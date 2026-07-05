@@ -1,0 +1,140 @@
+% Minimalne ustawienia pracy dyplomowej
+% Zostawione głównie: marginesy, font, język, interlinia, nagłówki, podpisy, bibliografia i linki.
+
+% Marginesy strony.
+% inner = większy margines od strony oprawy przy druku dwustronnym.
+\usepackage[
+  top=2.5cm,
+  bottom=2.5cm,
+  inner=3.5cm,
+  outer=2.5cm,
+  a4paper,
+  twoside
+]{geometry}
+
+% Obsługa grafik.
+\usepackage{graphicx}
+
+% Kodowanie fontów i pliku źródłowego — potrzebne przy kompilacji pdfLaTeX-em.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% Język polski: dzielenie wyrazów, podpisy, nazwy elementów dokumentu.
+\usepackage[polish]{babel}
+
+% Font podobny do Times New Roman.
+\usepackage{tgtermes}
+
+% Formatowanie tytułów rozdziałów i sekcji.
+\usepackage{titlesec}
+
+% Formatowanie tytułu spisu treści.
+\usepackage{tocloft}
+
+% Interlinia, np. 1.5.
+\usepackage{setspace}
+
+% Wcięcie pierwszego akapitu po nagłówku.
+\usepackage{indentfirst}
+
+% Estetyczne tabele: \toprule, \midrule, \bottomrule.
+\usepackage{booktabs}
+
+% Formatowanie podpisów rysunków i tabel.
+\usepackage[
+  format=plain,
+  labelfont=it,
+  textfont=it,
+  labelsep=period,
+  justification=centering
+]{caption}
+
+% Podstawowe środowiska i symbole matematyczne.
+\usepackage{amsmath}
+
+% Nagłówki i stopki.
+\usepackage{fancyhdr}
+
+% Bibliografia.
+\usepackage[style=ieee]{biblatex}
+\usepackage{csquotes}
+
+% Linki w PDF.
+% hyperref najlepiej ładować pod koniec ustawień.
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  citecolor=black,
+  filecolor=black,
+  linkcolor=black,
+  urlcolor=black
+}
+
+% Ścieżka do grafik.
+\graphicspath{{./images/}}
+
+% Plik bibliografii.
+\addbibresource{bibliografia.bib}
+
+% Numerowanie rysunków i tabel w obrębie rozdziału, np. 2.1, 2.2.
+\counterwithin{figure}{chapter}
+\counterwithin{table}{chapter}
+
+% Polska, krótka nazwa podpisu rysunku: "Rys." zamiast "Rysunek".
+\addto\captionspolish{\renewcommand{\figurename}{Rys.}}
+
+% Stopka z numerem strony na środku.
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\fontsize{10}{12}\selectfont\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Ten sam styl numeracji dla stron początkowych rozdziałów.
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\fontsize{10}{12}\selectfont\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% Tytuł rozdziału: 12 pt, pogrubiony, wielkie litery.
+\titleformat{\chapter}[block]
+  {\normalfont\fontsize{12}{14}\selectfont\bfseries\MakeUppercase}
+  {\thechapter.}{0.5em}{}
+\titlespacing*{\chapter}{0pt}{12pt}{6pt}
+
+% Tytuł sekcji: 10 pt, pogrubiony, kursywa.
+\titleformat{\section}[block]
+  {\normalfont\fontsize{10}{12}\selectfont\bfseries\itshape}
+  {\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+% Tytuł podsekcji: 10 pt, kursywa.
+\titleformat{\subsection}[block]
+  {\normalfont\fontsize{10}{12}\selectfont\itshape}
+  {\thesubsection.}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{12pt}{6pt}
+
+% Tytuł podpodsekcji: 10 pt, kursywa.
+\titleformat{\subsubsection}[block]
+  {\normalfont\fontsize{10}{12}\selectfont\itshape}
+  {\thesubsubsection.}{0.5em}{}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+
+% Tytuł spisu treści: 12 pt, pogrubiony, wielkie litery.
+\renewcommand{\cfttoctitlefont}{\fontsize{12}{14}\selectfont\bfseries\MakeUppercase}
+
+% Wcięcie akapitu, brak dodatkowego odstępu między akapitami.
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+% Interlinia 1.5.
+\onehalfspacing
+
+% Pusta strona bez numeru — przydatne przy druku dwustronnym.
+\newcommand\blankpage{%
+  \null
+  \thispagestyle{empty}%
+  \addtocounter{page}{-1}%
+  \newpage
+}
