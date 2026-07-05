@@ -22,14 +22,45 @@
 % Język polski: dzielenie wyrazów, podpisy, nazwy elementów dokumentu.
 \usepackage[polish]{babel}
 
-% Font podobny do Times New Roman.
-\usepackage{tgtermes}
+% CZCIONKA GLOBALNA: Nowoczesna czcionka bezszeryfowa (Sans-Serif) z pełnymi polskimi znakami
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\sfdefault} % Ustawia czcionkę bezszeryfową jako domyślną dla całego tekstu
 
-% Formatowanie tytułów rozdziałów i sekcji.
-\usepackage{titlesec}
+\usepackage[indentafter]{titlesec}
 
-% Formatowanie tytułu spisu treści.
+% Nowoczesne formatowanie dla \chapter (Rozdział) - bez kursywy, wielkie litery, rozmiar 14pt (lub dostosuj)
+\titleformat{\chapter}[block]
+  {\normalfont\large\bfseries\MakeUppercase}
+  {\thechapter.}{0.5em}{}
+\titlespacing*{\chapter}{0pt}{12pt}{40pt}
+
+% Nowoczesne formatowanie dla \section (Podrozdział) - pogrubiony, prosty, brak kursywy
+\titleformat{\section}[block]
+  {\normalfont\normalsize\bfseries}
+  {\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+% Nowoczesne formatowanie dla \subsection (Pod-podrozdział) - pogrubiony, prosty, brak kursywy
+\titleformat{\subsection}[block]
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection.}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{12pt}{6pt}
+
+% Nowoczesne formatowanie dla \subsubsection
+\titleformat{\subsubsection}[block]
+  {\normalfont\normalsize\bfseries}
+  {\thesubsubsection.}{0.5em}{}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+
+% Formatowanie tytułu spisu treści i jego zawartości.
 \usepackage{tocloft}
+\renewcommand{\cfttoctitlefont}{\normalfont\large\bfseries\MakeUppercase}
+\renewcommand{\cftchapfont}{\normalfont\bfseries}
+\renewcommand{\cftchappagefont}{\normalfont\bfseries}
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftsecpagefont}{\normalfont}
+\renewcommand{\cftsubsecfont}{\normalfont}
+\renewcommand{\cftsubsecpagefont}{\normalfont}
 
 % Interlinia, np. 1.5.
 \usepackage{setspace}
@@ -40,11 +71,11 @@
 % Estetyczne tabele: \toprule, \midrule, \bottomrule.
 \usepackage{booktabs}
 
-% Formatowanie podpisów rysunków i tabel.
+% Formatowanie podpisów rysunków i tabel (usunięto kursywę dla czystości inżynierskiej).
 \usepackage[
   format=plain,
-  labelfont=it,
-  textfont=it,
+  labelfont=bf,
+  textfont=normalfont,
   labelsep=period,
   justification=centering
 ]{caption}
@@ -97,33 +128,6 @@
   \renewcommand{\headrulewidth}{0pt}
 }
 
-% Tytuł rozdziału: 12 pt, pogrubiony, wielkie litery.
-\titleformat{\chapter}[block]
-  {\normalfont\fontsize{12}{14}\selectfont\bfseries\MakeUppercase}
-  {\thechapter.}{0.5em}{}
-\titlespacing*{\chapter}{0pt}{12pt}{6pt}
-
-% Tytuł sekcji: 10 pt, pogrubiony, kursywa.
-\titleformat{\section}[block]
-  {\normalfont\fontsize{10}{12}\selectfont\bfseries\itshape}
-  {\thesection.}{0.5em}{}
-\titlespacing*{\section}{0pt}{12pt}{6pt}
-
-% Tytuł podsekcji: 10 pt, kursywa.
-\titleformat{\subsection}[block]
-  {\normalfont\fontsize{10}{12}\selectfont\itshape}
-  {\thesubsection.}{0.5em}{}
-\titlespacing*{\subsection}{0pt}{12pt}{6pt}
-
-% Tytuł podpodsekcji: 10 pt, kursywa.
-\titleformat{\subsubsection}[block]
-  {\normalfont\fontsize{10}{12}\selectfont\itshape}
-  {\thesubsubsection.}{0.5em}{}
-\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
-
-% Tytuł spisu treści: 12 pt, pogrubiony, wielkie litery.
-\renewcommand{\cfttoctitlefont}{\fontsize{12}{14}\selectfont\bfseries\MakeUppercase}
-
 % Wcięcie akapitu, brak dodatkowego odstępu między akapitami.
 \setlength{\parindent}{1.25cm}
 \setlength{\parskip}{0pt}
@@ -137,4 +141,26 @@
   \thispagestyle{empty}%
   \addtocounter{page}{-1}%
   \newpage
+}
+% Obsługa kolorów i własnych znaczników (TODO, FIXME, NOTE)
+\usepackage{xcolor}
+
+% Definicja niestandardowych kolorów (możesz dostosować odcienie HEX)
+\definecolor{todoYellow}{HTML}{FFDE59}  % Żółty jak flamaster
+\definecolor{fixmePurple}{HTML}{C19A6B} % Jeśli wolisz fiolet, zmień na: {A32CC4}
+\definecolor{noteRed}{HTML}{FF4D4D}     % Czerwony
+
+% Komenda \TODO{tekst} - żółte tło (jak zakreślacz)
+\newcommand{\TODO}[1]{%
+  \colorbox{todoYellow}{\bfseries\sffamily\small TODO: #1}%
+}
+
+% Komenda \FIXME{tekst} - fioletowy tekst w ramce lub tło
+\newcommand{\FIXME}[1]{%
+  \colorbox{purple!30}{\bfseries\sffamily\small FIXME: #1}% (fioletowe tło)
+}
+
+% Komenda \NOTE{tekst} - czerwone tło, biały tekst (żeby był czytelny)
+\newcommand{\NOTE}[1]{%
+  \colorbox{noteRed}{\color{white}\bfseries\sffamily\small NOTE: #1}%
 }
