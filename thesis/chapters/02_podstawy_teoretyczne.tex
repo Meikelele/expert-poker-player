@@ -1,0 +1,204 @@
+\chapter{Podstawy teoretyczne}
+
+\section{Poker jako gra z niepełną informacją}
+
+Poker jest rodziną gier karcianych, w których wynik zależy zarówno od losowego rozdania kart, jak i od decyzji podejmowanych przez graczy. W przeciwieństwie do gier z pełną informacją, takich jak szachy, uczestnicy rozgrywki nie znają wszystkich elementów stanu gry. Ukryte pozostają przede wszystkim karty przeciwników, co sprawia, że decyzje podejmowane są w warunkach niepewności.
+
+Z punktu widzenia sztucznej inteligencji poker jest interesującym problemem badawczym, ponieważ łączy losowość, niepełną informację, sekwencyjne podejmowanie decyzji oraz konieczność maksymalizacji wyniku w długim horyzoncie czasowym. W takim środowisku pojedyncza decyzja nie powinna być oceniana wyłącznie przez pryzmat wyniku jednego rozdania, lecz przez jej wpływ na oczekiwaną wartość strategii w wielu powtórzeniach gry.
+
+\section{Texas Hold’em}
+
+Texas Hold’em jest jedną z najpopularniejszych odmian pokera. Każdy gracz otrzymuje dwie zakryte karty własne (ang. \emph{hole cards}), natomiast na stole stopniowo odkrywanych jest pięć kart wspólnych (ang. \emph{community cards}). Gracz tworzy najlepszy możliwy układ pięciokartowy, wykorzystując dowolną kombinację swoich dwóch kart oraz pięciu kart wspólnych.
+
+Rozgrywka w klasycznym Texas Hold’em składa się z kilku etapów: etapu przed flopem (ang. \emph{preflop}), flopa (ang. \emph{flop}), czyli odkrycia trzech pierwszych kart wspólnych, turna (ang. \emph{turn}), czyli czwartej karty wspólnej, rivera (ang. \emph{river}), czyli piątej i ostatniej karty wspólnej, oraz showdownu (ang. \emph{showdown}), czyli końcowego porównania układów. W trakcie kolejnych rund licytacji gracze mogą podejmować decyzje takie jak czekanie (ang. \emph{check}), postawienie zakładu (ang. \emph{bet}), sprawdzenie zakładu przeciwnika (ang. \emph{call}), podbicie (ang. \emph{raise}) lub spasowanie (ang. \emph{fold}). W odmianach no-limit możliwe jest również stosowanie różnych rozmiarów zakładów, co istotnie zwiększa przestrzeń możliwych strategii.
+
+\section{Ranking układów pokerowych}
+
+W Texas Hold’em oraz Ultimate Texas Hold’em wynik rozdania zależy od siły najlepszego układu pięciokartowego utworzonego z dostępnych kart. Układy pokerowe mają ustaloną hierarchię, która pozwala jednoznacznie porównać rękę gracza i krupiera podczas showdownu. Przykładowy ranking układów od najsilniejszego do najsłabszego przedstawiono w tabeli~\ref{tab:poker_hand_ranking} \cite{tulalip_uth_rules}.
+
+Najsilniejszym układem jest poker królewski, natomiast najsłabszym układem jest wysoka karta. W przypadku gdy dwóch uczestników rozdania posiada układ tej samej kategorii, o zwycięstwie decydują wartości kart wchodzących w skład układu oraz karty dodatkowe, określane jako kickery.
+
+\begin{table}[h]
+\centering
+\caption{Ranking układów pokerowych od najsilniejszego do najsłabszego}
+\label{tab:poker_hand_ranking}
+\begin{tabular}{ll}
+\toprule
+Układ & Opis \\
+\midrule
+Poker królewski & A, K, Q, J, 10 w tym samym kolorze \\
+Poker & Pięć kolejnych kart w tym samym kolorze \\
+Kareta & Cztery karty tej samej wartości \\
+Full & Trójka oraz para \\
+Kolor & Pięć kart w tym samym kolorze \\
+Strit & Pięć kolejnych kart \\
+Trójka & Trzy karty tej samej wartości \\
+Dwie pary & Dwa różne układy par \\
+Para & Dwie karty tej samej wartości \\
+Wysoka karta & Brak silniejszego układu \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Ultimate Texas Hold’em}
+
+\subsection{Charakterystyka gry}
+
+Ultimate Texas Hold’em jest kasynową odmianą pokera opartą na zasadach Texas Hold’em. W przeciwieństwie do klasycznej odmiany wieloosobowej gracz nie rywalizuje z innymi graczami, lecz z krupierem reprezentującym kasyno. Zarówno gracz, jak i krupier otrzymują po dwie karty własne, a następnie korzystają z pięciu kart wspólnych w celu utworzenia najlepszego możliwego układu pięciokartowego \cite{nevada_uth_rules,tulalip_uth_rules}.
+
+\subsection{Różnice względem klasycznego Texas Hold’em}
+
+Najważniejsza różnica względem klasycznego Texas Hold’em polega na tym, że w Ultimate Texas Hold’em gracz podejmuje decyzje przeciwko kasynu, a nie przeciwko innym graczom. Nie występuje więc klasyczna rywalizacja między wieloma uczestnikami stołu, nie ma konieczności blefowania przeciwników ani reagowania na ich indywidualne style gry.
+
+Istotną cechą Ultimate Texas Hold’em jest również ograniczona liczba momentów decyzyjnych. Gracz może wykonać zakład Play (ang. \emph{Play bet}) tylko raz w trakcie rozdania: przed flopem, po flopie albo po odkryciu wszystkich kart wspólnych. Im wcześniej gracz zdecyduje się na zagranie agresywne, tym większy zakład może postawić, ale decyzja jest wtedy podejmowana przy mniejszej liczbie informacji \cite{wizard_uth,tulalip_uth_rules}.
+
+\begin{table}[h]
+\centering
+\caption{Porównanie Texas Hold’em i Ultimate Texas Hold’em}
+\label{tab:texas_vs_uth}
+\begin{tabular}{lll}
+\toprule
+Cecha & Texas Hold’em & Ultimate Texas Hold’em \\
+\midrule
+Przeciwnik & inni gracze & krupier / kasyno \\
+Liczba graczy & wielu & jeden gracz przeciwko dealerowi \\
+Zakłady & zmienne & ustalone mnożniki Ante \\
+Blefowanie & istotne & brak klasycznego blefowania \\
+Liczba decyzji & duża & ograniczona \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Przebieg rozdania}
+
+Rozdanie rozpoczyna się od postawienia przez gracza obowiązkowych zakładów Ante (ang. \emph{Ante bet}) oraz Blind (ang. \emph{Blind bet}). Zakłady te mają zwykle taką samą wartość. Opcjonalnie gracz może również postawić zakład poboczny (ang. \emph{side bet}), na przykład Trips, który jest rozliczany niezależnie od wyniku pojedynku z krupierem \cite{tulalip_uth_rules}.
+
+Po wniesieniu zakładów gracz oraz krupier otrzymują po dwie zakryte karty własne. Następnie gracz podejmuje pierwszą decyzję. Może zaczekać albo wykonać zakład Play w wysokości trzykrotności lub czterokrotności zakładu Ante.
+
+Jeżeli gracz nie wykona zakładu Play przed flopem, odkrywane są trzy pierwsze karty wspólne, czyli flop. Na tym etapie gracz może ponownie zaczekać albo wykonać zakład Play w wysokości dwukrotności Ante. Jeżeli również po flopie gracz zdecyduje się zaczekać, odkrywane są dwie ostatnie karty wspólne, czyli turn oraz river. Wtedy gracz musi wybrać pomiędzy spasowaniem a wykonaniem zakładu Play w wysokości jednokrotności Ante \cite{wizard_uth,tulalip_uth_rules}.
+
+\subsection{Zakłady i decyzje gracza}
+
+W podstawowym modelu gry występują trzy główne rodzaje zakładów: Ante, Blind oraz Play. Zakłady Ante i Blind są obowiązkowe i stawiane przed rozpoczęciem rozdania. Zakład Play jest natomiast bezpośrednio związany z decyzją gracza i może zostać wykonany tylko raz w trakcie rozdania.
+
+Z punktu widzenia modelowania problemu jako środowiska uczenia przez wzmacnianie najważniejszy jest zakład Play, ponieważ jego wysokość i moment wykonania wynikają z decyzji agenta. Ante i Blind można traktować jako początkowy koszt udziału w rozdaniu, natomiast Play odzwierciedla wybór strategii w aktualnym stanie gry.
+
+Dostępne decyzje gracza w poszczególnych etapach rozdania przedstawiono w tabeli~\ref{tab:uth_decisions}.
+
+\begin{table}[h]
+\centering
+\caption{Dostępne decyzje gracza w Ultimate Texas Hold’em}
+\label{tab:uth_decisions}
+\begin{tabular}{lll}
+\toprule
+Etap & Dostępne akcje & Wysokość zakładu Play \\
+\midrule
+Preflop & check / raise & 3x lub 4x Ante \\
+Flop & check / raise & 2x Ante \\
+River & fold / raise & 1x Ante \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Rozstrzyganie rozdania}
+
+Po zakończeniu etapu decyzyjnego krupier odsłania swoje dwie karty własne. Zarówno gracz, jak i krupier tworzą najlepszy możliwy układ pięciokartowy z siedmiu dostępnych kart: dwóch kart własnych oraz pięciu kart wspólnych. Następnie układy są porównywane zgodnie ze standardowym rankingiem układów pokerowych.
+
+Krupier kwalifikuje się do gry, jeżeli posiada co najmniej parę. Jeżeli krupier się nie kwalifikuje, zakład Ante jest zwracany graczowi. Zakład Play jest rozliczany na podstawie bezpośredniego porównania układu gracza i krupiera. W przypadku zwycięstwa gracza Play wypłacany jest w stosunku 1:1, w przypadku przegranej gracz traci zakład Play, a w przypadku remisu zakład jest zwracany \cite{tulalip_uth_rules,wizard_uth}.
+
+Zakład Blind ma odrębną logikę rozliczania. Jeżeli gracz pokona krupiera układem o wartości co najmniej strita, Blind wypłacany jest zgodnie z tabelą wypłat. Jeżeli gracz wygra rozdanie układem słabszym niż strit, zakład Blind jest zwracany. W przypadku przegranej gracza zakład Blind jest tracony, a w przypadku remisu zwracany \cite{tulalip_uth_rules}.
+
+\subsection{Zakłady poboczne}
+
+W wielu wariantach Ultimate Texas Hold’em dostępne są również zakłady poboczne, takie jak Trips lub Progressive. Zakład Trips jest opcjonalny i wypłacany na podstawie końcowego układu gracza, niezależnie od tego, czy gracz pokonał krupiera. Najczęściej wygrywa on wtedy, gdy końcowy układ gracza ma wartość co najmniej trójki \cite{tulalip_uth_rules}.
+
+Zakłady poboczne mogą różnić się w zależności od kasyna i stosowanej tabeli wypłat.
+
+\TODO{Decyzja do potwierdzenia z promotorem: czy w podstawowym środowisku uwzględniać zakład Trips, czy ograniczyć model do Ante, Blind oraz Play. Zakład Progressive zostanie pominięty jako rozszerzenie zależne od konkretnego wariantu kasynowego.}
+
+W podstawowej wersji środowiska zakłady poboczne Trips oraz Progressive nie będą uwzględniane. Wynika to z faktu, że głównym celem pracy jest modelowanie sekwencyjnego procesu decyzyjnego dotyczącego zakładu Play. Zakłady poboczne są opcjonalne, zależą od tabel wypłat konkretnego kasyna i zwiększają wariancję wyniku, nie zmieniając podstawowej struktury decyzji: check, raise albo fold.
+
+\subsection{Tabele wypłat}
+
+Zakład Blind nie jest wypłacany dla każdego zwycięskiego układu gracza. Zgodnie z tabelą wypłat, bonus na zakładzie Blind wypłacany jest wtedy, gdy gracz pokona krupiera i posiada układ o wartości co najmniej strita. Jeżeli gracz pokona krupiera układem słabszym niż strit, zakład Blind jest zwracany. Tabelę wypłat zakładu Blind przedstawiono w tabeli~\ref{tab:blind_payouts} \cite{tulalip_uth_rules}.
+
+\begin{table}[h]
+\centering
+\caption{Przykładowa tabela wypłat zakładu Blind w Ultimate Texas Hold’em}
+\label{tab:blind_payouts}
+\begin{tabular}{ll}
+\toprule
+Układ gracza & Wypłata \\
+\midrule
+Poker królewski & 500:1 \\
+Poker & 50:1 \\
+Kareta & 10:1 \\
+Full & 3:1 \\
+Kolor & 3:2 \\
+Strit & 1:1 \\
+Pozostałe układy & Zwrot \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Zakład Trips jest opcjonalnym zakładem pobocznym. Jest on rozliczany na podstawie końcowego układu gracza i nie zależy od tego, czy gracz pokonał krupiera. W analizowanym przykładzie zakład Trips wygrywa wtedy, gdy gracz uzyska układ co najmniej trójki. Przykładową tabelę wypłat zakładu Trips przedstawiono w tabeli~\ref{tab:trips_payouts} \cite{tulalip_uth_rules}.
+
+\begin{table}[h]
+\centering
+\caption{Przykładowa tabela wypłat zakładu Trips w Ultimate Texas Hold’em}
+\label{tab:trips_payouts}
+\begin{tabular}{ll}
+\toprule
+Układ gracza & Wypłata \\
+\midrule
+Poker królewski & 50:1 \\
+Poker & 40:1 \\
+Kareta & 30:1 \\
+Full & 8:1 \\
+Kolor & 7:1 \\
+Strit & 4:1 \\
+Trójka & 3:1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+W niektórych wariantach gry dostępny jest również zakład Progressive, którego tabela wypłat zależy od konkretnego kasyna oraz wartości puli progresywnej. Ze względu na zależność od zewnętrznych zasad kasynowych oraz brak bezpośredniego związku z podstawową decyzją Play, zakład ten nie będzie uwzględniany w podstawowym modelu środowiska.
+
+\section{Wartość oczekiwana, house edge i strategia bazowa}
+
+Wartość oczekiwana (ang. \emph{expected value}, EV) określa średni wynik finansowy decyzji lub strategii przy założeniu dużej liczby powtórzeń gry. W kontekście Ultimate Texas Hold’em pojedyncze rozdanie może zakończyć się zarówno zyskiem, jak i stratą, jednak jakość strategii należy oceniać na podstawie średniego wyniku uzyskiwanego w wielu rozdaniach.
+
+Przewaga kasyna (ang. \emph{house edge}) jest matematyczną miarą określającą oczekiwany zysk kasyna względem zakładu gracza. Nie oznacza ona, że kasyno wygrywa każde pojedyncze rozdanie, lecz że przy dużej liczbie rozegranych rozdań średni wynik będzie przesuwał się na korzyść kasyna. Gracz może więc osiągać krótkoterminowe zyski, jednak w długim okresie wynik gry powinien zbliżać się do wartości oczekiwanej wynikającej z zasad gry \cite{investopedia_house_edge}.
+
+Istotne jest również to, że przewaga kasyna odnosi się do kwoty postawionych zakładów, a nie wyłącznie do początkowego kapitału gracza (ang. \emph{bankroll}). Jeżeli gracz wykonuje wiele zakładów w kolejnych rozdaniach, całkowita kwota zaangażowana w grę może być wielokrotnie większa niż początkowy kapitał. Z tego powodu nawet niewielka procentowa przewaga kasyna może prowadzić do istotnej oczekiwanej straty w długim horyzoncie czasowym \cite{investopedia_house_edge}.
+
+W grach takich jak Ultimate Texas Hold’em interpretacja house edge wymaga dodatkowej ostrożności, ponieważ gracz oprócz zakładów początkowych może zwiększać swoje zaangażowanie poprzez zakład Play. Z tego powodu oprócz klasycznej przewagi kasyna można analizować również miarę określaną jako element ryzyka (ang. \emph{element of risk}), odnoszącą średnią stratę do całkowitej kwoty postawionej w rozdaniu \cite{wizard_house_edge,wizard_uth}.
+
+Przykładowe wartości przewagi kasyna dla wybranych gier przedstawiono w tabeli~\ref{tab:house_edge_examples} \cite{wizard_house_edge}.
+
+\begin{table}[h]
+\centering
+\caption{Przykładowe wartości przewagi kasyna dla wybranych gier kasynowych}
+\label{tab:house_edge_examples}
+\begin{tabular}{ll}
+\toprule
+Gra & Przewaga kasyna \\
+\midrule
+Blackjack & 0{,}28\% \\
+Ultimate Texas Hold’em & 2{,}19\% \\
+Ruletka europejska & 2{,}70\% \\
+Ruletka amerykańska & 5{,}26\% \\
+Slot machines & 2--15\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Tabela~\ref{tab:house_edge_examples} pokazuje, że przewaga kasyna jest cechą konstrukcyjną gier hazardowych, ale jej poziom istotnie różni się pomiędzy grami. Celem niniejszej pracy nie jest wykazanie, że agent może trwale uzyskać dodatnią wartość oczekiwaną w grze zaprojektowanej na korzyść kasyna, lecz sprawdzenie, które metody uczenia przez wzmacnianie są w stanie nauczyć się strategii minimalizującej tę przewagę.
+
+\section{Uczenie przez wzmacnianie}
+
+Uczenie przez wzmacnianie (ang. \emph{reinforcement learning}, RL) jest paradygmatem uczenia maszynowego, w którym agent uczy się podejmowania decyzji poprzez interakcję ze środowiskiem. W każdym kroku agent obserwuje aktualny stan (ang. \emph{state}) środowiska, wybiera akcję (ang. \emph{action}), a następnie otrzymuje nagrodę (ang. \emph{reward}) oraz przechodzi do kolejnego stanu. Celem agenta jest wyuczenie strategii, określanej również jako polityka decyzyjna (ang. \emph{policy}), która maksymalizuje sumę nagród w długim horyzoncie czasowym.
+
+W przypadku Ultimate Texas Hold’em środowiskiem jest symulator gry, stanem jest aktualna sytuacja w rozdaniu, akcją jest decyzja gracza, natomiast nagrodą może być końcowy wynik finansowy rozdania. Takie sformułowanie pozwala traktować grę jako problem sekwencyjnego podejmowania decyzji, w którym agent uczy się kompromisu pomiędzy ryzykiem, ilością dostępnej informacji oraz potencjalną wysokością wypłaty.
+
+Z perspektywy uczenia przez wzmacnianie Ultimate Texas Hold’em jest interesującym środowiskiem, ponieważ decyzje gracza są sekwencyjne i podejmowane przy różnym poziomie dostępnej informacji. Przed flopem gracz zna jedynie swoje dwie karty, ale może wykonać najwyższy zakład Play. Po flopie posiada więcej informacji, lecz maksymalny zakład jest mniejszy. Po odkryciu wszystkich kart wspólnych zna już pełny board, ale może wykonać wyłącznie zakład 1x Ante albo spasować. Agent musi więc nauczyć się kompromisu pomiędzy ryzykiem, ilością informacji oraz potencjalną wypłatą.
