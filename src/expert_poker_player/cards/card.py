@@ -60,10 +60,10 @@ class Card:
 
     def __post_init__(self) -> None:
         """Sprawdza poprawność danych podczas tworzenia karty."""
-        if not isinstance(self.rank, Rank):
+        if not isinstance(self.rank, Rank): # type: ignore
             raise TypeError("[Card]: 'rank' must be an instance of Rank")
 
-        if not isinstance(self.suit, Suit):
+        if not isinstance(self.suit, Suit): # type: ignore
             raise TypeError("[Card]: 'suit' must be an instance of Suit")
 
     def __str__(self) -> str:

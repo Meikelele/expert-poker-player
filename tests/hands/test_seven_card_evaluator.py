@@ -193,3 +193,77 @@ def test_rejects_duplicate_available_cards() -> None:
         match="cannot contain duplicates",
     ):
         evaluate_best_hand(cards)
+
+def test_six_cards_are_supported() -> None:
+    cards = make_cards(
+        (Rank.ACE, Suit.SPADES),
+        (Rank.ACE, Suit.HEARTS),
+        (Rank.KING, Suit.DIAMONDS),
+        (Rank.QUEEN, Suit.CLUBS),
+        (Rank.NINE, Suit.SPADES),
+        (Rank.TWO, Suit.HEARTS),
+    )
+
+    result = evaluate_best_hand(cards)
+
+    assert result.value.rank is HandRank.ONE_PAIR
+    assert result.value.tiebreak == (
+        Rank.ACE.value,
+        Rank.KING.value,
+        Rank.QUEEN.value,
+        Rank.NINE.value,
+    )
+
+def test_selects_six_high_straight_over_wheel_from_seven_cards() -> None:
+    cards = make_cards(
+        (Rank.ACE, Suit.SPADES),
+        (Rank.SIX, Suit.HEARTS),
+        (Rank.FIVE, Suit.DIAMONDS),
+        (Rank.FOUR, Suit.CLUBS),
+        (Rank.THREE, Suit.SPADES),
+        (Rank.TWO, Suit.HEARTS),
+        (Rank.KING, Suit.DIAMONDS),
+    )
+
+    result = evaluate_best_hand(cards)
+
+    assert result.value.rank is HandRank.STRAIGHT
+    assert result.value.tiebreak == (Rank.SIX.value,)
+
+def test_player_can_use_exactly_one_hole_card() -> None:
+    board = make_cards(
+        (Rank.ACE, Suit.SPADES),
+        (Rank.KING, Suit.HEARTS),
+        (Rank.QUEEN, Suit.DIAMONDS),
+        (Rank.JACK, Suit.CLUBS),
+        (Rank.TWO, Suit.SPADES),
+    )
+
+    hole_cards = make_cards(
+        (Rank.TEN, Suit.HEARTS),
+        (Rank.THREE, Suit.DIAMONDS),
+    )
+
+    result = evaluate_best_hand([*hole_cards, *board])
+
+    assert result.value.rank is HandRank.STRAIGHT
+    assert result.value.tiebreak == (Rank.ACE.value,)
+    assert hole_cards[0] in result.cards
+    assert hole_cards[1] not in result.cards
+
+def test_best_hand_rejects_non_card_element() -> None:
+    cards = [ # type: ignore
+        Card(rank=Rank.ACE, suit=Suit.SPADES),
+        Card(rank=Rank.KING, suit=Suit.HEARTS),
+        Card(rank=Rank.QUEEN, suit=Suit.DIAMONDS),
+        Card(rank=Rank.JACK, suit=Suit.CLUBS),
+        Card(rank=Rank.TEN, suit=Suit.SPADES),
+        Card(rank=Rank.NINE, suit=Suit.HEARTS),
+        "not a card",
+    ]
+
+    with pytest.raises(
+        TypeError,
+        match="all elements must be instances of Card",
+    ):
+        evaluate_best_hand(cards)  # type: ignore[arg-type]

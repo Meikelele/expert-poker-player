@@ -256,3 +256,18 @@ def test_rejects_duplicate_cards() -> None:
         match="cannot contain duplicate cards",
     ):
         evaluate_five_card_hand(cards)
+
+def test_rejects_non_card_element() -> None:
+    cards = [ # type: ignore
+        Card(rank=Rank.ACE, suit=Suit.SPADES),
+        Card(rank=Rank.KING, suit=Suit.HEARTS),
+        Card(rank=Rank.QUEEN, suit=Suit.DIAMONDS),
+        Card(rank=Rank.JACK, suit=Suit.CLUBS),
+        "not a card",
+    ]
+
+    with pytest.raises(
+        TypeError,
+        match="all elements must be instances of Card",
+    ):
+        evaluate_five_card_hand(cards)  # type: ignore[arg-type]

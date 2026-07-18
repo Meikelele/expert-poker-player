@@ -197,3 +197,53 @@ def test_rank_must_be_hand_rank() -> None:
             rank=1,  # type: ignore[arg-type]
             tiebreak=(14, 13, 9, 4),
         )
+
+def test_tiebreak_values_must_be_integers() -> None:
+    with pytest.raises(
+        TypeError,
+        match="all tiebreak values must be integers",
+    ):
+        HandValue(
+            rank=HandRank.STRAIGHT,
+            tiebreak=("10",),  # type: ignore[arg-type]
+        )
+
+def test_hand_value_is_not_equal_to_object_of_different_type() -> None:
+    hand = HandValue(
+        rank=HandRank.STRAIGHT,
+        tiebreak=(Rank.TEN.value,),
+    )
+
+    assert hand != object()
+
+def test_comparison_with_unsupported_type_returns_not_implemented() -> None:
+    hand = HandValue(
+        rank=HandRank.STRAIGHT,
+        tiebreak=(Rank.TEN.value,),
+    )
+
+    assert hand.__lt__(object()) is NotImplemented
+
+def test_ordering_with_unsupported_type_raises_type_error() -> None:
+    hand = HandValue(
+        rank=HandRank.STRAIGHT,
+        tiebreak=(Rank.TEN.value,),
+    )
+
+    with pytest.raises(TypeError):
+        _ = hand < object()
+
+def test_equal_hand_values_have_equal_hashes() -> None:
+    first_hand = HandValue(
+        rank=HandRank.TWO_PAIR,
+        tiebreak=(14, 13, 7),
+    )
+
+    second_hand = HandValue(
+        rank=HandRank.TWO_PAIR,
+        tiebreak=(14, 13, 7),
+    )
+
+    assert first_hand == second_hand
+    assert hash(first_hand) == hash(second_hand)
+    assert len({first_hand, second_hand}) == 1
