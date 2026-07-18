@@ -1,7 +1,9 @@
 # wykonuje wlasciwa analize rak
 from collections import Counter
 from collections.abc import Iterable, Sequence
+from itertools import combinations
 
+from expert_poker_player.hands.evaluated_hand import EvaluatedHand
 from expert_poker_player.cards import Card, Rank
 from expert_poker_player.hands.hand_rank import HandRank
 from expert_poker_player.hands.hand_value import HandValue
@@ -131,6 +133,41 @@ def evaluate_five_card_hand(cards: Sequence[Card]) -> HandValue:
         tiebreak=tuple(rank_values_desc),
     )
 
+def evaluate_best_hand(cards: Sequence[Card]) -> EvaluatedHand:
+    """
+    Wybiera najlepszy układ pięciokartowy z pięciu, sześciu lub siedmiu kart.
+    """
+
+    available_cards = tuple(cards)
+    _validate_available_cards(available_cards)
+
+    evaluated_hands = [
+        EvaluatedHand(
+            value=evaluate_five_card_hand(combination),
+            cards=combination,
+        )
+        for combination in combinations(available_cards, 5)
+    ]
+
+    return max(
+        evaluated_hands,
+        key=lambda evaluated_hand: evaluated_hand.value,
+    )
+
+def _validate_available_cards(cards: tuple[Card, ...]) -> None:
+    """Sprawdza karty przekazane do wyboru najlepszego układu."""
+
+    if not 5 <= len(cards) <= 7:
+        raise ValueError(
+            f"hand evaluation requires between 5 and 7 cards, "
+            f"but received {len(cards)}"
+        )
+
+    if not all(isinstance(card, Card) for card in cards): # type: ignore
+        raise TypeError("all elements must be instances of Card")
+
+    if len(set(cards)) != len(cards):
+        raise ValueError("available cards cannot contain duplicates")
 
 def _validate_five_card_hand(cards: tuple[Card, ...]) -> None:
     """Sprawdza, czy przekazano dokładnie pięć unikalnych kart."""
