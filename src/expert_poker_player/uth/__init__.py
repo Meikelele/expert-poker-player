@@ -10,6 +10,10 @@ from expert_poker_player.uth.errors import (
     RoundNotStartedError,
     UTHError,
 )
+from expert_poker_player.uth.wagers import (
+    Settlement,
+    WagerSettlement,
+)
 
 __all__ = [
     "Action",
@@ -18,6 +22,8 @@ __all__ = [
     "RoundFinishedError",
     "RoundNotStartedError",
     "RoundOutcome",
+    "Settlement",
     "UTHError",
     "WagerOutcome",
+    "WagerSettlement",
 ]
