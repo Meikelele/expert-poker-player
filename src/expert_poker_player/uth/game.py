@@ -28,10 +28,10 @@ from expert_poker_player.uth.models import (
 )
 from expert_poker_player.uth.rules import legal_actions_for_phase
 from expert_poker_player.uth.settlement import (
-    determine_round_outcome,
     settle_fold,
     settle_showdown,
 )
+from expert_poker_player.uth.showdown import ShowdownResult
 
 
 class UTHGame:
@@ -244,28 +244,26 @@ class UTHGame:
     ) -> StepResult:
         """Ocenia obie ręce i kończy rozdanie showdownem."""
 
-        player_hand = evaluate_best_hand(
-            (
-                *state.player_cards,
-                *state.community_cards,
-            )
+        showdown = ShowdownResult(
+            player_hand=evaluate_best_hand(
+                (
+                    *state.player_cards,
+                    *state.community_cards,
+                )
+            ),
+            dealer_hand=evaluate_best_hand(
+                (
+                    *state.dealer_cards,
+                    *state.community_cards,
+                )
+            ),
         )
 
-        dealer_hand = evaluate_best_hand(
-            (
-                *state.dealer_cards,
-                *state.community_cards,
-            )
-        )
-
-        outcome = determine_round_outcome(
-            player_hand=player_hand.value,
-            dealer_hand=dealer_hand.value,
-        )
+        outcome = showdown.outcome
 
         settlement = settle_showdown(
-            player_hand=player_hand.value,
-            dealer_hand=dealer_hand.value,
+            player_hand=showdown.player_hand.value,
+            dealer_hand=showdown.dealer_hand.value,
             play_multiplier=play_multiplier,
         )
 
@@ -278,6 +276,7 @@ class UTHGame:
             play_multiplier=play_multiplier,
             outcome=outcome,
             settlement=settlement,
+            showdown=showdown,
         )
 
         return self._store_state(terminal_state)

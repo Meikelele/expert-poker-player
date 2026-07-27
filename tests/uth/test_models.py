@@ -3,7 +3,11 @@ from dataclasses import replace
 import pytest
 
 from expert_poker_player.cards import Card, Rank, Suit
-from expert_poker_player.hands import HandRank, HandValue
+from expert_poker_player.hands import (
+    EvaluatedHand,
+    HandRank,
+    HandValue,
+)
 from expert_poker_player.uth import (
     Action,
     GamePhase,
@@ -23,7 +27,24 @@ from expert_poker_player.uth.settlement import (
     settle_fold,
     settle_showdown,
 )
+from expert_poker_player.hands import evaluate_best_hand
+from expert_poker_player.uth.showdown import ShowdownResult
 
+def make_showdown() -> ShowdownResult:
+    return ShowdownResult(
+        player_hand=evaluate_best_hand(
+            (
+                *PLAYER_CARDS,
+                *COMMUNITY_CARDS,
+            )
+        ),
+        dealer_hand=evaluate_best_hand(
+            (
+                *DEALER_CARDS,
+                *COMMUNITY_CARDS,
+            )
+        ),
+    )
 
 PLAYER_CARDS = (
     Card(rank=Rank.ACE, suit=Suit.SPADES),
@@ -178,6 +199,29 @@ def test_terminal_showdown_state_requires_play_multiplier() -> None:
         play_multiplier=4,
     )
 
+    showdown = ShowdownResult(
+        player_hand=EvaluatedHand(
+            value=player_hand,
+            cards=(
+                PLAYER_CARDS[0],
+                PLAYER_CARDS[1],
+                COMMUNITY_CARDS[0],
+                COMMUNITY_CARDS[1],
+                COMMUNITY_CARDS[2],
+            ),
+        ),
+        dealer_hand=EvaluatedHand(
+            value=dealer_hand,
+            cards=(
+                DEALER_CARDS[0],
+                DEALER_CARDS[1],
+                COMMUNITY_CARDS[0],
+                COMMUNITY_CARDS[1],
+                COMMUNITY_CARDS[2],
+            ),
+        ),
+    )
+
     state = RoundState(
         phase=GamePhase.TERMINAL,
         player_cards=PLAYER_CARDS,
@@ -187,10 +231,13 @@ def test_terminal_showdown_state_requires_play_multiplier() -> None:
         play_multiplier=4,
         outcome=RoundOutcome.PLAYER_WIN,
         settlement=settlement,
+        showdown=showdown,
     )
 
     assert state.play_multiplier == 4
     assert state.outcome is RoundOutcome.PLAYER_WIN
+    assert state.showdown == showdown
+    
 def test_round_state_rejects_invalid_phase_type() -> None: # type: ignore
     with pytest.raises(
         TypeError,
@@ -642,4 +689,134 @@ def test_observation_rejects_duplicate_visible_cards() -> None:
             legal_actions=legal_actions_for_phase(
                 GamePhase.FLOP
             ),
+        )
+
+def test_non_terminal_state_rejects_showdown() -> None:
+    with pytest.raises(
+        ValueError,
+        match="non-terminal state cannot have showdown details",
+    ):
+        replace(
+            make_state(GamePhase.PREFLOP),
+            showdown=make_showdown(),
+        )
+
+def test_folded_state_rejects_showdown() -> None:
+    with pytest.raises(
+        ValueError,
+        match="folded round cannot have a showdown result",
+    ):
+        replace(
+            make_state(GamePhase.TERMINAL),
+            showdown=make_showdown(),
+        )
+
+def test_terminal_showdown_requires_details() -> None:
+    with pytest.raises(
+        ValueError,
+        match="showdown result requires showdown details",
+    ):
+        replace(
+            make_state(GamePhase.TERMINAL),
+            play_multiplier=4,
+            outcome=RoundOutcome.DEALER_WIN,
+        )
+
+def test_round_state_rejects_invalid_showdown_type() -> None:
+    with pytest.raises(
+        TypeError,
+        match="showdown must be an instance",
+    ):
+        replace(
+            make_state(GamePhase.TERMINAL),
+            showdown="showdown",  # type: ignore[arg-type]
+        )
+
+def test_round_outcome_must_match_showdown() -> None:
+    showdown = make_showdown()
+
+    opposite_outcome = (
+        RoundOutcome.PLAYER_WIN
+        if showdown.outcome is RoundOutcome.DEALER_WIN
+        else RoundOutcome.DEALER_WIN
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="round outcome must match showdown outcome",
+    ):
+        replace(
+            make_state(GamePhase.TERMINAL),
+            play_multiplier=4,
+            outcome=opposite_outcome,
+            showdown=showdown,
+        )
+
+def test_non_terminal_step_rejects_showdown() -> None:
+    observation = observation_from_state(
+        make_state(GamePhase.PREFLOP)
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="non-terminal step result cannot have "
+        "showdown details",
+    ):
+        StepResult(
+            observation=observation,
+            showdown=make_showdown(),
+        )
+
+def test_folded_step_rejects_showdown() -> None:
+    observation = observation_from_state(
+        make_state(GamePhase.TERMINAL)
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="folded step result cannot have showdown details",
+    ):
+        StepResult(
+            observation=observation,
+            outcome=RoundOutcome.PLAYER_FOLD,
+            settlement=settle_fold(),
+            showdown=make_showdown(),
+        )
+
+def test_showdown_step_requires_details() -> None:
+    observation = observation_from_state(
+        make_state(GamePhase.TERMINAL)
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="showdown step result requires showdown details",
+    ):
+        StepResult(
+            observation=observation,
+            outcome=RoundOutcome.DEALER_WIN,
+            settlement=settle_fold(),
+        )
+
+def test_step_outcome_must_match_showdown() -> None:
+    observation = observation_from_state(
+        make_state(GamePhase.TERMINAL)
+    )
+    showdown = make_showdown()
+
+    opposite_outcome = (
+        RoundOutcome.PLAYER_WIN
+        if showdown.outcome is RoundOutcome.DEALER_WIN
+        else RoundOutcome.DEALER_WIN
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="step outcome must match showdown outcome",
+    ):
+        StepResult(
+            observation=observation,
+            outcome=opposite_outcome,
+            settlement=settle_fold(),
+            showdown=showdown,
         )

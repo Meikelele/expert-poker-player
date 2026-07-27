@@ -200,6 +200,8 @@ def test_river_fold_loses_ante_and_blind() -> None:
     assert result.terminated
     assert result.outcome is RoundOutcome.PLAYER_FOLD
     assert result.settlement is not None
+    assert result.showdown is None
+    assert game.state.showdown is None
 
     assert game.state.phase is GamePhase.TERMINAL
     assert game.state.play_multiplier is None
@@ -252,14 +254,10 @@ def test_step_rejects_action_after_round_finished() -> None:
     ):
         game.step(Action.CHECK)
 
-
-
-
 def test_game_is_not_started_before_reset() -> None:
     game = UTHGame()
 
     assert not game.is_started
-
 
 def test_state_requires_started_round() -> None:
     game = UTHGame()
@@ -270,7 +268,6 @@ def test_state_requires_started_round() -> None:
     ):
         _ = game.state
 
-
 def test_observation_requires_started_round() -> None:
     game = UTHGame()
 
@@ -279,7 +276,6 @@ def test_observation_requires_started_round() -> None:
         match=r"call reset\(\) first",
     ):
         _ = game.observation
-
 
 def test_reset_starts_preflop_round() -> None:
     game = UTHGame()
@@ -291,7 +287,6 @@ def test_reset_starts_preflop_round() -> None:
     assert observation.phase is GamePhase.PREFLOP
     assert observation.community_cards == ()
     assert not observation.terminated
-
 
 def test_reset_returns_preflop_legal_actions() -> None:
     game = UTHGame()
@@ -305,7 +300,6 @@ def test_reset_returns_preflop_legal_actions() -> None:
             Action.BET_4X,
         }
     )
-
 
 def test_reset_with_fixed_deck_uses_declared_draw_order() -> None:
     game = UTHGame()
@@ -325,7 +319,6 @@ def test_reset_with_fixed_deck_uses_declared_draw_order() -> None:
 
     assert len(deck) == 0
 
-
 def test_observation_does_not_expose_dealer_cards() -> None:
     game = UTHGame()
 
@@ -335,7 +328,6 @@ def test_observation_does_not_expose_dealer_cards() -> None:
 
     assert not hasattr(observation, "dealer_cards")
     assert not hasattr(observation, "burned_cards")
-
 
 def test_same_seed_produces_same_sequence_of_rounds() -> None:
     first_game = UTHGame(seed=42)
@@ -359,7 +351,6 @@ def test_same_seed_produces_same_sequence_of_rounds() -> None:
     assert second_observation_a == second_observation_b
     assert second_state_a == second_state_b
 
-
 def test_consecutive_rounds_use_fresh_decks() -> None:
     game = UTHGame(seed=42)
 
@@ -380,7 +371,6 @@ def test_consecutive_rounds_use_fresh_decks() -> None:
 
     assert first_deal != second_deal
 
-
 @pytest.mark.parametrize(
     "seed",
     [
@@ -398,7 +388,6 @@ def test_game_rejects_invalid_seed_type(
     ):
         UTHGame(seed=seed)  # type: ignore[arg-type]
 
-
 def test_reset_rejects_invalid_card_source() -> None:
     game = UTHGame()
 
@@ -409,3 +398,27 @@ def test_reset_rejects_invalid_card_source() -> None:
         game.reset(
             card_source=object(),  # type: ignore[arg-type]
         )
+
+def test_terminal_showdown_contains_best_five_cards() -> None:
+    game, _ = start_fixed_game()
+
+    result = game.step(Action.BET_4X)
+
+    assert result.showdown is not None
+    assert game.state.showdown is not None
+
+    assert len(result.showdown.player_hand.cards) == 5
+    assert len(result.showdown.dealer_hand.cards) == 5
+
+    assert (
+        result.showdown.player_hand
+        == game.state.showdown.player_hand
+    )
+    assert (
+        result.showdown.dealer_hand
+        == game.state.showdown.dealer_hand
+    )
+    assert (
+        result.showdown.outcome
+        is result.outcome
+    )

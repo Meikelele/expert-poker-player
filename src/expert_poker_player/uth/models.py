@@ -13,6 +13,7 @@ from expert_poker_player.uth.settlement import (
     VALID_PLAY_MULTIPLIERS,
 )
 from expert_poker_player.uth.wagers import Settlement
+from expert_poker_player.uth.showdown import ShowdownResult
 
 
 _EXPECTED_CARD_COUNTS: Final[
@@ -48,6 +49,7 @@ class RoundState:
     play_multiplier: int | None = None
     outcome: RoundOutcome | None = None
     settlement: Settlement | None = None
+    showdown: ShowdownResult | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.phase, GamePhase): # type: ignore
@@ -109,6 +111,7 @@ class RoundState:
         )
         _validate_optional_outcome(self.outcome)
         _validate_optional_settlement(self.settlement)
+        _validate_optional_showdown(self.showdown)
 
         self._validate_phase_invariants()
 
@@ -124,20 +127,32 @@ class RoundState:
                     "terminal state requires a settlement"
                 )
 
-            if (
-                self.outcome is RoundOutcome.PLAYER_FOLD
-                and self.play_multiplier is not None
-            ):
-                raise ValueError(
-                    "folded round cannot have a Play multiplier"
-                )
+            if self.outcome is RoundOutcome.PLAYER_FOLD:
+                if self.play_multiplier is not None:
+                    raise ValueError(
+                        "folded round cannot have a Play multiplier"
+                    )
 
-            if (
-                self.outcome is not RoundOutcome.PLAYER_FOLD
-                and self.play_multiplier is None
-            ):
+                if self.showdown is not None:
+                    raise ValueError(
+                        "folded round cannot have a showdown result"
+                    )
+
+                return
+
+            if self.play_multiplier is None:
                 raise ValueError(
                     "showdown result requires a Play multiplier"
+                )
+
+            if self.showdown is None:
+                raise ValueError(
+                    "showdown result requires showdown details"
+                )
+
+            if self.showdown.outcome is not self.outcome:
+                raise ValueError(
+                    "round outcome must match showdown outcome"
                 )
 
             return
@@ -155,6 +170,11 @@ class RoundState:
         if self.settlement is not None:
             raise ValueError(
                 "non-terminal state cannot have a settlement"
+            )
+
+        if self.showdown is not None:
+            raise ValueError(
+                "non-terminal state cannot have showdown details"
             )
 
 
@@ -257,6 +277,7 @@ class StepResult:
     observation: UTHObservation
     outcome: RoundOutcome | None = None
     settlement: Settlement | None = None
+    showdown: ShowdownResult | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.observation, UTHObservation): # type: ignore
@@ -267,6 +288,7 @@ class StepResult:
 
         _validate_optional_outcome(self.outcome)
         _validate_optional_settlement(self.settlement)
+        _validate_optional_showdown(self.showdown)
 
         if self.observation.terminated:
             if self.outcome is None:
@@ -279,6 +301,26 @@ class StepResult:
                 raise ValueError(
                     "terminal step result requires "
                     "a settlement"
+                )
+
+            if self.outcome is RoundOutcome.PLAYER_FOLD:
+                if self.showdown is not None:
+                    raise ValueError(
+                        "folded step result cannot have "
+                        "showdown details"
+                    )
+
+                return
+
+            if self.showdown is None:
+                raise ValueError(
+                    "showdown step result requires "
+                    "showdown details"
+                )
+
+            if self.showdown.outcome is not self.outcome:
+                raise ValueError(
+                    "step outcome must match showdown outcome"
                 )
 
             return
@@ -295,6 +337,12 @@ class StepResult:
                 "a settlement"
             )
 
+        if self.showdown is not None:
+            raise ValueError(
+                "non-terminal step result cannot have "
+                "showdown details"
+            )
+        
     @property
     def terminated(self) -> bool:
         """Informuje, czy akcja zakończyła rozdanie."""
@@ -335,6 +383,7 @@ def step_result_from_state(
         observation=observation_from_state(state),
         outcome=state.outcome,
         settlement=state.settlement,
+        showdown=state.showdown,
     )
 
 
@@ -409,4 +458,16 @@ def _validate_optional_settlement(
         raise TypeError(
             "settlement must be an instance "
             "of Settlement or None"
+        )
+    
+def _validate_optional_showdown(
+    showdown: object,
+) -> None:
+    if showdown is not None and not isinstance(
+        showdown,
+        ShowdownResult,
+    ):
+        raise TypeError(
+            "showdown must be an instance "
+            "of ShowdownResult or None"
         )
