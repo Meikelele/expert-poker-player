@@ -3,11 +3,7 @@ from dataclasses import replace
 import pytest
 
 from expert_poker_player.cards import Card, Rank, Suit
-from expert_poker_player.hands import (
-    EvaluatedHand,
-    HandRank,
-    HandValue,
-)
+
 from expert_poker_player.uth import (
     Action,
     GamePhase,
@@ -30,21 +26,6 @@ from expert_poker_player.uth.settlement import (
 from expert_poker_player.hands import evaluate_best_hand
 from expert_poker_player.uth.showdown import ShowdownResult
 
-def make_showdown() -> ShowdownResult:
-    return ShowdownResult(
-        player_hand=evaluate_best_hand(
-            (
-                *PLAYER_CARDS,
-                *COMMUNITY_CARDS,
-            )
-        ),
-        dealer_hand=evaluate_best_hand(
-            (
-                *DEALER_CARDS,
-                *COMMUNITY_CARDS,
-            )
-        ),
-    )
 
 PLAYER_CARDS = (
     Card(rank=Rank.ACE, suit=Suit.SPADES),
@@ -69,6 +50,21 @@ BURNED_CARDS = (
     Card(rank=Rank.FOUR, suit=Suit.DIAMONDS),
 )
 
+def make_showdown() -> ShowdownResult:
+    return ShowdownResult(
+        player_hand=evaluate_best_hand(
+            (
+                *PLAYER_CARDS,
+                *COMMUNITY_CARDS,
+            )
+        ),
+        dealer_hand=evaluate_best_hand(
+            (
+                *DEALER_CARDS,
+                *COMMUNITY_CARDS,
+            )
+        ),
+    )
 
 def make_state(
     phase: GamePhase,
@@ -183,43 +179,13 @@ def test_terminal_step_result_contains_final_result() -> None:
     assert result.settlement == settle_fold()
 
 
-def test_terminal_showdown_state_requires_play_multiplier() -> None:
-    player_hand = HandValue(
-        rank=HandRank.ONE_PAIR,
-        tiebreak=(14, 13, 10, 9),
-    )
-    dealer_hand = HandValue(
-        rank=HandRank.HIGH_CARD,
-        tiebreak=(14, 12, 11, 9, 8),
-    )
+def test_creates_valid_terminal_showdown_state() -> None:
+    showdown = make_showdown()
 
     settlement = settle_showdown(
-        player_hand=player_hand,
-        dealer_hand=dealer_hand,
+        player_hand=showdown.player_hand.value,
+        dealer_hand=showdown.dealer_hand.value,
         play_multiplier=4,
-    )
-
-    showdown = ShowdownResult(
-        player_hand=EvaluatedHand(
-            value=player_hand,
-            cards=(
-                PLAYER_CARDS[0],
-                PLAYER_CARDS[1],
-                COMMUNITY_CARDS[0],
-                COMMUNITY_CARDS[1],
-                COMMUNITY_CARDS[2],
-            ),
-        ),
-        dealer_hand=EvaluatedHand(
-            value=dealer_hand,
-            cards=(
-                DEALER_CARDS[0],
-                DEALER_CARDS[1],
-                COMMUNITY_CARDS[0],
-                COMMUNITY_CARDS[1],
-                COMMUNITY_CARDS[2],
-            ),
-        ),
     )
 
     state = RoundState(
@@ -229,14 +195,15 @@ def test_terminal_showdown_state_requires_play_multiplier() -> None:
         community_cards=COMMUNITY_CARDS,
         burned_cards=BURNED_CARDS,
         play_multiplier=4,
-        outcome=RoundOutcome.PLAYER_WIN,
+        outcome=showdown.outcome,
         settlement=settlement,
         showdown=showdown,
     )
 
     assert state.play_multiplier == 4
-    assert state.outcome is RoundOutcome.PLAYER_WIN
+    assert state.outcome is showdown.outcome
     assert state.showdown == showdown
+    assert state.settlement == settlement
     
 def test_round_state_rejects_invalid_phase_type() -> None: # type: ignore
     with pytest.raises(

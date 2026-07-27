@@ -4,12 +4,6 @@ from expert_poker_player.uth.enums import (
     RoundOutcome,
     WagerOutcome,
 )
-from expert_poker_player.uth.errors import (
-    IllegalActionError,
-    RoundFinishedError,
-    RoundNotStartedError,
-    UTHError,
-)
 from expert_poker_player.uth.wagers import (
     Settlement,
     WagerSettlement,
@@ -50,6 +44,7 @@ from expert_poker_player.uth.errors import (
     UTHError,
 )
 from expert_poker_player.uth.game import UTHGame
+from expert_poker_player.uth.showdown import ShowdownResult
 
 __all__ = [
     "Action",
@@ -82,4 +77,5 @@ __all__ = [
     "FixedDeck",
     "InvalidPhaseTransitionError",
     "UTHGame",
+    "ShowdownResult",
 ]

@@ -1,3 +1,4 @@
+from fractions import Fraction
 import pytest
 
 from expert_poker_player.cards import Card, Rank, Suit
@@ -11,7 +12,6 @@ from expert_poker_player.uth import (
     RoundOutcome,
     UTHGame,
 )
-from fractions import Fraction
 
 ROUND_DRAW_ORDER = (
     # Player 1

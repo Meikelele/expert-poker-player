@@ -1,10 +1,12 @@
 import pytest
 
 from expert_poker_player.cards import Card, Rank, Suit
-from expert_poker_player.hands import evaluate_best_hand
 from expert_poker_player.uth import RoundOutcome
 from expert_poker_player.uth.showdown import ShowdownResult
-from expert_poker_player.hands import EvaluatedHand
+from expert_poker_player.hands import (
+    EvaluatedHand,
+    evaluate_best_hand,
+)
 
 BOARD = (
     Card(rank=Rank.TWO, suit=Suit.CLUBS),
