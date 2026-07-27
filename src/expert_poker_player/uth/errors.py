@@ -12,3 +12,6 @@ class RoundNotStartedError(UTHError):
 
 class RoundFinishedError(UTHError):
     """Próba wykonania akcji po zakończeniu rozdania."""
+
+class InvalidPhaseTransitionError(UTHError):
+    """Operacja rozdawania nie pasuje do aktualnej fazy."""

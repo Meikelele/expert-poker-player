@@ -42,6 +42,13 @@ from expert_poker_player.uth.card_source import (
     CardSource,
     FixedDeck,
 )
+from expert_poker_player.uth.errors import (
+    IllegalActionError,
+    InvalidPhaseTransitionError,
+    RoundFinishedError,
+    RoundNotStartedError,
+    UTHError,
+)
 
 __all__ = [
     "Action",
@@ -72,4 +79,5 @@ __all__ = [
     "step_result_from_state",
     "CardSource",
     "FixedDeck",
+    "InvalidPhaseTransitionError",
 ]
