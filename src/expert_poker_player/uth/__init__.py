@@ -38,6 +38,10 @@ from expert_poker_player.uth.models import (
 from expert_poker_player.uth.rules import (
     legal_actions_for_phase,
 )
+from expert_poker_player.uth.card_source import (
+    CardSource,
+    FixedDeck,
+)
 
 __all__ = [
     "Action",
@@ -66,4 +70,6 @@ __all__ = [
     "legal_actions_for_phase",
     "observation_from_state",
     "step_result_from_state",
+    "CardSource",
+    "FixedDeck",
 ]
