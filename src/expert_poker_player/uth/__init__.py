@@ -28,6 +28,16 @@ from expert_poker_player.uth.settlement import (
     settle_fold,
     settle_showdown,
 )
+from expert_poker_player.uth.models import (
+    RoundState,
+    StepResult,
+    UTHObservation,
+    observation_from_state,
+    step_result_from_state,
+)
+from expert_poker_player.uth.rules import (
+    legal_actions_for_phase,
+)
 
 __all__ = [
     "Action",
@@ -50,4 +60,10 @@ __all__ = [
     "determine_round_outcome",
     "settle_fold",
     "settle_showdown",
+    "RoundState",
+    "StepResult",
+    "UTHObservation",
+    "legal_actions_for_phase",
+    "observation_from_state",
+    "step_result_from_state",
 ]
