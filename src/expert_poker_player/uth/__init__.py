@@ -49,6 +49,7 @@ from expert_poker_player.uth.errors import (
     RoundNotStartedError,
     UTHError,
 )
+from expert_poker_player.uth.game import UTHGame
 
 __all__ = [
     "Action",
@@ -80,4 +81,5 @@ __all__ = [
     "CardSource",
     "FixedDeck",
     "InvalidPhaseTransitionError",
+    "UTHGame",
 ]
