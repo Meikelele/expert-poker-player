@@ -5,10 +5,42 @@ from expert_poker_player.uth import (
     Action,
     FixedDeck,
     GamePhase,
+    IllegalActionError,
+    RoundFinishedError,
     RoundNotStartedError,
+    RoundOutcome,
     UTHGame,
 )
+from fractions import Fraction
 
+ROUND_DRAW_ORDER = (
+    # Player 1
+    Card(rank=Rank.ACE, suit=Suit.SPADES),
+
+    # Dealer 1
+    Card(rank=Rank.KING, suit=Suit.HEARTS),
+
+    # Player 2
+    Card(rank=Rank.QUEEN, suit=Suit.DIAMONDS),
+
+    # Dealer 2
+    Card(rank=Rank.JACK, suit=Suit.CLUBS),
+
+    # Burn przed flopem
+    Card(rank=Rank.TEN, suit=Suit.SPADES),
+
+    # Flop
+    Card(rank=Rank.NINE, suit=Suit.HEARTS),
+    Card(rank=Rank.EIGHT, suit=Suit.DIAMONDS),
+    Card(rank=Rank.SEVEN, suit=Suit.CLUBS),
+
+    # Burn przed turnem i riverem
+    Card(rank=Rank.SIX, suit=Suit.SPADES),
+
+    # Turn i river
+    Card(rank=Rank.FIVE, suit=Suit.HEARTS),
+    Card(rank=Rank.FOUR, suit=Suit.DIAMONDS),
+)
 
 INITIAL_DRAW_ORDER = (
     Card(rank=Rank.ACE, suit=Suit.SPADES),
@@ -16,6 +48,211 @@ INITIAL_DRAW_ORDER = (
     Card(rank=Rank.QUEEN, suit=Suit.DIAMONDS),
     Card(rank=Rank.JACK, suit=Suit.CLUBS),
 )
+
+def start_fixed_game() -> tuple[UTHGame, FixedDeck]:
+    game = UTHGame()
+    deck = FixedDeck(ROUND_DRAW_ORDER)
+
+    game.reset(card_source=deck)
+
+    return game, deck
+
+def test_preflop_check_reveals_flop() -> None:
+    game, deck = start_fixed_game()
+
+    result = game.step(Action.CHECK)
+
+    assert not result.terminated
+    assert result.outcome is None
+    assert result.settlement is None
+
+    assert game.state.phase is GamePhase.FLOP
+    assert game.state.burned_cards == (
+        ROUND_DRAW_ORDER[4],
+    )
+    assert game.state.community_cards == (
+        ROUND_DRAW_ORDER[5],
+        ROUND_DRAW_ORDER[6],
+        ROUND_DRAW_ORDER[7],
+    )
+
+    assert result.observation.legal_actions == frozenset(
+        {
+            Action.CHECK,
+            Action.BET_2X,
+        }
+    )
+
+    assert len(deck) == 3
+
+def test_flop_check_reveals_turn_and_river() -> None:
+    game, deck = start_fixed_game()
+
+    game.step(Action.CHECK)
+    result = game.step(Action.CHECK)
+
+    assert not result.terminated
+    assert game.state.phase is GamePhase.RIVER
+
+    assert game.state.burned_cards == (
+        ROUND_DRAW_ORDER[4],
+        ROUND_DRAW_ORDER[8],
+    )
+
+    assert game.state.community_cards == (
+        ROUND_DRAW_ORDER[5],
+        ROUND_DRAW_ORDER[6],
+        ROUND_DRAW_ORDER[7],
+        ROUND_DRAW_ORDER[9],
+        ROUND_DRAW_ORDER[10],
+    )
+
+    assert result.observation.legal_actions == frozenset(
+        {
+            Action.BET_1X,
+            Action.FOLD,
+        }
+    )
+
+    assert len(deck) == 0
+
+@pytest.mark.parametrize(
+    ("action", "expected_multiplier"),
+    [
+        (Action.BET_3X, 3),
+        (Action.BET_4X, 4),
+    ],
+)
+def test_preflop_bet_finishes_round(
+    action: Action,
+    expected_multiplier: int,
+) -> None:
+    game, deck = start_fixed_game()
+
+    result = game.step(action)
+
+    assert result.terminated
+    assert result.observation.phase is GamePhase.TERMINAL
+    assert result.observation.legal_actions == frozenset()
+
+    assert result.outcome is RoundOutcome.PLAYER_WIN
+    assert result.settlement is not None
+
+    assert game.state.play_multiplier == expected_multiplier
+
+    assert result.settlement.ante.net_profit == Fraction(0)
+    assert result.settlement.blind.net_profit == Fraction(0)
+    assert result.settlement.play.net_profit == Fraction(
+        expected_multiplier
+    )
+    assert result.settlement.total_net_profit == Fraction(
+        expected_multiplier
+    )
+
+    assert len(deck) == 0
+
+def test_flop_bet_2x_finishes_round() -> None:
+    game, deck = start_fixed_game()
+
+    game.step(Action.CHECK)
+    result = game.step(Action.BET_2X)
+
+    assert result.terminated
+    assert result.outcome is RoundOutcome.PLAYER_WIN
+    assert result.settlement is not None
+
+    assert game.state.phase is GamePhase.TERMINAL
+    assert game.state.play_multiplier == 2
+
+    assert result.settlement.play.stake == Fraction(2)
+    assert result.settlement.play.net_profit == Fraction(2)
+    assert result.settlement.total_net_profit == Fraction(2)
+
+    assert len(deck) == 0
+
+def test_river_bet_1x_finishes_round() -> None:
+    game, _ = start_fixed_game()
+
+    game.step(Action.CHECK)
+    game.step(Action.CHECK)
+
+    result = game.step(Action.BET_1X)
+
+    assert result.terminated
+    assert result.outcome is RoundOutcome.PLAYER_WIN
+    assert result.settlement is not None
+
+    assert game.state.phase is GamePhase.TERMINAL
+    assert game.state.play_multiplier == 1
+
+    assert result.settlement.play.stake == Fraction(1)
+    assert result.settlement.play.net_profit == Fraction(1)
+    assert result.settlement.total_net_profit == Fraction(1)
+
+def test_river_fold_loses_ante_and_blind() -> None:
+    game, _ = start_fixed_game()
+
+    game.step(Action.CHECK)
+    game.step(Action.CHECK)
+
+    result = game.step(Action.FOLD)
+
+    assert result.terminated
+    assert result.outcome is RoundOutcome.PLAYER_FOLD
+    assert result.settlement is not None
+
+    assert game.state.phase is GamePhase.TERMINAL
+    assert game.state.play_multiplier is None
+
+    assert result.settlement.ante.net_profit == Fraction(-1)
+    assert result.settlement.blind.net_profit == Fraction(-1)
+    assert result.settlement.play.stake == Fraction(0)
+    assert result.settlement.total_net_profit == Fraction(-2)
+
+def test_step_requires_started_round() -> None:
+    game = UTHGame()
+
+    with pytest.raises(
+        RoundNotStartedError,
+        match=r"call reset\(\) first",
+    ):
+        game.step(Action.CHECK)
+
+def test_step_rejects_invalid_action_type() -> None:
+    game, _ = start_fixed_game()
+
+    with pytest.raises(
+        TypeError,
+        match="action must be an instance of Action",
+    ):
+        game.step("check")  # type: ignore[arg-type]
+
+def test_step_rejects_action_illegal_during_phase() -> None:
+    game, deck = start_fixed_game()
+    initial_state = game.state
+    cards_before_action = deck.cards
+
+    with pytest.raises(
+        IllegalActionError,
+        match="bet_2x is illegal during preflop",
+    ):
+        game.step(Action.BET_2X)
+
+    assert game.state == initial_state
+    assert deck.cards == cards_before_action
+
+def test_step_rejects_action_after_round_finished() -> None:
+    game, _ = start_fixed_game()
+
+    game.step(Action.BET_4X)
+
+    with pytest.raises(
+        RoundFinishedError,
+        match="round has already finished",
+    ):
+        game.step(Action.CHECK)
+
+
 
 
 def test_game_is_not_started_before_reset() -> None:
