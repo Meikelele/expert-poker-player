@@ -519,6 +519,28 @@ def test_illegal_action_is_not_recorded() -> None:
     assert trace is not None
     assert trace.decisions == ()
 
+
+def test_failed_transition_is_not_recorded() -> None:
+    game = UTHGame(record_history=True)
+    deck = FixedDeck(INITIAL_DRAW_ORDER)
+
+    game.reset(card_source=deck)
+
+    initial_state = game.state
+
+    with pytest.raises(
+        IndexError,
+        match="cannot draw a card from an empty fixed deck",
+    ):
+        game.step(Action.CHECK)
+
+    trace = game.trace
+
+    assert trace is not None
+    assert trace.decisions == ()
+    assert game.state == initial_state
+    assert game.state.phase is GamePhase.PREFLOP
+
 def test_reset_starts_new_trace() -> None:
     game = UTHGame(record_history=True)
 

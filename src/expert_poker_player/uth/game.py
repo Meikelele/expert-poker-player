@@ -100,7 +100,6 @@ class UTHGame:
 
         return self._record_history # type: ignore
 
-
     @property
     def trace(self) -> RoundTrace | None:
         """
@@ -193,28 +192,33 @@ class UTHGame:
                 f"{current_state.phase.value}; "
                 f"legal actions: {legal_action_names}"
             )
-        
-        self._record_decision(
-            observation=observation_from_state(current_state),
-            action=action,
+
+        observation_before_action = observation_from_state(
+            current_state
         )
 
         if current_state.phase is GamePhase.PREFLOP:
-            return self._step_preflop(
+            result = self._step_preflop(
+                state=current_state,
+                action=action,
+            )
+        elif current_state.phase is GamePhase.FLOP:
+            result = self._step_flop(
+                state=current_state,
+                action=action,
+            )
+        else:
+            result = self._step_river(
                 state=current_state,
                 action=action,
             )
 
-        if current_state.phase is GamePhase.FLOP:
-            return self._step_flop(
-                state=current_state,
-                action=action,
-            )
-
-        return self._step_river(
-            state=current_state,
+        self._record_decision(
+            observation=observation_before_action,
             action=action,
         )
+
+        return result
 
     def _step_preflop(
         self,
