@@ -184,3 +184,167 @@ interfejsu \texttt{UTHGame}, przekształcając obiekty domenowe na numeryczne
 reprezentacje wymagane przez algorytmy uczące się. Pozwala to zachować jedną
 implementację zasad gry dla wszystkich badanych reprezentacji obserwacji,
 funkcji nagrody i metod uczenia.
+
+Ogólny przepływ informacji pomiędzy agentem, klasą sterującą i pozostałymi
+elementami silnika przedstawiono na rysunku~\ref{fig:architektura-uth}.
+Agent komunikuje się wyłącznie z publicznym interfejsem klasy
+\texttt{UTHGame}. Pełny stan rozdania oraz moduły realizujące reguły gry
+pozostają ukryte za tą warstwą.
+
+\begin{figure}[htbp]
+    \centering
+
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+        node distance=20mm and 30mm,
+        every node/.style={
+            font=\small
+        },
+        external/.style={
+            draw,
+            rounded corners,
+            align=center,
+            minimum width=42mm,
+            minimum height=12mm
+        },
+        core/.style={
+            draw,
+            very thick,
+            rounded corners,
+            align=center,
+            minimum width=56mm,
+            minimum height=16mm
+        },
+        domainbox/.style={
+            draw,
+            rounded corners,
+            align=left,
+            minimum width=56mm,
+            minimum height=34mm,
+            inner sep=4mm
+        },
+        state/.style={
+            draw,
+            dashed,
+            rounded corners,
+            align=center,
+            minimum width=70mm,
+            minimum height=18mm,
+            text width=68mm
+        },
+        flow/.style={
+            -{Latex[length=2.5mm]},
+            thick
+        }
+    ]
+
+        \node[external] (agent) {
+            Agent
+        };
+
+        \node[core, right=of agent] (game) {
+            \texttt{UTHGame}\\
+            \texttt{reset()} i \texttt{step()}
+        };
+
+        \node[domainbox, right=of game] (modules) {
+            \textbf{Moduły domenowe}\\[1mm]
+            \texttt{rules}\\
+            \texttt{dealing}\\
+            \texttt{cards} i \texttt{hands}\\
+            \texttt{settlement}\\
+            \texttt{trace}
+        };
+
+        \node[state, below=of game, xshift=16mm] (state) {
+            Pełny stan wewnętrzny\\
+            \texttt{RoundState}\\
+            karty krupiera, karty spalone, wynik
+        };
+
+        \node[external, below=of agent] (result) {
+            \texttt{UTHObservation}\\
+            \texttt{StepResult}
+        };
+
+        \draw[flow]
+            (agent)
+            --
+            node[above] {\texttt{Action}}
+            (game);
+
+        \draw[flow]
+            (game)
+            to[bend left=12]
+            node[above] {operacje domenowe}
+            (modules);
+
+        \draw[flow]
+            (modules)
+            to[bend left=12]
+            node[below] {wyniki operacji}
+            (game);
+
+        \draw[flow]
+            (game.south)
+            to[bend left=16]
+            node[right] {odczyt i aktualizacja}
+            (state.north);
+
+        \draw[flow]
+            (state.north)
+            to[bend left=16]
+            (game.south);
+
+        \draw[flow]
+            (game.south west)
+            to[out=-120, in=0]
+            node[pos=0.55, below] {wynik kroku}
+            (result.east);
+
+        \draw[flow]
+            (result)
+            --
+            (agent);
+
+    \end{tikzpicture}%
+    }
+
+    \caption{Architektura i przepływ informacji w środowisku UTH}
+    \label{fig:architektura-uth}
+\end{figure}
+
+\subsection{Przepływ danych podczas wykonania akcji}
+\label{subsec:przeplyw-akcji}
+
+Po rozpoczęciu rozdania metoda \texttt{reset()} zwraca pierwszą obserwację
+agenta. Na jej podstawie agent wybiera akcję należącą do zbioru akcji
+legalnych w aktualnej fazie gry. Wybrana wartość jest następnie przekazywana
+do metody \texttt{step()}, która realizuje pojedyncze przejście środowiska.
+
+W pierwszej kolejności silnik sprawdza, czy rozdanie nie zostało już
+zakończone, czy przekazana wartość jest poprawnym obiektem reprezentującym
+akcję oraz czy dana akcja jest legalna w aktualnej fazie. Odrzucenie
+niepoprawnej akcji następuje przed jakąkolwiek zmianą stanu lub pobraniem
+kart z talii. Zapobiega to częściowemu wykonaniu niedozwolonego przejścia.
+
+Po pozytywnej walidacji sterowanie jest przekazywane do operacji właściwej
+dla aktualnej fazy: preflop, flopa albo rivera. Akcja oczekiwania powoduje
+odkrycie kart wymaganych do przejścia do następnej fazy. Wykonanie zakładu
+Play prowadzi natomiast do odkrycia wszystkich pozostałych kart wspólnych,
+oceny układów gracza i krupiera, określenia wyniku oraz rozliczenia aktywnych
+zakładów. Spasowanie na riverze kończy rozdanie bez wykonywania showdownu.
+
+Po pomyślnym przeprowadzeniu operacji tworzony jest nowy obiekt
+\texttt{RoundState}. Na jego podstawie budowana jest obserwacja przeznaczona
+dla agenta oraz obiekt \texttt{StepResult}. Wynik kroku zawiera informację,
+czy rozdanie zostało zakończone, a w stanie terminalnym również rezultat
+rozgrywki, szczegółowe rozliczenie zakładów i dane dotyczące showdownu.
+
+Jeżeli rejestrowanie historii jest włączone, obserwacja sprzed wykonania
+akcji i wybrana decyzja są zapisywane jako \texttt{DecisionRecord}.
+Rejestracja następuje dopiero po prawidłowym zakończeniu przejścia. Jeżeli
+podczas odkrywania kart lub aktualizacji stanu wystąpi wyjątek, decyzja nie
+jest dodawana do historii, a poprzedni stan środowiska pozostaje aktualny.
+Rozwiązanie to zapewnia spójność pomiędzy zapisanym przebiegiem rozdania
+a rzeczywiście wykonanymi przejściami.
