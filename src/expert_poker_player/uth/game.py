@@ -32,6 +32,10 @@ from expert_poker_player.uth.settlement import (
     settle_showdown,
 )
 from expert_poker_player.uth.showdown import ShowdownResult
+from expert_poker_player.uth.trace import (
+    DecisionRecord,
+    RoundTrace,
+)
 
 
 class UTHGame:
@@ -46,13 +50,21 @@ class UTHGame:
         self,
         *,
         seed: int | None = None,
+        record_history: bool = False,
     ) -> None:
         if seed is not None and type(seed) is not int:
             raise TypeError("seed must be an integer or None")
 
+        if type(record_history) is not bool:
+            raise TypeError("record_history must be a boolean")
+
         self._random = Random(seed)
         self._state: RoundState | None = None
         self._card_source: CardSource | None = None
+
+        self._record_history = record_history
+        self._round_id = 0
+        self._decisions: list[DecisionRecord] | None = None
 
     @property
     def state(self) -> RoundState:
@@ -80,7 +92,36 @@ class UTHGame:
     def is_started(self) -> bool:
         """Informuje, czy rozpoczęto rozdanie."""
 
-        return self._state is not None
+        return self._state is not None # type: ignore
+
+    @property
+    def history_enabled(self) -> bool:
+        """Informuje, czy silnik zapisuje przebieg rozdania."""
+
+        return self._record_history # type: ignore
+
+
+    @property
+    def trace(self) -> RoundTrace | None:
+        """
+        Zwraca aktualny zapis rozdania.
+
+        Zwraca None, gdy historia jest wyłączona albo rozdanie
+        nie zostało jeszcze rozpoczęte.
+        """
+
+        if (
+            not self._record_history
+            or self._state is None
+            or self._decisions is None
+        ):
+            return None
+
+        return RoundTrace(
+            round_id=self._round_id,
+            decisions=tuple(self._decisions),
+            state=self._state,
+        )
 
     def reset(
         self,
@@ -103,6 +144,13 @@ class UTHGame:
 
         self._card_source = card_source
         self._state = initial_state
+
+        self._round_id += 1
+        self._decisions = (
+            []
+            if self._record_history
+            else None
+        )
 
         return self.observation
 
@@ -145,6 +193,11 @@ class UTHGame:
                 f"{current_state.phase.value}; "
                 f"legal actions: {legal_action_names}"
             )
+        
+        self._record_decision(
+            observation=observation_from_state(current_state),
+            action=action,
+        )
 
         if current_state.phase is GamePhase.PREFLOP:
             return self._step_preflop(
@@ -316,3 +369,21 @@ class UTHGame:
         deck_seed = self._random.randrange(0, 2**63)
 
         return Deck(seed=deck_seed)
+
+    def _record_decision(
+        self,
+        *,
+        observation: UTHObservation,
+        action: Action,
+    ) -> None:
+        """Zapisuje legalną decyzję, gdy historia jest włączona."""
+
+        if self._decisions is None:
+            return
+
+        self._decisions.append(
+            DecisionRecord(
+                observation=observation,
+                action=action,
+            )
+        )

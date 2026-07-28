@@ -422,3 +422,138 @@ def test_terminal_showdown_contains_best_five_cards() -> None:
         result.showdown.outcome
         is result.outcome
     )
+
+def test_history_is_disabled_by_default() -> None:
+    game, _ = start_fixed_game()
+
+    game.step(Action.CHECK)
+
+    assert not game.history_enabled
+    assert game.trace is None
+
+def test_enabled_history_is_empty_before_reset() -> None:
+    game = UTHGame(record_history=True)
+
+    assert game.history_enabled
+    assert game.trace is None
+
+def test_trace_records_agent_observations_and_actions() -> None:
+    game = UTHGame(record_history=True)
+    game.reset(card_source=FixedDeck(ROUND_DRAW_ORDER))
+
+    game.step(Action.CHECK)
+    game.step(Action.CHECK)
+
+    trace = game.trace
+
+    assert trace is not None
+    assert trace.round_id == 1
+    assert not trace.completed
+    assert len(trace.decisions) == 2
+
+    first_decision = trace.decisions[0]
+
+    assert first_decision.observation.phase is GamePhase.PREFLOP
+    assert first_decision.action is Action.CHECK
+    assert not hasattr(
+        first_decision.observation,
+        "dealer_cards",
+    )
+
+    second_decision = trace.decisions[1]
+
+    assert second_decision.observation.phase is GamePhase.FLOP
+    assert second_decision.action is Action.CHECK
+
+def test_trace_contains_completed_fold_round() -> None:
+    game = UTHGame(record_history=True)
+    game.reset(card_source=FixedDeck(ROUND_DRAW_ORDER))
+
+    game.step(Action.CHECK)
+    game.step(Action.CHECK)
+    game.step(Action.FOLD)
+
+    trace = game.trace
+
+    assert trace is not None
+    assert trace.completed
+    assert trace.outcome is RoundOutcome.PLAYER_FOLD
+    assert trace.settlement is not None
+    assert trace.showdown is None
+
+    assert len(trace.decisions) == 3
+    assert trace.decisions[-1].action is Action.FOLD
+
+def test_trace_contains_completed_showdown_round() -> None:
+    game = UTHGame(record_history=True)
+    game.reset(card_source=FixedDeck(ROUND_DRAW_ORDER))
+
+    game.step(Action.BET_4X)
+
+    trace = game.trace
+
+    assert trace is not None
+    assert trace.completed
+    assert trace.outcome is RoundOutcome.PLAYER_WIN
+    assert trace.settlement is not None
+    assert trace.showdown is not None
+
+    assert len(trace.decisions) == 1
+    assert trace.decisions[0].action is Action.BET_4X
+
+    assert not hasattr(
+        trace.decisions[0].observation,
+        "dealer_cards",
+    )
+    assert trace.state.dealer_cards == game.state.dealer_cards
+
+def test_illegal_action_is_not_recorded() -> None:
+    game = UTHGame(record_history=True)
+    game.reset(card_source=FixedDeck(ROUND_DRAW_ORDER))
+
+    with pytest.raises(IllegalActionError):
+        game.step(Action.BET_2X)
+
+    trace = game.trace
+
+    assert trace is not None
+    assert trace.decisions == ()
+
+def test_reset_starts_new_trace() -> None:
+    game = UTHGame(record_history=True)
+
+    game.reset(card_source=FixedDeck(ROUND_DRAW_ORDER))
+    game.step(Action.CHECK)
+
+    first_trace = game.trace
+
+    assert first_trace is not None
+    assert first_trace.round_id == 1
+    assert len(first_trace.decisions) == 1
+
+    game.reset(card_source=FixedDeck(ROUND_DRAW_ORDER))
+
+    second_trace = game.trace
+
+    assert second_trace is not None
+    assert second_trace.round_id == 2
+    assert second_trace.decisions == ()
+
+@pytest.mark.parametrize(
+    "record_history",
+    [
+        1,
+        "true",
+        None,
+    ],
+)
+def test_game_rejects_invalid_record_history_type(
+    record_history: object,
+) -> None:
+    with pytest.raises(
+        TypeError,
+        match="record_history must be a boolean",
+    ):
+        UTHGame(
+            record_history=record_history,  # type: ignore[arg-type]
+        )

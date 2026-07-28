@@ -45,6 +45,10 @@ from expert_poker_player.uth.errors import (
 )
 from expert_poker_player.uth.game import UTHGame
 from expert_poker_player.uth.showdown import ShowdownResult
+from expert_poker_player.uth.trace import (
+    DecisionRecord,
+    RoundTrace,
+)
 
 __all__ = [
     "Action",
@@ -78,4 +82,6 @@ __all__ = [
     "InvalidPhaseTransitionError",
     "UTHGame",
     "ShowdownResult",
+    "DecisionRecord",
+    "RoundTrace",
 ]
