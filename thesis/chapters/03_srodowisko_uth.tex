@@ -64,3 +64,123 @@ pseudolosowych, dzięki czemu możliwe jest odtworzenie całej sekwencji rozdań
 W testach jednostkowych stosowana jest dodatkowo talia deterministyczna,
 pozwalająca jednoznacznie określić kolejność dobieranych kart i zweryfikować
 konkretne przypadki przebiegu oraz rozliczenia rozdania.
+
+\section{Architektura rozwiązania}
+\label{sec:architektura-srodowiska}
+
+Środowisko Ultimate Texas Hold’em zaprojektowano jako zestaw niezależnych
+modułów domenowych. Każdy moduł odpowiada za jeden wyraźnie określony obszar,
+taki jak reprezentacja kart, ocena układów, sterowanie przebiegiem rozdania
+albo rozliczanie zakładów. Centralnym elementem rozwiązania jest klasa
+\texttt{UTHGame}, która koordynuje działanie pozostałych komponentów, ale nie
+implementuje bezpośrednio wszystkich reguł gry.
+
+Przyjęty podział ogranicza zależności pomiędzy poszczególnymi częściami
+systemu. Model kart i evaluator układów mogą być rozwijane oraz testowane
+niezależnie od zasad Ultimate Texas Hold’em. Analogicznie mechanizm
+rozliczania zakładów nie odpowiada za odkrywanie kart ani za walidację
+dozwolonych akcji. Dzięki temu zmiana jednego elementu, na przykład
+reprezentacji obserwacji agenta, nie wymaga modyfikowania sposobu oceny
+układów lub obliczania wypłat.
+
+Najniższą warstwę rozwiązania stanowią moduły \texttt{cards} i
+\texttt{hands}. Pierwszy z nich definiuje karty oraz talię, natomiast drugi
+odpowiada za ocenę i porównywanie układów pokerowych. Moduły te nie zawierają
+reguł charakterystycznych dla Ultimate Texas Hold’em i mogą zostać ponownie
+wykorzystane w innych odmianach pokera.
+
+Warstwę domenową gry tworzy pakiet \texttt{uth}. Zawiera on modele stanu,
+reguły legalności akcji, mechanizm rozdawania kart, sposób rozliczania
+zakładów oraz logikę sterującą kolejnymi fazami rozdania. Klasa
+\texttt{UTHGame} pełni rolę koordynatora tej warstwy. Na podstawie aktualnego
+stanu i wybranej akcji wywołuje odpowiednie operacje, aktualizuje stan
+rozdania oraz zwraca rezultat kroku.
+
+Agent nie komunikuje się bezpośrednio z talią, evaluatorem ani pełnym stanem
+wewnętrznym gry. Otrzymuje obiekt \texttt{UTHObservation}, a swoją decyzję
+przekazuje do metody \texttt{step}. Rezultatem wykonania akcji jest obiekt
+\texttt{StepResult}, zawierający kolejną obserwację oraz, w przypadku
+zakończenia rozdania, jego wynik i szczegółowe rozliczenie. Takie rozwiązanie
+tworzy jednoznaczną granicę pomiędzy logiką środowiska a implementacją agenta.
+
+Tabela~\ref{tab:moduly-srodowiska} przedstawia najważniejsze moduły
+rozwiązania i zakres ich odpowiedzialności.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Podział odpowiedzialności pomiędzy modułami środowiska UTH}
+    \label{tab:moduly-srodowiska}
+    \begin{tabular}{|p{0.27\textwidth}|p{0.63\textwidth}|}
+        \hline
+        \textbf{Moduł} & \textbf{Odpowiedzialność} \\
+        \hline
+        \texttt{cards}
+        &
+        Reprezentacja rang, kolorów, pojedynczych kart oraz standardowej
+        talii składającej się z 52 unikalnych kart.
+        \\
+        \hline
+
+        \texttt{hands}
+        &
+        Ocena pięciokartowych układów, wybór najlepszego układu z pięciu,
+        sześciu lub siedmiu kart oraz porównywanie wartości rąk.
+        \\
+        \hline
+
+        \texttt{uth.models}
+        &
+        Definicja pełnego stanu rozdania, obserwacji agenta oraz wyniku
+        pojedynczego kroku środowiska.
+        \\
+        \hline
+
+        \texttt{uth.rules}
+        &
+        Określanie zbioru legalnych akcji dla każdej fazy rozdania.
+        \\
+        \hline
+
+        \texttt{uth.dealing}
+        &
+        Realizacja kolejności rozdawania kart, odkrywania flopa, turna
+        i rivera oraz obsługa kart spalonych.
+        \\
+        \hline
+
+        \texttt{uth.card\_source}
+        &
+        Abstrakcja źródła kart oraz deterministyczna talia wykorzystywana
+        w testach.
+        \\
+        \hline
+
+        \texttt{uth.settlement}
+        &
+        Określanie wyniku rozdania, kwalifikacji krupiera oraz rozliczanie
+        zakładów Ante, Blind i Play.
+        \\
+        \hline
+
+        \texttt{uth.game}
+        &
+        Koordynacja przebiegu rozdania, walidacja akcji, przechodzenie
+        pomiędzy fazami oraz tworzenie wyników kolejnych kroków.
+        \\
+        \hline
+
+        \texttt{uth.trace}
+        &
+        Opcjonalne rejestrowanie obserwacji, decyzji agenta i końcowego
+        stanu rozdania na potrzeby diagnostyki.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Silnik domenowy nie zależy od konkretnej biblioteki uczenia przez
+wzmacnianie. Przyszły adapter Gymnasium będzie korzystał z publicznego
+interfejsu \texttt{UTHGame}, przekształcając obiekty domenowe na numeryczne
+reprezentacje wymagane przez algorytmy uczące się. Pozwala to zachować jedną
+implementację zasad gry dla wszystkich badanych reprezentacji obserwacji,
+funkcji nagrody i metod uczenia.
