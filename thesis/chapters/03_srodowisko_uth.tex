@@ -1,0 +1,66 @@
+\chapter{Projekt i implementacja środowiska Ultimate Texas Hold’em}
+\label{chap:srodowisko-uth}
+
+W niniejszym rozdziale przedstawiono projekt oraz implementację środowiska
+Ultimate Texas Hold’em wykorzystywanego w dalszej części pracy do uczenia
+i oceny agentów. Opisane wcześniej zasady gry zostały odwzorowane w postaci
+deterministycznego i testowalnego silnika, który zarządza przebiegiem rozdania,
+udostępnia agentowi legalne akcje oraz rozlicza wynik finansowy rozgrywki.
+
+Szczególną uwagę poświęcono zachowaniu niepełnej informacji charakterystycznej
+dla pokera. Agent otrzymuje wyłącznie informacje, które byłyby dostępne
+rzeczywistemu graczowi, natomiast karty krupiera, karty spalone oraz kolejność
+pozostałych kart w talii pozostają elementami wewnętrznego stanu środowiska.
+Takie rozdzielenie pozwala ograniczyć ryzyko niezamierzonego ujawnienia
+informacji podczas uczenia modeli.
+
+Implementację podzielono na niezależne moduły odpowiedzialne między innymi
+za reprezentację kart, ocenę układów, sterowanie przebiegiem rozdania,
+walidację akcji oraz rozliczanie zakładów. Silnik domenowy nie zależy
+bezpośrednio od biblioteki Gymnasium. Adapter zgodny z jej interfejsem zostanie
+utworzony jako osobna warstwa, co umożliwi późniejsze porównywanie różnych
+reprezentacji stanu i funkcji nagrody bez modyfikowania zasad gry.
+
+\section{Założenia projektowe środowiska}
+\label{sec:zalozenia-srodowiska}
+
+Podstawową jednostką interakcji ze środowiskiem jest jedno kompletne rozdanie.
+Rozdanie rozpoczyna się od utworzenia talii i przekazania graczowi oraz
+krupierowi po dwóch kart własnych, a kończy się spasowaniem gracza albo
+automatycznym rozstrzygnięciem układów. Z punktu widzenia uczenia przez
+wzmacnianie pojedyncze rozdanie stanowi jeden epizod.
+
+Agent podejmuje decyzje wyłącznie w trzech etapach: przed flopem, po odkryciu
+flopa oraz po odkryciu wszystkich pięciu kart wspólnych. W zależności od etapu
+może czekać, wykonać zakład Play o odpowiednim mnożniku albo spasować.
+Po wykonaniu zakładu Play środowisko automatycznie odkrywa pozostałe karty,
+ocenia ręce gracza i krupiera oraz przechodzi do stanu końcowego. W ramach
+jednego rozdania zakład Play może zostać wykonany tylko raz.
+
+Środowisko modeluje podstawowy wariant Ultimate Texas Hold’em obejmujący
+zakłady Ante, Blind oraz Play. Zakłady boczne Trips i Progressive zostały
+pominięte. Nie wpływają one na przestrzeń decyzji podstawowej gry, natomiast
+zmieniają rozkład wyników finansowych i utrudniają ocenę jakości strategii
+decyzyjnej agenta. Uzasadnienie tego ograniczenia przedstawiono szerzej
+w dalszej części rozdziału.
+
+Wartości zakładów wyrażono w jednostkach względnych, gdzie jedna jednostka
+odpowiada wartości zakładu Ante. Zakłady Ante i Blind mają zatem wartość
+jednej jednostki, natomiast wartość zakładu Play zależy od momentu jego
+wykonania i może wynosić od jednej do czterech jednostek. Takie rozwiązanie
+uniezależnia środowisko od konkretnej waluty i nominalnej wysokości stawki,
+a także ułatwia porównywanie wyników pomiędzy eksperymentami.
+
+Silnik zwraca szczegółowe rozliczenie poszczególnych zakładów oraz łączny
+wynik netto rozdania. W podstawowym wariancie środowiska przeznaczonym dla
+agentów uczących się wynik netto będzie wykorzystywany jako nagroda terminalna.
+W krokach pośrednich nagroda wynosi zero. Rozdzielenie mechanizmu rozliczania
+gry od funkcji nagrody umożliwia późniejsze badanie alternatywnych wariantów
+nagrody bez ingerencji w reguły Ultimate Texas Hold’em.
+
+Istotnym założeniem była również powtarzalność eksperymentów. Standardowa
+talia może być tasowana przy użyciu zadanego ziarna generatora liczb
+pseudolosowych, dzięki czemu możliwe jest odtworzenie całej sekwencji rozdań.
+W testach jednostkowych stosowana jest dodatkowo talia deterministyczna,
+pozwalająca jednoznacznie określić kolejność dobieranych kart i zweryfikować
+konkretne przypadki przebiegu oraz rozliczenia rozdania.
