@@ -1612,3 +1612,249 @@ do zbioru legalnego dla bieżącej fazy. Operacje odkrywania kart dodatkowo
 sprawdzają oczekiwaną fazę wejściową. Ogranicza to możliwość pominięcia etapu,
 ponownego odkrycia tych samych kart lub wykonania akcji po zakończeniu
 rozdania.
+\section{Przestrzeń akcji i walidacja decyzji}
+\label{sec:przestrzen-akcji}
+
+Pełna przestrzeń akcji środowiska Ultimate Texas Hold’em składa się z sześciu
+decyzji domenowych:
+
+\begin{equation}
+    \mathcal{A} =
+    \{
+        \texttt{CHECK},
+        \texttt{BET\_4X},
+        \texttt{BET\_3X},
+        \texttt{BET\_2X},
+        \texttt{BET\_1X},
+        \texttt{FOLD}
+    \}.
+\end{equation}
+
+Nie wszystkie elementy zbioru \(\mathcal{A}\) są dostępne jednocześnie.
+Zbiór akcji legalnych zależy od aktualnej fazy rozdania. Dla fazy \(p\)
+zdefiniowano funkcję
+
+\begin{equation}
+    \mathcal{A}_{legal}(p) \subseteq \mathcal{A},
+\end{equation}
+
+która zwraca akcje dozwolone w danym momencie rozgrywki.
+
+Zależność pomiędzy fazą i zbiorem legalnych akcji można zapisać następująco:
+
+\begin{equation}
+\mathcal{A}_{legal}(p) =
+\begin{cases}
+    \{
+        \texttt{CHECK},
+        \texttt{BET\_3X},
+        \texttt{BET\_4X}
+    \},
+    &
+    p = \texttt{PREFLOP},
+    \\[2mm]
+
+    \{
+        \texttt{CHECK},
+        \texttt{BET\_2X}
+    \},
+    &
+    p = \texttt{FLOP},
+    \\[2mm]
+
+    \{
+        \texttt{BET\_1X},
+        \texttt{FOLD}
+    \},
+    &
+    p = \texttt{RIVER},
+    \\[2mm]
+
+    \varnothing,
+    &
+    p = \texttt{TERMINAL}.
+\end{cases}
+\end{equation}
+
+Znaczenie poszczególnych akcji przedstawiono w
+tabeli~\ref{tab:przestrzen-akcji-uth}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Akcje dostępne w środowisku UTH}
+    \label{tab:przestrzen-akcji-uth}
+    \begin{tabular}{
+        |p{0.19\textwidth}
+        |p{0.19\textwidth}
+        |p{0.52\textwidth}|
+    }
+        \hline
+        \textbf{Akcja}
+        &
+        \textbf{Legalna faza}
+        &
+        \textbf{Znaczenie}
+        \\
+        \hline
+
+        \texttt{CHECK}
+        &
+        \texttt{PREFLOP}, \texttt{FLOP}
+        &
+        Odłożenie decyzji o zakładzie Play i przejście do kolejnego etapu
+        rozdania.
+        \\
+        \hline
+
+        \texttt{BET\_4X}
+        &
+        \texttt{PREFLOP}
+        &
+        Postawienie zakładu Play o wartości czterech jednostek Ante
+        i zakończenie części decyzyjnej rozdania.
+        \\
+        \hline
+
+        \texttt{BET\_3X}
+        &
+        \texttt{PREFLOP}
+        &
+        Postawienie zakładu Play o wartości trzech jednostek Ante
+        i zakończenie części decyzyjnej rozdania.
+        \\
+        \hline
+
+        \texttt{BET\_2X}
+        &
+        \texttt{FLOP}
+        &
+        Postawienie zakładu Play o wartości dwóch jednostek Ante
+        po odkryciu flopa.
+        \\
+        \hline
+
+        \texttt{BET\_1X}
+        &
+        \texttt{RIVER}
+        &
+        Postawienie zakładu Play o wartości jednej jednostki Ante
+        po odkryciu wszystkich kart wspólnych.
+        \\
+        \hline
+
+        \texttt{FOLD}
+        &
+        \texttt{RIVER}
+        &
+        Rezygnacja z dalszej gry i zakończenie rozdania bez showdownu.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Akcje legalne jako część obserwacji}
+\label{subsec:legalne-akcje-obserwacja}
+
+Zbiór legalnych akcji jest wyznaczany przez środowisko na podstawie aktualnej
+fazy i umieszczany w obiekcie \texttt{UTHObservation}. Agent nie musi zatem
+samodzielnie odtwarzać reguł legalności na podstawie liczby kart wspólnych
+lub historii poprzednich decyzji.
+
+Takie rozwiązanie ogranicza odpowiedzialność agenta do wyboru jednej akcji
+spośród wartości udostępnionych przez środowisko. Jest to szczególnie
+przydatne dla agentów bazowych, które mogą bezpośrednio losować lub wybierać
+element ze zbioru \texttt{legal\_actions}.
+
+Przechowywanie legalnych akcji w obserwacji nie oznacza, że środowisko ufa
+decyzji zwróconej przez agenta. Każda akcja jest ponownie walidowana przez
+metodę \texttt{step()}. Dzięki temu niepoprawnie zaimplementowany agent nie
+może wymusić przejścia sprzecznego z regułami gry.
+
+\subsection{Walidacja decyzji}
+\label{subsec:walidacja-decyzji}
+
+Przed wykonaniem operacji zmieniającej stan środowisko przeprowadza kolejne
+etapy walidacji:
+
+\begin{enumerate}
+    \item sprawdza, czy rozdanie zostało rozpoczęte,
+    \item sprawdza, czy aktualny stan nie jest terminalny,
+    \item sprawdza, czy przekazana wartość jest obiektem typu
+          \texttt{Action},
+    \item wyznacza zbiór akcji legalnych dla aktualnej fazy,
+    \item sprawdza, czy przekazana akcja należy do tego zbioru.
+\end{enumerate}
+
+Jeżeli rozdanie nie zostało rozpoczęte, zgłaszany jest błąd
+\texttt{RoundNotStartedError}. Próba wykonania decyzji po zakończeniu epizodu
+prowadzi do zgłoszenia \texttt{RoundFinishedError}. Akcja należąca do typu
+\texttt{Action}, lecz niedozwolona w aktualnej fazie, powoduje zgłoszenie
+\texttt{IllegalActionError}.
+
+Przykładem nielegalnej decyzji jest wykonanie \texttt{BET\_2X} przed flopem
+albo próba spasowania w fazie \texttt{FLOP}. Środowisko nie zastępuje takiej
+akcji inną decyzją i nie nakłada automatycznej kary. Przejście jest odrzucane,
+a błąd musi zostać obsłużony przez komponent sterujący eksperymentem.
+
+Walidacja następuje przed dobieraniem nowych kart i przed zapisaniem nowego
+stanu. Oznacza to, że nielegalna decyzja nie zużywa kart z talii, nie zmienia
+fazy rozdania i nie jest dodawana do historii decyzji.
+
+\subsection{Niezmienniki przestrzeni akcji}
+\label{subsec:niezmienniki-przestrzeni-akcji}
+
+Wprowadzone reguły pozwalają sformułować następujące niezmienniki:
+
+\begin{itemize}
+    \item \texttt{CHECK} jest dostępne wyłącznie przed riverem,
+    \item \texttt{FOLD} jest dostępne wyłącznie po odkryciu wszystkich
+          kart wspólnych,
+    \item mnożnik zakładu Play jest jednoznacznie związany z fazą,
+    \item każda akcja typu \texttt{BET} prowadzi do stanu terminalnego,
+    \item po postawieniu zakładu Play nie można wykonać kolejnej decyzji,
+    \item stan terminalny nie udostępnia żadnej akcji.
+\end{itemize}
+
+Wartość mnożnika nie jest przekazywana jako dowolny parametr liczbowy agenta.
+Zamiast jednej ogólnej akcji \texttt{BET} zastosowano osobne wartości
+\texttt{BET\_1X}, \texttt{BET\_2X}, \texttt{BET\_3X} i
+\texttt{BET\_4X}. Ogranicza to możliwość przekazania niepoprawnej wysokości
+zakładu, na przykład \(5\times\) Ante, oraz upraszcza późniejsze odwzorowanie
+akcji na przestrzeń dyskretną.
+
+\subsection{Planowane odwzorowanie na przestrzeń Gymnasium}
+\label{subsec:akcje-gymnasium}
+
+Obecny silnik posługuje się wartościami domenowymi typu \texttt{Action}.
+Biblioteki uczenia przez wzmacnianie zwykle oczekują natomiast akcji
+reprezentowanych przez kolejne liczby całkowite. Przyszły adapter Gymnasium
+będzie zatem definiował stałe, jednoznaczne odwzorowanie
+
+\begin{equation}
+    f : \mathcal{A} \rightarrow
+    \{0,1,\ldots,|\mathcal{A}|-1\}.
+\end{equation}
+
+Ponieważ pełna przestrzeń zawiera sześć akcji, adapter będzie mógł
+wykorzystywać dyskretną przestrzeń o liczności sześciu. Dokładne przypisanie
+identyfikatorów liczbowych zostanie zdefiniowane w implementacji adaptera,
+aby dokumentacja odpowiadała rzeczywiście używanemu interfejsowi.
+
+Stała przestrzeń dyskretna będzie zawierała również akcje niedostępne
+w niektórych fazach. Z tego względu obserwacja adaptera powinna udostępniać
+maskę legalności. Dla akcji \(a_i\) maskę można zdefiniować jako
+
+\begin{equation}
+    M_i(s) =
+    \begin{cases}
+        1, & a_i \in \mathcal{A}_{legal}(p(s)), \\
+        0, & a_i \notin \mathcal{A}_{legal}(p(s)),
+    \end{cases}
+\end{equation}
+
+gdzie \(p(s)\) oznacza fazę odpowiadającą stanowi \(s\).
+
+Maska pozwoli agentowi ograniczyć wybór do akcji zgodnych z regułami gry,
+nie zmieniając stałego rozmiaru przestrzeni wyjściowej modelu. Niezależnie
+od zastosowania maski adapter nadal będzie przekazywał decyzję do właściwego
+silnika, który zachowa końcową odpowiedzialność za walidację legalności.
