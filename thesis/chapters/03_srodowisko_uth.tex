@@ -1820,44 +1820,7 @@ Zamiast jednej ogólnej akcji \texttt{BET} zastosowano osobne wartości
 \texttt{BET\_1X}, \texttt{BET\_2X}, \texttt{BET\_3X} i
 \texttt{BET\_4X}. Ogranicza to możliwość przekazania niepoprawnej wysokości
 zakładu, na przykład \(5\times\) Ante, oraz upraszcza późniejsze odwzorowanie
-akcji na przestrzeń dyskretną.
-
-\subsection{Planowane odwzorowanie na przestrzeń Gymnasium}
-\label{subsec:akcje-gymnasium}
-
-Obecny silnik posługuje się wartościami domenowymi typu \texttt{Action}.
-Biblioteki uczenia przez wzmacnianie zwykle oczekują natomiast akcji
-reprezentowanych przez kolejne liczby całkowite. Przyszły adapter Gymnasium
-będzie zatem definiował stałe, jednoznaczne odwzorowanie
-
-\begin{equation}
-    f : \mathcal{A} \rightarrow
-    \{0,1,\ldots,|\mathcal{A}|-1\}.
-\end{equation}
-
-Ponieważ pełna przestrzeń zawiera sześć akcji, adapter będzie mógł
-wykorzystywać dyskretną przestrzeń o liczności sześciu. Dokładne przypisanie
-identyfikatorów liczbowych zostanie zdefiniowane w implementacji adaptera,
-aby dokumentacja odpowiadała rzeczywiście używanemu interfejsowi.
-
-Stała przestrzeń dyskretna będzie zawierała również akcje niedostępne
-w niektórych fazach. Z tego względu obserwacja adaptera powinna udostępniać
-maskę legalności. Dla akcji \(a_i\) maskę można zdefiniować jako
-
-\begin{equation}
-    M_i(s) =
-    \begin{cases}
-        1, & a_i \in \mathcal{A}_{legal}(p(s)), \\
-        0, & a_i \notin \mathcal{A}_{legal}(p(s)),
-    \end{cases}
-\end{equation}
-
-gdzie \(p(s)\) oznacza fazę odpowiadającą stanowi \(s\).
-
-Maska pozwoli agentowi ograniczyć wybór do akcji zgodnych z regułami gry,
-nie zmieniając stałego rozmiaru przestrzeni wyjściowej modelu. Niezależnie
-od zastosowania maski adapter nadal będzie przekazywał decyzję do właściwego
-silnika, który zachowa końcową odpowiedzialność za walidację legalności.
+akcji na przestrzeń dyskretną w adapterze Gymnasium.
 
 \section{Showdown i rozliczanie zakładów}
 \label{sec:showdown-i-rozliczenie}
@@ -2418,206 +2381,41 @@ lecz nie zastępuje porównania układów.
 
 Mechanizm rozliczania zakładów został oddzielony od funkcji nagrody
 wykorzystywanej przez algorytmy uczenia przez wzmacnianie. Silnik domenowy
-odpowiada za poprawne wyznaczenie wyniku finansowego zgodnie z zasadami
-Ultimate Texas Hold’em. Funkcja nagrody będzie natomiast elementem warstwy
-integrującej silnik z agentem uczącym się.
+wyznacza wyłącznie dokładny wynik finansowy rozdania zgodny z zasadami
+Ultimate Texas Hold’em, natomiast konstruowanie sygnału nagrody należy do
+warstwy integrującej silnik z agentem. Dzięki temu ta sama implementacja
+zasad gry może być wykorzystywana w eksperymentach z różnymi funkcjami
+nagrody, bez modyfikowania showdownu, kwalifikacji krupiera ani tabel wypłat.
 
-Rozdzielenie tych dwóch odpowiedzialności pozwala wykorzystywać tę samą
-implementację zasad gry podczas eksperymentów z różnymi sposobami
-konstruowania sygnału nagrody. Zmiana funkcji nagrody nie wymaga dzięki temu
-modyfikowania mechanizmu showdownu, kwalifikacji krupiera ani tabel wypłat.
-
-\subsection{Rozliczenie finansowe a nagroda}
-\label{subsec:rozliczenie-a-nagroda}
-
-Rozliczenie \texttt{Settlement} jest obiektem domenowym opisującym rzeczywisty
-wynik rozdania. Zawiera osobne wyniki zakładów Ante, Blind i Play oraz ich
-łączny wynik netto. Nie jest ono bezpośrednio nagrodą w rozumieniu uczenia
-przez wzmacnianie, ponieważ zawiera więcej informacji niż pojedyncza wartość
-skalarna oczekiwana przez większość algorytmów.
-
-Funkcję nagrody można przedstawić jako odwzorowanie
-
-\begin{equation}
-    R :
-    \mathcal{S}
-    \times
-    \mathcal{A}
-    \times
-    \mathcal{S}
-    \rightarrow
-    \mathbb{R},
-\end{equation}
-
-które przypisuje wartość liczbową przejściu ze stanu \(s_t\) do
-\(s_{t+1}\) po wykonaniu akcji \(a_t\).
-
-W podstawowym wariancie źródłem nagrody terminalnej będzie łączny wynik
-netto rozdania:
-
-\begin{equation}
-    R_{net}(S)
-    =
-    S_{net},
-\end{equation}
-
-gdzie \(S_{net}\) oznacza wartość
-\texttt{Settlement.total\_net\_profit}.
-
-Wynik netto został wybrany zamiast zwrotu brutto, ponieważ nie zawiera
-zwracanych stawek początkowych. Przykładowo zwrócony zakład ma dodatni zwrot
-brutto równy jego stawce, ale nie oznacza osiągnięcia zysku. W reprezentacji
-netto taki przypadek otrzymuje wartość zero.
-
-\subsection{Podstawowa nagroda terminalna}
-\label{subsec:nagroda-terminalna}
-
-Pojedyncze rozdanie stanowi jeden epizod. W podstawowej funkcji nagrody
-wszystkie przejścia pośrednie otrzymują wartość zero, natomiast końcowe
-przejście otrzymuje łączny wynik netto rozdania:
+Pojedyncze rozdanie stanowi jeden epizod. W podstawowym wariancie źródłem
+nagrody terminalnej jest łączny wynik netto rozdania
+\(S_{net}=n_{Ante}+n_{Blind}+n_{Play}\), a wszystkie przejścia pośrednie
+otrzymują nagrodę równą zero:
 
 \begin{equation}
     r_t =
     \begin{cases}
-        0,
-        &
-        s_{t+1} \notin \mathcal{S}_{terminal},
-        \\[2mm]
-
-        S_{net},
-        &
-        s_{t+1} \in \mathcal{S}_{terminal}.
+        0, & s_{t+1} \notin \mathcal{S}_{terminal}, \\[1mm]
+        S_{net}, & s_{t+1} \in \mathcal{S}_{terminal}.
     \end{cases}
 \end{equation}
 
-Oznacza to, że akcja \texttt{CHECK} nie generuje natychmiastowej nagrody.
-Jej konsekwencje są uwzględniane dopiero w wyniku całego rozdania.
-Wykonanie zakładu Play prowadzi bezpośrednio do showdownu, dlatego rezultat
-finansowy jest zwracany w tym samym kroku, w którym agent wybrał akcję
-\texttt{BET}.
+Wynik netto wybrano zamiast zwrotu brutto, ponieważ nie zawiera zwracanych
+stawek początkowych: zwrócony zakład otrzymuje wtedy wartość zero. Wartości
+rozliczeń są przechowywane dokładnie za pomocą typu \texttt{Fraction},
+a adapter środowiska przekształca końcową wartość na typ liczbowy wymagany
+przez bibliotekę uczenia dopiero na granicy interfejsu.
 
-Spasowanie również tworzy nagrodę terminalną. Ponieważ gracz traci Ante
-i Blind, a zakład Play nie został postawiony, podstawowa nagroda wynosi
+% TODO: przenieść warianty nagrody (znormalizowana, oparta na znaku,
+% kształtowanie) oraz analizę dyskontowania do rozdziału o metodyce
+% eksperymentów, po ustaleniu, które warianty zostaną zaimplementowane.
+Alternatywne funkcje nagrody, na przykład znormalizowane względem liczby
+postawionych jednostek albo oparte wyłącznie na znaku wyniku, zostaną
+przedstawione w rozdziale poświęconym metodyce eksperymentów. Podstawowym
+punktem odniesienia pozostanie nagroda terminalna równa wynikowi netto
+rozdania.
 
-\begin{equation}
-    r_{fold} = -2.
-\end{equation}
-
-Dla przykładowej wygranej z zyskiem netto równym
-\(\frac{13}{2}\) nagroda terminalna przyjmuje wartość
-
-\begin{equation}
-    r_{terminal} = \frac{13}{2}.
-\end{equation}
-
-Wewnętrzne rozliczenia są reprezentowane dokładnie za pomocą typu
-\texttt{Fraction}. Adapter środowiska będzie przekształcał końcową wartość
-na typ liczbowy wymagany przez bibliotekę uczenia, na przykład
-\texttt{float}, dopiero na granicy interfejsu.
-
-\subsection{Zwrot epizodyczny}
-\label{subsec:zwrot-epizodyczny}
-
-Zwrot uzyskany przez agenta od chwili \(t\) można zapisać jako
-
-\begin{equation}
-    G_t =
-    \sum_{k=0}^{T-t-1}
-    \gamma^k r_{t+k},
-\end{equation}
-
-gdzie \(T\) oznacza koniec epizodu, a \(\gamma\) jest współczynnikiem
-dyskontowania.
-
-Ponieważ w podstawowym wariancie wszystkie nagrody pośrednie są równe zero,
-dla \(\gamma=1\) całkowity zwrot epizodu jest równy wynikowi netto rozdania:
-
-\begin{equation}
-    G_0 = S_{net}.
-\end{equation}
-
-Zastosowanie współczynnika \(\gamma<1\) powodowałoby, że ta sama wartość
-terminalna byłaby silniej dyskontowana w rozdaniach zawierających więcej
-decyzji. Strategia kończąca rozdanie przed flopem mogłaby więc otrzymywać
-inną efektywną wartość niż strategia osiągająca identyczny wynik po dwóch
-akcjach \texttt{CHECK}. Z tego względu wpływ współczynnika dyskontowania
-musi zostać uwzględniony podczas konfiguracji eksperymentów.
-
-\subsection{Brak nagrody za nielegalną akcję}
-\label{subsec:nielegalna-akcja-nagroda}
-
-Nielegalna akcja nie stanowi poprawnego przejścia środowiska. Silnik odrzuca
-ją przez zgłoszenie wyjątku, zanim zostanie zmieniony stan lub pobrane
-zostaną kolejne karty. Nie jest zatem tworzona nagroda odpowiadająca takiej
-decyzji.
-
-W podstawowej integracji z agentami wybór nielegalnych akcji będzie
-ograniczany za pomocą zbioru legalnych decyzji lub maski akcji. Silnik
-pozostanie końcowym mechanizmem walidującym, natomiast kod sterujący
-eksperymentem powinien traktować wystąpienie nielegalnej decyzji jako błąd
-implementacji agenta, a nie jako normalny element trajektorii uczenia.
-
-Nie przyjęto automatycznej kary za nielegalną akcję. Wprowadzenie takiej
-wartości mieszałoby dwa różne zjawiska: jakość strategii pokerowej oraz
-poprawność techniczną komponentu wybierającego decyzje.
-
-\subsection{Możliwość stosowania alternatywnych funkcji nagrody}
-\label{subsec:alternatywne-funkcje-nagrody}
-
-Jednym z celów pracy jest zbadanie wpływu funkcji nagrody na jakość
-uzyskiwanej strategii. Z tego względu adapter zostanie zaprojektowany tak,
-aby sposób konstruowania nagrody nie był zapisany bezpośrednio w silniku
-domenowym.
-
-Oprócz surowego wyniku netto możliwe jest rozważenie między innymi:
-
-\begin{itemize}
-    \item nagrody znormalizowanej względem liczby postawionych jednostek,
-    \item nagrody ograniczonej do ustalonego przedziału,
-    \item nagrody opisującej jedynie znak wyniku rozdania,
-    \item nagrody pośredniej wspomagającej proces uczenia.
-\end{itemize}
-
-Przykładową nagrodę znormalizowaną można zapisać jako
-
-\begin{equation}
-    R_{normalized}(S)
-    =
-    \frac{S_{net}}{S_{stake}},
-\end{equation}
-
-gdzie \(S_{stake}>0\) oznacza całkowitą wartość zakładów postawionych
-w rozdaniu.
-
-Wariant oparty wyłącznie na znaku wyniku mógłby przyjmować postać
-
-\begin{equation}
-    R_{sign}(S)
-    =
-    \begin{cases}
-        1,  & S_{net}>0, \\
-        0,  & S_{net}=0, \\
-        -1, & S_{net}<0.
-    \end{cases}
-\end{equation}
-
-Takie przekształcenie ogranicza wpływ rzadkich, bardzo wysokich wypłat,
-ale jednocześnie usuwa informację o rzeczywistej wartości finansowej
-decyzji. Przykładowo wygrana jednej jednostki i wygrana wynikająca z pokera
-królewskiego otrzymałyby identyczną wartość.
-
-Nagroda pośrednia mogłaby dostarczać agentowi dodatkowy sygnał przed
-zakończeniem rozdania. Jej zastosowanie wymaga jednak ostrożności, ponieważ
-niepoprawnie zaprojektowane kształtowanie nagrody może skłonić model do
-optymalizacji pomocniczego kryterium zamiast długoterminowego wyniku
-finansowego.
-
-Dokładny zestaw badanych wariantów funkcji nagrody oraz ich parametry
-zostaną przedstawione w rozdziale opisującym metodykę eksperymentów.
-Podstawowym punktem odniesienia pozostanie nagroda terminalna równa
-wynikowi netto rozdania.
-
-\section{Interfejs silnika i integracja z Gymnasium}
+\section{Interfejs silnika}
 \label{sec:interfejs-silnika}
 
 Silnik domenowy udostępnia niewielki interfejs publiczny, za pomocą którego
@@ -2804,267 +2602,21 @@ do podejmowania decyzji przez agenta. Udostępniono ją na potrzeby testów,
 diagnostyki i analizy środowiska. Agent powinien otrzymywać wyłącznie
 wartość właściwości \texttt{observation} albo obserwację zwróconą przez
 \texttt{reset()} lub \texttt{step()}.
-\subsection{Rola adaptera Gymnasium}
-\label{subsec:rola-adaptera-gymnasium}
+\subsection{Integracja z Gymnasium}
+\label{subsec:integracja-gymnasium}
 
-Silnik \texttt{UTHGame} nie implementuje bezpośrednio klasy środowiska
-Gymnasium. Zostanie on opakowany przez osobny adapter, którego zadaniem
-będzie przekształcenie obiektów domenowych na format oczekiwany przez
-algorytmy uczenia przez wzmacnianie.
+Silnik \texttt{UTHGame} jest niezależny od biblioteki Gymnasium. Integracja
+z algorytmami uczenia przez wzmacnianie zostanie zrealizowana przez osobny
+adapter, który nie będzie implementował zasad gry, lecz jedynie warstwę
+translacyjną: numeryczne kodowanie obserwacji, odwzorowanie indeksów akcji
+na wartości \texttt{Action}, utworzenie maski legalnych akcji oraz
+wyznaczenie nagrody i flag \texttt{terminated} i \texttt{truncated}.
+Wszystkie przejścia, walidacja akcji, showdown i rozliczenia pozostaną
+odpowiedzialnością silnika domenowego, co zapobiega powstaniu dwóch
+niezależnych implementacji UTH.
 
-Adapter nie będzie implementował zasad gry. Wszystkie przejścia, walidacja
-akcji, showdown i rozliczenia pozostaną odpowiedzialnością
-\texttt{UTHGame}. Warstwa integracyjna będzie odpowiadała za:
-
-\begin{itemize}
-    \item numeryczne kodowanie obserwacji,
-    \item odwzorowanie indeksów akcji na wartości \texttt{Action},
-    \item utworzenie maski legalnych akcji,
-    \item przekształcenie wyniku netto w nagrodę,
-    \item utworzenie wartości \texttt{terminated} i \texttt{truncated},
-    \item przygotowanie dodatkowych danych w słowniku \texttt{info}.
-\end{itemize}
-
-Taki podział pozwala zmieniać sposób reprezentacji obserwacji oraz funkcję
-nagrody bez modyfikowania silnika domenowego.
-
-\subsection{Odwzorowanie metody reset}
-\label{subsec:gymnasium-reset}
-
-Metoda \texttt{reset()} adaptera będzie zwracała parę
-
-\begin{equation}
-    \left(
-        o_0,
-        info_0
-    \right),
-\end{equation}
-
-gdzie \(o_0\) oznacza numeryczną reprezentację pierwszej obserwacji,
-a \(info_0\) zawiera dodatkowe dane niewchodzące bezpośrednio w skład
-reprezentacji stanu.
-
-Przebieg operacji będzie następujący:
-
-\begin{enumerate}
-    \item adapter rozpoczyna nowy epizod w \texttt{UTHGame},
-    \item silnik zwraca domenowy obiekt \texttt{UTHObservation},
-    \item wybrany encoder przekształca obserwację do postaci numerycznej,
-    \item adapter tworzy maskę akcji i dane pomocnicze,
-    \item zakodowana obserwacja i słownik \texttt{info} są zwracane agentowi.
-\end{enumerate}
-
-Ziarno przekazane do adaptera będzie wykorzystywane do inicjalizacji
-powtarzalnego przebiegu środowiska. Szczegóły propagowania ziarna zostaną
-ustalone podczas implementacji adaptera, aby zachować zgodność pomiędzy
-generatorem Gymnasium i generatorem silnika domenowego.
-
-\subsection{Odwzorowanie metody step}
-\label{subsec:gymnasium-step}
-
-Metoda \texttt{step()} adaptera będzie zwracała pięć wartości:
-
-\begin{equation}
-    \left(
-        o_{t+1},
-        r_t,
-        terminated_t,
-        truncated_t,
-        info_t
-    \right).
-\end{equation}
-
-Dla pojedynczego przejścia adapter wykona następujące operacje:
-
-\begin{enumerate}
-    \item przekształci indeks akcji na wartość typu \texttt{Action},
-    \item przekaże akcję do metody \texttt{UTHGame.step()},
-    \item zakoduje otrzymaną obserwację,
-    \item wyznaczy nagrodę na podstawie rozliczenia,
-    \item odczyta informację o zakończeniu rozdania,
-    \item utworzy słownik danych pomocniczych.
-\end{enumerate}
-
-Flaga \texttt{terminated} będzie przyjmowała wartość prawdziwą po naturalnym
-zakończeniu rozdania przez showdown albo fold. Podstawowe środowisko nie
-nakłada zewnętrznego limitu kroków, dlatego \texttt{truncated} będzie
-domyślnie fałszywe. Najdłuższe poprawne rozdanie zawiera trzy decyzje,
-więc samo środowisko nie wymaga dodatkowego limitu czasu.
-
-Rozróżnienie tych dwóch flag jest istotne. \texttt{terminated} oznacza
-osiągnięcie rzeczywistego stanu końcowego procesu decyzyjnego, natomiast
-\texttt{truncated} służy do oznaczania przerwania epizodu przez warunek
-zewnętrzny wobec dynamiki gry.
-
-\subsection{Planowana przestrzeń akcji}
-\label{subsec:gymnasium-action-space}
-
-Pełna przestrzeń akcji adaptera będzie stałą przestrzenią dyskretną
-o liczności sześciu:
-
-\begin{equation}
-    \mathcal{A}_{gym}
-    =
-    \{0,1,2,3,4,5\}.
-\end{equation}
-
-Każdy indeks zostanie jednoznacznie przypisany do jednej wartości
-\texttt{Action}. Ponieważ liczba legalnych akcji zmienia się pomiędzy fazami,
-adapter będzie dodatkowo konstruował binarną maskę
-
-\begin{equation}
-    M_t
-    =
-    \left(
-        m_0,
-        m_1,
-        \ldots,
-        m_5
-    \right),
-    \qquad
-    m_i \in \{0,1\}.
-\end{equation}
-
-Wartość \(m_i=1\) będzie oznaczała, że akcja o indeksie \(i\) jest legalna
-w bieżącej obserwacji. Stała liczność przestrzeni umożliwi zastosowanie
-jednej warstwy wyjściowej modelu we wszystkich fazach rozdania.
-
-\subsection{Planowana przestrzeń obserwacji}
-\label{subsec:gymnasium-observation-space}
-
-Ostateczna postać przestrzeni obserwacji nie została jeszcze ustalona,
-ponieważ porównanie reprezentacji stanu stanowi jeden z elementów badawczych
-pracy. Każdy wariant będzie jednak kodował ten sam dozwolony zakres
-informacji wynikający z \texttt{UTHObservation}.
-
-Rozważane reprezentacje mogą obejmować:
-
-\begin{itemize}
-    \item zakodowane identyfikatory kart gracza i kart wspólnych,
-    \item wektor binarny wskazujący obecność poszczególnych kart,
-    \item osobne kodowanie rang i kolorów,
-    \item cechy pochodne opisujące aktualną siłę ręki,
-    \item kod fazy oraz maskę legalnych akcji.
-\end{itemize}
-
-Niezależnie od wariantu obserwacja będzie miała stały rozmiar. Brakujące
-karty wspólne w fazach \texttt{PREFLOP} i \texttt{FLOP} zostaną
-reprezentowane przez ustaloną wartość pustą albo odpowiednie wyzerowanie
-wektora.
-
-Oddzielenie encodera od adaptera pozwoli porównywać różne reprezentacje przy
-zachowaniu identycznej dynamiki środowiska, sekwencji rozdań i sposobu
-rozliczania zakładów.
-
-\subsection{Dane pomocnicze}
-\label{subsec:gymnasium-info}
-
-Słownik \texttt{info} będzie przeznaczony dla danych diagnostycznych
-i wyników, które nie powinny być bezpośrednią częścią obserwacji modelu.
-Może on zawierać między innymi:
-
-\begin{itemize}
-    \item maskę legalnych akcji,
-    \item wynik rozdania,
-    \item łączną wartość postawionych zakładów,
-    \item wynik netto,
-    \item osobne rozliczenia Ante, Blind i Play,
-    \item informację o kwalifikacji krupiera,
-    \item szczegóły showdownu w zakończonym epizodzie.
-\end{itemize}
-
-Dane terminalne zostaną umieszczone w \texttt{info} dopiero po zakończeniu
-rozdania. Nie będą one wykorzystywane jako element wejścia agenta przed
-podjęciem decyzji.
-
-\subsection{Porównanie interfejsów}
-\label{subsec:porownanie-interfejsow}
-
-Relację pomiędzy obecnym interfejsem domenowym a planowanym adapterem
-przedstawiono w tabeli~\ref{tab:interfejs-domain-gymnasium}.
-
-\begin{table}[htbp]
-    \centering
-    \small
-    \caption{Odwzorowanie interfejsu domenowego na Gymnasium}
-    \label{tab:interfejs-domain-gymnasium}
-    \begin{tabular}{
-        |p{0.23\textwidth}
-        |p{0.29\textwidth}
-        |p{0.38\textwidth}|
-    }
-        \hline
-        \textbf{Element}
-        &
-        \textbf{Silnik domenowy}
-        &
-        \textbf{Adapter Gymnasium}
-        \\
-        \hline
-
-        Rozpoczęcie epizodu
-        &
-        \texttt{UTHObservation}
-        &
-        Zakodowana obserwacja oraz \texttt{info}.
-        \\
-        \hline
-
-        Akcja
-        &
-        Wartość \texttt{Action}
-        &
-        Indeks ze stałej przestrzeni dyskretnej.
-        \\
-        \hline
-
-        Wynik kroku
-        &
-        \texttt{StepResult}
-        &
-        Obserwacja, nagroda, \texttt{terminated},
-        \texttt{truncated} i \texttt{info}.
-        \\
-        \hline
-
-        Nagroda
-        &
-        Brak bezpośredniej wartości
-        &
-        Obliczana przez wybraną funkcję nagrody.
-        \\
-        \hline
-
-        Legalność akcji
-        &
-        \texttt{frozenset[Action]}
-        &
-        Maska binarna oraz walidacja silnika.
-        \\
-        \hline
-
-        Stan ukryty
-        &
-        \texttt{RoundState}
-        &
-        Nie jest przekazywany agentowi.
-        \\
-        \hline
-
-        Rozliczenie
-        &
-        Dokładne wartości \texttt{Fraction}
-        &
-        Wartości przekształcone do formatu używanego przez eksperyment.
-        \\
-        \hline
-    \end{tabular}
-\end{table}
-
-Adapter będzie zatem pełnił rolę warstwy translacyjnej. Nie będzie drugim
-silnikiem gry ani miejscem implementacji dodatkowych reguł. Takie podejście
-zapobiega powstaniu dwóch niezależnych implementacji UTH, które mogłyby
-zwracać różne wyniki dla tego samego rozdania.
+% TODO: uzupełnić szczegóły adaptera Gymnasium (przestrzenie akcji
+% i obserwacji, słownik info, mapowanie reset/step) po jego implementacji.
 
 \section{Rejestrowanie przebiegu i walidacja środowiska}
 \label{sec:rejestrowanie-i-walidacja}
