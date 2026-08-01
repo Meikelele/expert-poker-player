@@ -445,16 +445,11 @@ otrzymują nagrodę równą zero:
 
 Wynik netto wybrano zamiast zwrotu brutto, ponieważ nie zawiera zwracanych
 stawek początkowych: zwrócony zakład otrzymuje wtedy wartość zero. Wartości
-rozliczeń są przechowywane dokładnie za pomocą typu \texttt{Fraction},
-a adapter środowiska przekształca końcową wartość na typ liczbowy wymagany
-przez bibliotekę uczenia dopiero na granicy interfejsu.
+rozliczeń są przechowywane za pomocą typu \texttt{Fraction}. Konwersję do
+reprezentacji numerycznej wymaganej przez algorytm uczący pozostawiono
+warstwie integracyjnej.
 
-% TODO: przenieść warianty nagrody (znormalizowana, oparta na znaku,
-% kształtowanie) oraz analizę dyskontowania do rozdziału o metodyce
-% eksperymentów, po ustaleniu, które warianty zostaną zaimplementowane.
-Alternatywne funkcje nagrody, na przykład znormalizowane względem liczby
-postawionych jednostek albo oparte wyłącznie na znaku wyniku, zostaną
-przedstawione w rozdziale poświęconym metodyce eksperymentów. Podstawowym
-punktem odniesienia pozostanie nagroda terminalna równa wynikowi netto
-rozdania.
+% TODO: opisać rzeczywiście zaimplementowane warianty nagrody
+% (znormalizowana, oparta na znaku, kształtowanie) oraz analizę dyskontowania
+% w rozdziale dotyczącym metodyki eksperymentów.
 

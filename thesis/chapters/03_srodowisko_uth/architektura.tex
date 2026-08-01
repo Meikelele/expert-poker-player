@@ -29,10 +29,9 @@ uniezależnia środowisko od konkretnej waluty i nominalnej wysokości stawki,
 a także ułatwia porównywanie wyników pomiędzy eksperymentami.
 
 Silnik zwraca szczegółowe rozliczenie poszczególnych zakładów oraz łączny
-wynik netto rozdania. W podstawowym wariancie środowiska przeznaczonym dla
-agentów uczących się wynik netto będzie wykorzystywany jako nagroda terminalna.
-W krokach pośrednich nagroda wynosi zero. Rozdzielenie mechanizmu rozliczania
-gry od funkcji nagrody umożliwia późniejsze badanie alternatywnych wariantów
+wynik netto rozdania. Wynik netto stanowi podstawę nagrody terminalnej,
+a krokom pośrednim przypisano nagrodę zero. Rozdzielenie mechanizmu
+rozliczania gry od funkcji nagrody pozwala badać alternatywne warianty
 nagrody bez ingerencji w reguły Ultimate Texas Hold’em.
 
 Istotnym założeniem była również powtarzalność eksperymentów. Standardowa
@@ -156,9 +155,9 @@ rozwiązania i zakres ich odpowiedzialności.
 \end{table}
 
 Silnik domenowy nie zależy od konkretnej biblioteki uczenia przez
-wzmacnianie. Przyszły adapter Gymnasium będzie korzystał z publicznego
-interfejsu \texttt{UTHGame}, przekształcając obiekty domenowe na numeryczne
-reprezentacje wymagane przez algorytmy uczące się. Pozwala to zachować jedną
+wzmacnianie. Integrację z takimi bibliotekami wydzielono do osobnej warstwy
+korzystającej z publicznego interfejsu \texttt{UTHGame} i przekształcającej
+obiekty domenowe na reprezentacje numeryczne. Pozwala to zachować jedną
 implementację zasad gry dla wszystkich badanych reprezentacji obserwacji,
 funkcji nagrody i metod uczenia.
 

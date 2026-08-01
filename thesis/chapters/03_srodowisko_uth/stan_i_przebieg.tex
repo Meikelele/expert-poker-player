@@ -151,8 +151,8 @@ Obserwacja celowo nie zawiera:
 
 Zbiór legalnych akcji jest umieszczony bezpośrednio w obserwacji. Agent nie
 musi zatem samodzielnie odtwarzać zasad gry na podstawie fazy. Rozwiązanie
-to ułatwia implementację agentów bazowych, a w przyszłym adapterze Gymnasium
-umożliwi utworzenie maski akcji.
+to ułatwia implementację agentów bazowych i pozwala warstwie integracyjnej
+zbudować maskę akcji bez sięgania do wewnętrznego stanu.
 
 Obserwacja, podobnie jak pełny stan, jest obiektem niemodyfikowalnym.
 Sprawdzana jest liczba widocznych kart, brak duplikatów oraz zgodność zbioru
@@ -337,10 +337,9 @@ strategii.
 
 Jawna funkcja projekcji stanowi zatem część definicji środowiska z niepełną
 informacją. Zapewnia ona, że każda metoda wyboru akcji, niezależnie od
-zastosowanego algorytmu, otrzymuje ten sam zakres informacji. W przyszłych
-eksperymentach zmianie może podlegać sposób numerycznego kodowania
-obserwacji, natomiast zbiór informacji dostępnych agentowi pozostanie
-niezmieniony.
+zastosowanego algorytmu, otrzymuje ten sam zakres informacji. Sposób
+numerycznego kodowania obserwacji pozostaje przy tym poza warstwą domenową,
+natomiast zbiór informacji dostępnych agentowi jest stały.
 
 \section{Maszyna stanów i przestrzeń akcji}
 \label{sec:maszyna-stanow}

@@ -16,10 +16,11 @@ informacji podczas uczenia modeli.
 
 Implementację podzielono na niezależne moduły odpowiedzialne między innymi
 za reprezentację kart, ocenę układów, sterowanie przebiegiem rozdania,
-walidację akcji oraz rozliczanie zakładów. Silnik domenowy nie zależy
-bezpośrednio od biblioteki Gymnasium. Adapter zgodny z jej interfejsem zostanie
-utworzony jako osobna warstwa, co umożliwi późniejsze porównywanie różnych
-reprezentacji stanu i funkcji nagrody bez modyfikowania zasad gry.
+walidację akcji oraz rozliczanie zakładów. Silnik domenowy pozostaje
+niezależny od biblioteki Gymnasium. Kodowanie obserwacji, odwzorowanie akcji
+i konstrukcję nagrody wydzielono poza warstwę realizującą zasady gry, co
+umożliwia porównywanie różnych reprezentacji stanu i funkcji nagrody bez
+modyfikowania samych reguł.
 
 \input{chapters/03_srodowisko_uth/architektura}
 \input{chapters/03_srodowisko_uth/karty_i_evaluator}
