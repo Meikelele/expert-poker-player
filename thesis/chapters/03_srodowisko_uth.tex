@@ -454,65 +454,6 @@ sytuacji, takich jak:
     \item próba wykonania przejścia przy niewystarczającej liczbie kart.
 \end{itemize}
 
-Porównanie dwóch dostępnych źródeł kart przedstawiono w
-tabeli~\ref{tab:zrodla-kart}.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Porównanie źródeł kart wykorzystywanych przez środowisko}
-    \label{tab:zrodla-kart}
-    \begin{tabular}{|p{0.24\textwidth}|p{0.33\textwidth}|p{0.33\textwidth}|}
-        \hline
-        \textbf{Cecha}
-        &
-        \textbf{\texttt{Deck}}
-        &
-        \textbf{\texttt{FixedDeck}}
-        \\
-        \hline
-
-        Zastosowanie
-        &
-        Standardowe rozdania i eksperymenty
-        &
-        Testy deterministyczne i odtwarzanie scenariuszy
-        \\
-        \hline
-
-        Kolejność kart
-        &
-        Ustalana przez tasowanie
-        &
-        Jawnie przekazywana podczas tworzenia
-        \\
-        \hline
-
-        Obsługa ziarna
-        &
-        Tak
-        &
-        Nie jest wymagana
-        \\
-        \hline
-
-        Kontrola duplikatów
-        &
-        Wynika ze sposobu generowania pełnej talii
-        &
-        Walidowana podczas tworzenia obiektu
-        \\
-        \hline
-
-        Pierwsza dobierana karta
-        &
-        Wynika z kolejności po tasowaniu
-        &
-        Pierwszy element zadanej sekwencji
-        \\
-        \hline
-    \end{tabular}
-\end{table}
-
 \subsection{Powtarzalność losowych rozdań}
 \label{subsec:powtarzalnosc-talii}
 
@@ -601,97 +542,6 @@ dodatkowymi może zostać zapisana w postaci
 Jeżeli druga ręka również zawiera parę asów, porównanie przechodzi kolejno
 do króla, dziesiątki i dziewiątki. Kolory kart nie uczestniczą w rozstrzyganiu
 remisów, zgodnie ze standardowymi zasadami pokera.
-
-Sposób budowy krotki rozstrzygającej dla każdej kategorii przedstawiono
-w tabeli~\ref{tab:tiebreak-ukladow}.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Wartości wykorzystywane do rozstrzygania remisów}
-    \label{tab:tiebreak-ukladow}
-    \begin{tabular}{|p{0.25\textwidth}|p{0.14\textwidth}|p{0.51\textwidth}|}
-        \hline
-        \textbf{Kategoria}
-        &
-        \textbf{Liczba wartości}
-        &
-        \textbf{Kolejność elementów \texttt{tiebreak}}
-        \\
-        \hline
-
-        Wysoka karta
-        &
-        5
-        &
-        Wszystkie rangi w kolejności malejącej.
-        \\
-        \hline
-
-        Jedna para
-        &
-        4
-        &
-        Ranga pary, a następnie trzy pozostałe rangi malejąco.
-        \\
-        \hline
-
-        Dwie pary
-        &
-        3
-        &
-        Wyższa para, niższa para oraz karta dodatkowa.
-        \\
-        \hline
-
-        Trójka
-        &
-        3
-        &
-        Ranga trójki oraz dwie pozostałe rangi malejąco.
-        \\
-        \hline
-
-        Strit
-        &
-        1
-        &
-        Ranga najwyższej karty strita.
-        \\
-        \hline
-
-        Kolor
-        &
-        5
-        &
-        Wszystkie rangi w kolejności malejącej.
-        \\
-        \hline
-
-        Full
-        &
-        2
-        &
-        Ranga trójki, a następnie ranga pary.
-        \\
-        \hline
-
-        Kareta
-        &
-        2
-        &
-        Ranga karety oraz ranga karty dodatkowej.
-        \\
-        \hline
-
-        Poker
-        &
-        1
-        &
-        Ranga najwyższej karty pokera.
-        \\
-        \hline
-    \end{tabular}
-\end{table}
 
 Obiekt \texttt{HandValue} sprawdza zgodność długości krotki
 \texttt{tiebreak} z kategorią układu. Walidowane jest również, czy wszystkie
@@ -1613,92 +1463,13 @@ Wynik finansowy każdego zakładu reprezentuje obiekt
 
 Wszystkie kwoty są wyrażane w jednostkach Ante. Dla pojedynczego zakładu
 o stawce \(s\) i zysku netto \(n\) całkowity zwrot brutto wynosi
+\(g = s + n\); wartość \(g = s\) oznacza zwrot stawki, \(g = 0\) jej pełną
+utratę, a stawka \(s = 0\) zakład niepostawiony.
 
-\begin{equation}
-    g = s + n.
-\end{equation}
-
-Przykładowe wartości przedstawiono w
-tabeli~\ref{tab:interpretacja-wager-settlement}.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Interpretacja wartości pojedynczego rozliczenia}
-    \label{tab:interpretacja-wager-settlement}
-    \begin{tabular}{
-        |c|c|c|p{0.35\textwidth}|
-    }
-        \hline
-        \textbf{Stawka}
-        &
-        \textbf{Zysk netto}
-        &
-        \textbf{Zwrot brutto}
-        &
-        \textbf{Znaczenie}
-        \\
-        \hline
-
-        \(1\)
-        &
-        \(1\)
-        &
-        \(2\)
-        &
-        Wygrana zakładu wypłacanego \(1{:}1\).
-        \\
-        \hline
-
-        \(1\)
-        &
-        \(0\)
-        &
-        \(1\)
-        &
-        Zwrot początkowej stawki.
-        \\
-        \hline
-
-        \(1\)
-        &
-        \(-1\)
-        &
-        \(0\)
-        &
-        Przegrana pełnej stawki.
-        \\
-        \hline
-
-        \(0\)
-        &
-        \(0\)
-        &
-        \(0\)
-        &
-        Zakład nie został postawiony.
-        \\
-        \hline
-    \end{tabular}
-\end{table}
-
-Pełne rozliczenie rozdania jest reprezentowane przez obiekt
-\texttt{Settlement}, który zawiera osobne wyniki dla Ante, Blind oraz Play.
-Dzięki temu możliwa jest analiza zarówno łącznego wyniku rozdania, jak
-i wpływu poszczególnych składników.
-
-Dla rozliczenia \(S\) całkowita postawiona kwota wynosi
-
-\begin{equation}
-    S_{stake}
-    =
-    s_{Ante}
-    +
-    s_{Blind}
-    +
-    s_{Play}.
-\end{equation}
-
-Łączny wynik netto jest równy
+Pełne rozliczenie rozdania reprezentuje obiekt \texttt{Settlement},
+zawierający osobne wyniki dla Ante, Blind oraz Play. Umożliwia to analizę
+zarówno łącznego wyniku rozdania, jak i wpływu poszczególnych składników.
+Łączny wynik netto jest sumą składników
 
 \begin{equation}
     S_{net}
@@ -1707,29 +1478,7 @@ Dla rozliczenia \(S\) całkowita postawiona kwota wynosi
     +
     n_{Blind}
     +
-    n_{Play},
-\end{equation}
-
-natomiast całkowity zwrot brutto wynosi
-
-\begin{equation}
-    S_{gross}
-    =
-    g_{Ante}
-    +
-    g_{Blind}
-    +
-    g_{Play}.
-\end{equation}
-
-Z definicji zachodzi zależność
-
-\begin{equation}
-    S_{gross}
-    =
-    S_{stake}
-    +
-    S_{net}.
+    n_{Play}.
 \end{equation}
 
 Wartości finansowe są reprezentowane za pomocą typu
@@ -1902,45 +1651,13 @@ Rozliczenie folda ma zatem postać
 W rozliczeniu Play zapisywana jest stawka równa zero. Pozwala to odróżnić
 zakład niepostawiony od postawionego zakładu, który został zwrócony.
 
-\subsection{Przykładowe rozliczenia}
+\subsection{Przykładowe rozliczenie}
 \label{subsec:przyklady-rozliczen}
 
-Pierwszy przykład zakłada, że gracz wykonał Play \(4\times\), uzyskał kolor
-i pokonał kwalifikującego się krupiera. Poszczególne zyski netto wynoszą
-
-\begin{equation}
-    n_{Ante}=1,
-    \qquad
-    n_{Blind}=\frac{3}{2},
-    \qquad
-    n_{Play}=4.
-\end{equation}
-
-Łączny wynik netto jest równy
-
-\begin{equation}
-    S_{net}
-    =
-    1+\frac{3}{2}+4
-    =
-    \frac{13}{2}.
-\end{equation}
-
-W drugim przykładzie gracz wykonał Play \(2\times\) i wygrał showdown
-wysoką kartą przeciwko niekwalifikującemu się krupierowi. Ante oraz Blind
-są zwracane, a zysk pochodzi wyłącznie z Play:
-
-\begin{equation}
-    S_{net}
-    =
-    0+0+2
-    =
-    2.
-\end{equation}
-
-Trzeci przykład przedstawia przypadek, w którym niekwalifikujący się krupier
-ma wyższą wysoką kartę niż gracz. Przy zakładzie Play \(1\times\) Ante jest
-zwracane, ale Blind i Play zostają przegrane:
+Nietrywialnym przypadkiem jest rozdanie, w którym niekwalifikujący się
+krupier ma wyższą wysoką kartę niż gracz. Przy zakładzie Play \(1\times\)
+Ante zostaje zwrócone, natomiast Blind i Play są przegrane, co daje wynik
+netto
 
 \begin{equation}
     S_{net}
@@ -1950,8 +1667,8 @@ zwracane, ale Blind i Play zostają przegrane:
     -2.
 \end{equation}
 
-Przypadek ten pokazuje, że warunek kwalifikacji wpływa na rozliczenie Ante,
-lecz nie zastępuje porównania układów.
+Przykład ten pokazuje, że warunek kwalifikacji wpływa jedynie na rozliczenie
+Ante i nie zastępuje porównania układów.
 
 \section{Funkcja nagrody i wynik epizodu}
 \label{sec:funkcja-nagrody}
@@ -2406,133 +2123,21 @@ zależność testu od szczegółów algorytmu tasowania.
 \subsection{Poziomy testowania}
 \label{subsec:poziomy-testowania}
 
-Testy środowiska podzielono według odpowiedzialności sprawdzanych
-komponentów. Najważniejsze obszary przedstawiono w
-tabeli~\ref{tab:obszary-testowania-uth}.
+Testy podzielono według odpowiedzialności komponentów. Testy jednostkowe
+sprawdzają w izolacji model kart i talię, evaluator, modele stanu,
+rozdawanie, legalność akcji, showdown oraz rozliczenia. Testy integracyjne
+wykonują kompletne rozdania obejmujące wszystkie ścieżki maszyny stanów, od
+\texttt{reset()} do stanu terminalnego, wraz z rejestrowaniem historii. Samo
+poprawne przetestowanie evaluatora i modułu rozliczeń nie gwarantuje bowiem,
+że silnik przekaże im właściwe karty i mnożnik zakładu Play.
 
-\begin{table}[htbp]
-    \centering
-    \small
-    \caption{Główne obszary testowania środowiska UTH}
-    \label{tab:obszary-testowania-uth}
-    \begin{tabular}{
-        |p{0.25\textwidth}
-        |p{0.29\textwidth}
-        |p{0.36\textwidth}|
-    }
-        \hline
-        \textbf{Obszar}
-        &
-        \textbf{Przykładowe przypadki}
-        &
-        \textbf{Weryfikowana własność}
-        \\
-        \hline
-
-        Model kart i talia
-        &
-        Pełna talia, brak duplikatów, pusta talia, stałe ziarno
-        &
-        Poprawność źródła kart i kolejności dobierania.
-        \\
-        \hline
-
-        Evaluator
-        &
-        Kategorie układów, remisy, niski strit, najlepsze pięć z siedmiu
-        &
-        Jednoznaczne porównywanie rąk.
-        \\
-        \hline
-
-        Modele stanu
-        &
-        Liczba kart w fazach, duplikaty, pola terminalne
-        &
-        Zachowanie niezmienników \texttt{RoundState} i obserwacji.
-        \\
-        \hline
-
-        Rozdawanie
-        &
-        Karty początkowe, flop, turn i river, karty spalone
-        &
-        Poprawna kolejność i dozwolone przejścia faz.
-        \\
-        \hline
-
-        Legalność akcji
-        &
-        Akcje dozwolone i zabronione w każdej fazie
-        &
-        Odrzucanie decyzji sprzecznych z zasadami.
-        \\
-        \hline
-
-        Showdown
-        &
-        Wygrana gracza, wygrana krupiera, remis
-        &
-        Poprawne wyznaczenie \texttt{RoundOutcome}.
-        \\
-        \hline
-
-        Rozliczenia
-        &
-        Kwalifikacja, tabela Blind, różne mnożniki Play, fold
-        &
-        Poprawność wyniku Ante, Blind, Play i wyniku łącznego.
-        \\
-        \hline
-
-        Pełne rozdania
-        &
-        Wszystkie ścieżki maszyny stanów
-        &
-        Integracja komponentów od \texttt{reset()} do stanu terminalnego.
-        \\
-        \hline
-
-        Historia
-        &
-        Jedna, dwie i trzy decyzje, błędne przejście
-        &
-        Rejestrowanie wyłącznie zakończonych sukcesem decyzji.
-        \\
-        \hline
-    \end{tabular}
-\end{table}
-
-Testy jednostkowe sprawdzają komponenty w izolacji, natomiast testy
-integracyjne wykonują kompletne rozdania. Samo poprawne przetestowanie
-evaluatora i modułu rozliczeń nie gwarantuje bowiem, że silnik przekaże im
-właściwe karty i mnożnik zakładu Play.
-
-\subsection{Walidowane niezmienniki}
-\label{subsec:walidowane-niezmienniki}
-
-Poza sprawdzaniem przykładowych wyników testy weryfikują niezmienniki
-obowiązujące dla wszystkich poprawnych rozdań. Należą do nich między innymi:
-
-\begin{itemize}
-    \item brak powtarzających się kart w stanie,
-    \item dokładnie dwie karty własne każdej strony,
-    \item liczba kart wspólnych zgodna z fazą,
-    \item liczba kart spalonych zgodna z fazą,
-    \item brak danych terminalnych w stanie pośrednim,
-    \item obecność wyniku i rozliczenia w stanie terminalnym,
-    \item brak showdownu po spasowaniu,
-    \item dokładnie jeden zakład Play albo brak tego zakładu po foldzie,
-    \item zgodność mnożnika Play z akcją kończącą część decyzyjną,
-    \item zgodność wyniku \texttt{RoundState}, \texttt{StepResult}
-          i \texttt{ShowdownResult},
-    \item brak kart krupiera i kart spalonych w obserwacji,
-    \item brak zmiany stanu po odrzuconej akcji.
-\end{itemize}
-
-Walidacja nie ogranicza się zatem do testowania typowych scenariuszy
-zwycięstwa i porażki. Uwzględnia również przypadki brzegowe oraz próby
-utworzenia stanów, które naruszałyby reguły domenowe.
+Poza przykładowymi wynikami testy weryfikują niezmienniki obowiązujące dla
+wszystkich poprawnych rozdań, między innymi brak powtarzających się kart,
+zgodność liczby kart wspólnych i spalonych z fazą, brak danych terminalnych
+w stanie pośrednim, brak showdownu po spasowaniu, wykonanie co najwyżej
+jednego zakładu Play, brak kart krupiera i kart spalonych w obserwacji oraz
+brak zmiany stanu po odrzuconej akcji. Walidacja obejmuje zatem także
+przypadki brzegowe i próby utworzenia stanów naruszających reguły domenowe.
 
 \subsection{Pokrycie kodu}
 \label{subsec:pokrycie-kodu}
@@ -2550,7 +2155,7 @@ Informuje jedynie, że testy wykonały wszystkie mierzone linie i gałęzie
 programu. Z tego względu został uzupełniony testami opartymi na konkretnych
 scenariuszach domenowych oraz walidacją niezmienników.
 
-\section{Ograniczenia i kierunki dalszego rozwoju}
+\section{Ograniczenia środowiska}
 \label{sec:ograniczenia-srodowiska}
 
 Zaimplementowane środowisko odwzorowuje podstawowy wariant Ultimate Texas
@@ -2583,100 +2188,10 @@ Zaimplementowany wariant środowiska obejmuje:
     \item opcjonalne rejestrowanie przebiegu rozdania.
 \end{itemize}
 
-Elementy znajdujące się poza zakresem podstawowego silnika przedstawiono
-w tabeli~\ref{tab:ograniczenia-srodowiska}.
-
-\begin{table}[htbp]
-    \centering
-    \small
-    \caption{Elementy nieuwzględnione w podstawowym środowisku}
-    \label{tab:ograniczenia-srodowiska}
-    \begin{tabular}{
-        |p{0.27\textwidth}
-        |p{0.28\textwidth}
-        |p{0.35\textwidth}|
-    }
-        \hline
-        \textbf{Element}
-        &
-        \textbf{Stan}
-        &
-        \textbf{Uzasadnienie}
-        \\
-        \hline
-
-        Zakład Trips
-        &
-        Nieuwzględniony
-        &
-        Nie zmienia sekwencji decyzji Play, ale wprowadza dodatkowy składnik
-        końcowego wyniku finansowego.
-        \\
-        \hline
-
-        Zakład Progressive
-        &
-        Nieuwzględniony
-        &
-        Wymaga modelowania dodatkowej tabeli wypłat lub wartości puli
-        narastającej pomiędzy rozdaniami.
-        \\
-        \hline
-
-        Wielu graczy przy stole
-        &
-        Nieuwzględnieni
-        &
-        Badany problem dotyczy decyzji pojedynczego gracza przeciwko
-        krupierowi.
-        \\
-        \hline
-
-        Saldo gracza
-        &
-        Nieuwzględnione
-        &
-        Każde rozdanie jest niezależnym epizodem, a wynik wyrażany jest
-        w jednostkach Ante.
-        \\
-        \hline
-
-        Limity i nominały stołu
-        &
-        Nieuwzględnione
-        &
-        Nie wpływają na względną jakość strategii ocenianej za pomocą
-        znormalizowanego wyniku finansowego.
-        \\
-        \hline
-
-        Interfejs graficzny
-        &
-        Nieuwzględniony
-        &
-        Środowisko jest przeznaczone do automatycznych eksperymentów,
-        a nie do interaktywnej rozgrywki.
-        \\
-        \hline
-
-        Adapter Gymnasium
-        &
-        Planowany
-        &
-        Zostanie dodany jako osobna warstwa nad gotowym silnikiem domenowym.
-        \\
-        \hline
-
-        Numeryczne kodowanie obserwacji
-        &
-        Planowane
-        &
-        Różne reprezentacje stanu będą jednym z elementów porównania
-        eksperymentalnego.
-        \\
-        \hline
-    \end{tabular}
-\end{table}
+Poza jego zakresem pozostają natomiast zakłady boczne Trips i Progressive,
+model wielu graczy przy stole, saldo gracza i limity stołu, interfejs
+graficzny, a także adapter Gymnasium oraz numeryczne kodowanie obserwacji,
+które zostaną dodane jako osobne warstwy.
 
 \subsection{Pominięcie zakładów dodatkowych}
 \label{subsec:pominiecie-zakladow-dodatkowych}
@@ -2785,37 +2300,6 @@ jeden z elementów badawczych pracy.
 Oddzielenie encodera od silnika umożliwi wykorzystanie identycznych rozdań
 i reguł przy porównywaniu różnych reprezentacji. Różnice w wynikach nie będą
 wówczas wynikały z odmiennego działania mechanizmu gry.
-
-\subsection{Planowane etapy rozwoju}
-\label{subsec:planowane-etapy-rozwoju}
-
-Dalsza realizacja projektu będzie przebiegała etapowo. Pierwszym krokiem
-będzie utworzenie wspólnego interfejsu agentów oraz mechanizmu uruchamiania
-wielu rozdań. Następnie zaimplementowani zostaną agenci bazowi:
-
-\begin{itemize}
-    \item agent wybierający losową legalną akcję,
-    \item agent oparty na ustalonych regułach strategicznych.
-\end{itemize}
-
-Agenci bazowi będą służyli do weryfikacji infrastruktury eksperymentalnej
-oraz jako punkty odniesienia dla metod uczących się.
-
-Kolejny etap obejmie:
-
-\begin{itemize}
-    \item implementację adaptera zgodnego z Gymnasium,
-    \item utworzenie numerycznych reprezentacji obserwacji,
-    \item implementację wymiennych funkcji nagrody,
-    \item zdefiniowanie metryk i procesu oceny strategii,
-    \item implementację wybranych metod uczenia przez wzmacnianie,
-    \item przeprowadzenie eksperymentów dla wielu ziaren losowych.
-\end{itemize}
-
-Architektura silnika umożliwia realizację tych etapów bez ponownego
-implementowania zasad UTH. Agenci i adapter będą korzystali z publicznego
-interfejsu \texttt{reset()} oraz \texttt{step()}, natomiast evaluator,
-maszyna stanów i moduł rozliczeń pozostaną wspólne dla wszystkich metod.
 
 \section{Podsumowanie}
 \label{sec:podsumowanie-srodowiska-uth}
