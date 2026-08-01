@@ -7,12 +7,9 @@ zna kart krupiera, kart spalonych ani kolejności pozostałych kart w talii.
 Poprawne odwzorowanie tej własności wymaga rozdzielenia pełnego stanu
 środowiska od informacji udostępnianych agentowi.
 
-W implementacji zastosowano dwa odrębne modele danych:
-
-\begin{itemize}
-    \item \texttt{RoundState}, reprezentujący pełny stan wewnętrzny rozdania,
-    \item \texttt{UTHObservation}, reprezentujący obserwację dostępną agentowi.
-\end{itemize}
+W implementacji zastosowano dwa odrębne modele danych: \texttt{RoundState}
+reprezentujący pełny stan wewnętrzny rozdania oraz \texttt{UTHObservation}
+reprezentujący obserwację dostępną agentowi.
 
 Agent nie otrzymuje bezpośredniego odwołania do obiektu
 \texttt{RoundState}. Każda obserwacja jest tworzona na jego podstawie przez
@@ -306,40 +303,25 @@ nie mogą wpłynąć na wybór akcji w bieżącym rozdaniu.
 
 Rozdzielenie stanu i obserwacji pełni rolę ochrony przed wyciekiem informacji
 ukrytej. Funkcja tworząca obserwację nie usuwa niepożądanych pól z kopii
-pełnego stanu. Zamiast tego jawnie konstruuje nowy obiekt, przekazując
-wyłącznie dozwolone wartości.
+pełnego stanu, lecz jawnie konstruuje nowy obiekt wyłącznie z dozwolonych
+wartości. Takie podejście oparte na liście pól dozwolonych jest
+bezpieczniejsze niż lista pól zabronionych: nowe pole \texttt{RoundState} nie
+zostaje ujawnione agentowi, dopóki nie doda się go jawnie do modelu
+\texttt{UTHObservation} i do funkcji projekcji.
 
-Podejście to można określić jako tworzenie obserwacji zgodnie z listą
-dozwolonych informacji. Jest ono bezpieczniejsze niż stosowanie listy pól
-zabronionych. Po dodaniu nowego pola do \texttt{RoundState} nie zostanie ono
-automatycznie ujawnione agentowi. Aby znalazło się w obserwacji, musi zostać
-jawnie dodane do modelu \texttt{UTHObservation} oraz do funkcji projekcji.
-
-Istotne jest również rozróżnienie pomiędzy interfejsem przeznaczonym dla
-agenta a interfejsem diagnostycznym. Pełny stan może być wykorzystywany
-przez testy, rejestrowanie przebiegu rozdania i analizę zakończonych epizodów,
-ale nie powinien być przekazywany metodzie wybierającej akcję agenta.
-
-Obserwacja nie jest bezpośrednim widokiem pełnego stanu, lecz wynikiem
-jawnie zdefiniowanej projekcji; informacje ukryte pozostają dostępne
-wyłącznie wewnętrznym komponentom środowiska.
-
-Informacje ukryte są częścią stanu potrzebnego do poprawnego prowadzenia
-rozgrywki, lecz nie uczestniczą w tworzeniu obserwacji. Przykładowo silnik
-musi przechowywać karty krupiera, aby po zakończeniu rozdania przeprowadzić
-showdown, ale agent nie może korzystać z nich podczas wyboru akcji.
-
-Podobnie karty spalone i kolejność pozostałych kart są potrzebne do
-kontynuowania rozdania oraz zapewnienia jego deterministycznego odtworzenia,
-jednak ich ujawnienie zmieniałoby problem decyzyjny. Agent znałby wówczas
-przyszłe zdarzenia losowe, co prowadziłoby do sztucznie zawyżonej jakości
-strategii.
+Informacje ukryte są częścią stanu potrzebnego do prowadzenia rozgrywki, lecz
+nie uczestniczą w tworzeniu obserwacji. Silnik musi przechowywać karty
+krupiera, aby przeprowadzić showdown, a karty spalone i kolejność talii są
+potrzebne do deterministycznego odtworzenia rozdania; ich ujawnienie
+zmieniałoby jednak problem decyzyjny, dając agentowi wiedzę o przyszłych
+zdarzeniach losowych. Z tego powodu pełny stan służy wyłącznie testom,
+rejestrowaniu przebiegu i analizie zakończonych epizodów, a nie jest
+przekazywany metodzie wybierającej akcję agenta.
 
 Jawna funkcja projekcji stanowi zatem część definicji środowiska z niepełną
-informacją. Zapewnia ona, że każda metoda wyboru akcji, niezależnie od
-zastosowanego algorytmu, otrzymuje ten sam zakres informacji. Sposób
-numerycznego kodowania obserwacji pozostaje przy tym poza warstwą domenową,
-natomiast zbiór informacji dostępnych agentowi jest stały.
+informacją i zapewnia, że każda metoda wyboru akcji otrzymuje ten sam zakres
+informacji. Sposób numerycznego kodowania obserwacji pozostaje przy tym poza
+warstwą domenową, natomiast zbiór informacji dostępnych agentowi jest stały.
 
 \section{Maszyna stanów i przestrzeń akcji}
 \label{sec:maszyna-stanow}
@@ -401,63 +383,25 @@ akcja typu \texttt{BET} ustala mnożnik Play wynikający z fazy: \(4\times\)
 lub \(3\times\) przed flopem, \(2\times\) po flopie i \(1\times\) na riverze.
 Po zakładzie środowisko odkrywa pozostałe karty wspólne, przeprowadza
 showdown i przechodzi do stanu terminalnego. Akcja \texttt{FOLD} kończy
-rozdanie na riverze bez showdownu. Zależności te zestawiono w
-tabeli~\ref{tab:fazy-akcje} i przedstawiono na
+rozdanie na riverze bez showdownu. Zbiór legalnych akcji w poszczególnych
+fazach zestawiono w tabeli~\ref{tab:fazy-akcje}, a przejścia przedstawiono na
 rysunku~\ref{fig:maszyna-stanow-uth}.
 
 \begin{table}[htbp]
     \centering
-    \caption{Fazy, legalne akcje i przejścia środowiska UTH}
+    \caption{Legalne akcje w poszczególnych fazach środowiska UTH}
     \label{tab:fazy-akcje}
-    \begin{tabular}{
-        |p{0.17\textwidth}
-        |p{0.29\textwidth}
-        |p{0.42\textwidth}|
-    }
+    \begin{tabular}{|p{0.22\textwidth}|p{0.55\textwidth}|}
         \hline
-        \textbf{Faza}
-        &
-        \textbf{Legalne akcje}
-        &
-        \textbf{Przejście i operacje}
-        \\
+        \textbf{Faza} & \textbf{Legalne akcje} \\
         \hline
-
-        \texttt{PREFLOP}
-        &
-        \texttt{CHECK}, \texttt{BET\_3X}, \texttt{BET\_4X}
-        &
-        \texttt{CHECK} spala kartę, odkrywa flop i przechodzi do
-        \texttt{FLOP}; zakład \texttt{BET} odkrywa cały stół, prowadzi do
-        showdownu i \texttt{TERMINAL}.
-        \\
+        \texttt{PREFLOP} & \texttt{CHECK}, \texttt{BET\_3X}, \texttt{BET\_4X} \\
         \hline
-
-        \texttt{FLOP}
-        &
-        \texttt{CHECK}, \texttt{BET\_2X}
-        &
-        \texttt{CHECK} odkrywa turn i river i przechodzi do \texttt{RIVER};
-        \texttt{BET\_2X} prowadzi do showdownu i \texttt{TERMINAL}.
-        \\
+        \texttt{FLOP} & \texttt{CHECK}, \texttt{BET\_2X} \\
         \hline
-
-        \texttt{RIVER}
-        &
-        \texttt{BET\_1X}, \texttt{FOLD}
-        &
-        \texttt{BET\_1X} prowadzi do showdownu, a \texttt{FOLD} kończy
-        rozdanie bez showdownu; oba przejścia prowadzą do \texttt{TERMINAL}.
-        \\
+        \texttt{RIVER} & \texttt{BET\_1X}, \texttt{FOLD} \\
         \hline
-
-        \texttt{TERMINAL}
-        &
-        brak
-        &
-        Stan końcowy z wynikiem i rozliczeniem; kolejne rozdanie wymaga
-        wywołania \texttt{reset()}.
-        \\
+        \texttt{TERMINAL} & brak \\
         \hline
     \end{tabular}
 \end{table}
@@ -559,23 +503,13 @@ rysunku~\ref{fig:maszyna-stanow-uth}.
 Struktura maszyny stanów gwarantuje, że zakład Play może zostać wykonany
 najwyżej raz: każda akcja typu \texttt{BET} prowadzi bezpośrednio do stanu
 terminalnego, a akcje \texttt{CHECK} jedynie przesuwają decyzję do
-późniejszej fazy. Najdłuższa ścieżka zawiera trzy decyzje
-
-\begin{equation}
-    \texttt{PREFLOP}
-    \xrightarrow{\texttt{CHECK}}
-    \texttt{FLOP}
-    \xrightarrow{\texttt{CHECK}}
-    \texttt{RIVER}
-    \xrightarrow{\texttt{BET\_1X}\,\text{lub}\,\texttt{FOLD}}
-    \texttt{TERMINAL},
-\end{equation}
-
-natomiast najkrótsza jedną, po zakładzie \(3\times\) lub \(4\times\) przed
-flopem. Zastosowanie osobnych akcji \texttt{BET\_1X}, \texttt{BET\_2X},
-\texttt{BET\_3X} i \texttt{BET\_4X} zamiast jednej ogólnej akcji
-\texttt{BET} wiąże mnożnik Play jednoznacznie z fazą i eliminuje możliwość
-przekazania niepoprawnej wysokości zakładu.
+późniejszej fazy. Najdłuższa ścieżka zawiera trzy decyzje (\texttt{CHECK},
+\texttt{CHECK}, a następnie \texttt{BET\_1X} albo \texttt{FOLD}), a najkrótsza
+jedną, po zakładzie \(3\times\) lub \(4\times\) przed flopem. Zastosowanie
+osobnych akcji \texttt{BET\_1X}, \texttt{BET\_2X}, \texttt{BET\_3X} i
+\texttt{BET\_4X} zamiast jednej ogólnej akcji \texttt{BET} wiąże mnożnik Play
+jednoznacznie z fazą i eliminuje możliwość przekazania niepoprawnej wysokości
+zakładu.
 
 Zbiór legalnych akcji jest wyznaczany przez środowisko i umieszczany
 w obiekcie \texttt{UTHObservation}, dzięki czemu agent nie musi samodzielnie
