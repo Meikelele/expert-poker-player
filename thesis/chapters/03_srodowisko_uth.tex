@@ -1124,134 +1124,9 @@ agenta a interfejsem diagnostycznym. Pełny stan może być wykorzystywany
 przez testy, rejestrowanie przebiegu rozdania i analizę zakończonych epizodów,
 ale nie powinien być przekazywany metodzie wybierającej akcję agenta.
 
-Granica pomiędzy pełnym stanem środowiska a informacjami przekazywanymi
-agentowi została przedstawiona na rysunku~\ref{fig:granica-informacji}.
 Obserwacja nie jest bezpośrednim widokiem pełnego stanu, lecz wynikiem
-jawnie zdefiniowanej projekcji. Informacje ukryte pozostają dostępne
+jawnie zdefiniowanej projekcji; informacje ukryte pozostają dostępne
 wyłącznie wewnętrznym komponentom środowiska.
-
-\begin{figure}[htbp]
-    \centering
-
-    \resizebox{\textwidth}{!}{%
-    \begin{tikzpicture}[
-        node distance=14mm and 30mm,
-        every node/.style={
-            font=\small
-        },
-        state/.style={
-            draw,
-            rounded corners,
-            align=left,
-            minimum width=42mm,
-            minimum height=31mm,
-            inner sep=4mm
-        },
-        projection/.style={
-            draw,
-            rounded corners,
-            align=center,
-            minimum width=29mm,
-            minimum height=17mm
-        },
-        observation/.style={
-            draw,
-            rounded corners,
-            align=left,
-            minimum width=42mm,
-            minimum height=31mm,
-            inner sep=4mm
-        },
-        agent/.style={
-            draw,
-            very thick,
-            rounded corners,
-            align=center,
-            minimum width=28mm,
-            minimum height=14mm
-        },
-        hidden/.style={
-            draw,
-            dashed,
-            rounded corners,
-            align=left,
-            minimum width=42mm,
-            minimum height=25mm,
-            inner sep=4mm
-        },
-        flow/.style={
-            -{Latex[length=2.5mm]},
-            thick
-        },
-        relation/.style={
-            -{Latex[length=2.2mm]},
-            dashed
-        }
-    ]
-
-        \node[state] (roundstate) {
-            \textbf{\texttt{RoundState}}\\[1mm]
-            faza gry\\
-            karty gracza\\
-            karty wspólne\\
-            legalne akcje\\
-            dane końcowe
-        };
-
-        \node[projection, right=of roundstate] (projection) {
-            Jawna projekcja\\
-            \(\phi(S_t)\)
-        };
-
-        \node[observation, right=of projection] (observation) {
-            \textbf{\texttt{UTHObservation}}\\[1mm]
-            faza gry\\
-            karty gracza\\
-            odkryte karty wspólne\\
-            legalne akcje
-        };
-
-        \node[agent, right=of observation] (agent) {
-            Agent
-        };
-
-        \node[hidden, below=of roundstate] (hidden) {
-            \textbf{Informacje ukryte}\\[1mm]
-            karty krupiera\\
-            karty spalone\\
-            kolejność talii\\
-            przyszłe karty wspólne
-        };
-
-        \draw[flow]
-            (roundstate)
-            --
-            node[above] {wybrane pola}
-            (projection);
-
-        \draw[flow]
-            (projection)
-            --
-            (observation);
-
-        \draw[flow]
-            (observation)
-            --
-            node[above] {dane wejściowe}
-            (agent);
-
-        \draw[relation]
-            (roundstate)
-            --
-            node[right] {zawiera}
-            (hidden);
-
-    \end{tikzpicture}%
-    }
-
-    \caption{Oddzielenie pełnego stanu środowiska od obserwacji agenta}
-    \label{fig:granica-informacji}
-\end{figure}
 
 Informacje ukryte są częścią stanu potrzebnego do poprawnego prowadzenia
 rozgrywki, lecz nie uczestniczą w tworzeniu obserwacji. Przykładowo silnik
@@ -1271,15 +1146,13 @@ eksperymentach zmianie może podlegać sposób numerycznego kodowania
 obserwacji, natomiast zbiór informacji dostępnych agentowi pozostanie
 niezmieniony.
 
-\section{Przebieg rozdania i maszyna stanów}
+\section{Maszyna stanów i przestrzeń akcji}
 \label{sec:maszyna-stanow}
 
 Przebieg pojedynczego rozdania Ultimate Texas Hold’em odwzorowano jako
 deterministyczną maszynę stanów. Aktualna faza określa zakres informacji
-widocznych dla agenta, zbiór legalnych akcji oraz operacje wykonywane
-przez środowisko po otrzymaniu decyzji.
-
-Zbiór faz środowiska ma postać
+widocznych dla agenta, zbiór legalnych akcji oraz operacje wykonywane przez
+środowisko po otrzymaniu decyzji. Zbiór faz ma postać
 
 \begin{equation}
     \mathcal{P} =
@@ -1291,206 +1164,109 @@ Zbiór faz środowiska ma postać
     \}.
 \end{equation}
 
-Każde poprawne wykonanie metody \texttt{step()} prowadzi do przejścia
-do następnej fazy albo do zakończenia rozdania. Agent nie może pozostać
+Rozdanie rozpoczyna metoda \texttt{reset()}, która rozdaje po dwie karty
+graczowi i krupierowi w kolejności \(P_1, D_1, P_2, D_2\), tworzy stan
+\texttt{PREFLOP} i zwraca pierwszą obserwację. Karty wspólne i spalone nie są
+jeszcze dobierane. Każde poprawne wykonanie metody \texttt{step()} przesuwa
+rozdanie do kolejnej fazy albo do stanu terminalnego; agent nie może pozostać
 w tej samej fazie po wykonaniu akcji.
 
-\subsection{Rozpoczęcie rozdania}
-\label{subsec:rozpoczecie-rozdania}
-
-Nowe rozdanie rozpoczynane jest przez metodę \texttt{reset()}. Jeżeli nie
-przekazano zewnętrznego źródła kart, środowisko tworzy nową przetasowaną
-talię. Następnie dobierane są cztery karty własne w kolejności
+Pełna przestrzeń akcji zawiera sześć decyzji domenowych, a zbiór akcji
+legalnych zależy od fazy:
 
 \begin{equation}
-    P_1 \rightarrow D_1 \rightarrow P_2 \rightarrow D_2,
+    \mathcal{A} =
+    \{
+        \texttt{CHECK},
+        \texttt{BET\_4X},
+        \texttt{BET\_3X},
+        \texttt{BET\_2X},
+        \texttt{BET\_1X},
+        \texttt{FOLD}
+    \},
 \end{equation}
 
-gdzie \(P_i\) oznacza kartę gracza, a \(D_i\) kartę krupiera. Utworzony stan
-znajduje się w fazie \texttt{PREFLOP}. Agent widzi swoje dwie karty, lecz
-karty krupiera pozostają ukryte.
+\begin{equation}
+\mathcal{A}_{legal}(p) =
+\begin{cases}
+    \{\texttt{CHECK}, \texttt{BET\_3X}, \texttt{BET\_4X}\},
+    & p = \texttt{PREFLOP}, \\[1mm]
+    \{\texttt{CHECK}, \texttt{BET\_2X}\},
+    & p = \texttt{FLOP}, \\[1mm]
+    \{\texttt{BET\_1X}, \texttt{FOLD}\},
+    & p = \texttt{RIVER}, \\[1mm]
+    \varnothing,
+    & p = \texttt{TERMINAL}.
+\end{cases}
+\end{equation}
 
-Na tym etapie nie są jeszcze dobierane karty wspólne ani karty spalone.
-Metoda \texttt{reset()} zwraca pierwszą obserwację, na podstawie której
-agent podejmuje decyzję przed flopem.
-
-\subsection{Faza preflop}
-\label{subsec:faza-preflop}
-
-W fazie \texttt{PREFLOP} dostępne są trzy akcje:
-
-\begin{itemize}
-    \item \texttt{CHECK},
-    \item \texttt{BET\_3X},
-    \item \texttt{BET\_4X}.
-\end{itemize}
-
-Akcja \texttt{CHECK} oznacza odłożenie decyzji o zakładzie Play. Środowisko
-spala jedną kartę, odkrywa trzy karty flopa i przechodzi do fazy
-\texttt{FLOP}.
-
-Wykonanie \texttt{BET\_3X} albo \texttt{BET\_4X} ustala wartość zakładu
-Play odpowiednio na trzy lub cztery jednostki Ante. Po postawieniu zakładu
-agent nie podejmuje już kolejnych decyzji. Środowisko odkrywa wszystkie
-pozostałe karty wspólne, przeprowadza showdown, rozlicza zakłady i przechodzi
-bezpośrednio do fazy \texttt{TERMINAL}.
-
-\subsection{Faza flopa}
-\label{subsec:faza-flopa}
-
-Przejście do fazy \texttt{FLOP} następuje wyłącznie po wykonaniu akcji
-\texttt{CHECK} przed flopem. Stan zawiera wówczas trzy odkryte karty wspólne
-i jedną kartę spaloną.
-
-Agent może wykonać jedną z dwóch akcji:
-
-\begin{itemize}
-    \item \texttt{CHECK},
-    \item \texttt{BET\_2X}.
-\end{itemize}
-
-Ponowne wykonanie \texttt{CHECK} powoduje spalenie kolejnej karty oraz
-jednoczesne odkrycie turna i rivera. Środowisko przechodzi następnie do fazy
-\texttt{RIVER}.
-
-Akcja \texttt{BET\_2X} ustala zakład Play na dwie jednostki Ante. Środowisko
-odkrywa turn i river, przeprowadza showdown i kończy rozdanie.
-
-\subsection{Faza rivera}
-\label{subsec:faza-rivera}
-
-W fazie \texttt{RIVER} wszystkie pięć kart wspólnych jest już odkrytych.
-Nazwa fazy oznacza ostatni etap decyzyjny, a nie samo odkrycie pojedynczej
-karty rivera. Turn i river są odkrywane razem, ponieważ pomiędzy nimi gracz
-nie podejmuje żadnej decyzji.
-
-W tej fazie agent musi wybrać jedną z dwóch akcji:
-
-\begin{itemize}
-    \item \texttt{BET\_1X},
-    \item \texttt{FOLD}.
-\end{itemize}
-
-Akcja \texttt{BET\_1X} ustala zakład Play na jedną jednostkę Ante
-i prowadzi do showdownu. Akcja \texttt{FOLD} kończy rozdanie bez porównywania
-układów. W obu przypadkach kolejną fazą jest \texttt{TERMINAL}.
-
-\subsection{Faza terminalna}
-\label{subsec:faza-terminalna}
-
-Faza \texttt{TERMINAL} oznacza zakończenie epizodu. Stan zawiera końcowy
-wynik rozdania oraz rozliczenie zakładów. W przypadku zakończenia przez
-zakład Play zawiera również rezultat showdownu i wartość mnożnika Play.
-
-Stan terminalny nie udostępnia żadnych legalnych akcji. Próba ponownego
-wywołania metody \texttt{step()} jest traktowana jako błąd domenowy.
-Rozpoczęcie kolejnego epizodu wymaga ponownego wywołania metody
-\texttt{reset()}.
-
-\subsection{Tabela przejść}
-\label{subsec:tabela-przejsc}
-
-Pełny zbiór przejść pomiędzy fazami przedstawiono w
-tabeli~\ref{tab:przejscia-uth}.
+Akcja \texttt{CHECK} odkłada decyzję o zakładzie Play i przesuwa rozdanie do
+następnej fazy, spalając kartę oraz odkrywając flop albo turn i river. Każda
+akcja typu \texttt{BET} ustala mnożnik Play wynikający z fazy: \(4\times\)
+lub \(3\times\) przed flopem, \(2\times\) po flopie i \(1\times\) na riverze.
+Po zakładzie środowisko odkrywa pozostałe karty wspólne, przeprowadza
+showdown i przechodzi do stanu terminalnego. Akcja \texttt{FOLD} kończy
+rozdanie na riverze bez showdownu. Zależności te zestawiono w
+tabeli~\ref{tab:fazy-akcje} i przedstawiono na
+rysunku~\ref{fig:maszyna-stanow-uth}.
 
 \begin{table}[htbp]
     \centering
-    \caption{Przejścia pomiędzy fazami środowiska UTH}
-    \label{tab:przejscia-uth}
+    \caption{Fazy, legalne akcje i przejścia środowiska UTH}
+    \label{tab:fazy-akcje}
     \begin{tabular}{
-        |p{0.16\textwidth}
-        |p{0.16\textwidth}
         |p{0.17\textwidth}
-        |p{0.40\textwidth}|
+        |p{0.29\textwidth}
+        |p{0.42\textwidth}|
     }
         \hline
         \textbf{Faza}
         &
-        \textbf{Akcja}
+        \textbf{Legalne akcje}
         &
-        \textbf{Następna faza}
-        &
-        \textbf{Operacje środowiska}
+        \textbf{Przejście i operacje}
         \\
         \hline
 
         \texttt{PREFLOP}
         &
-        \texttt{CHECK}
+        \texttt{CHECK}, \texttt{BET\_3X}, \texttt{BET\_4X}
         &
-        \texttt{FLOP}
-        &
-        Spalenie jednej karty i odkrycie trzech kart flopa.
-        \\
-        \hline
-
-        \texttt{PREFLOP}
-        &
-        \texttt{BET\_3X}
-        &
-        \texttt{TERMINAL}
-        &
-        Odkrycie całego stołu, showdown i rozliczenie Play \(3\times\).
-        \\
-        \hline
-
-        \texttt{PREFLOP}
-        &
-        \texttt{BET\_4X}
-        &
-        \texttt{TERMINAL}
-        &
-        Odkrycie całego stołu, showdown i rozliczenie Play \(4\times\).
+        \texttt{CHECK} spala kartę, odkrywa flop i przechodzi do
+        \texttt{FLOP}; zakład \texttt{BET} odkrywa cały stół, prowadzi do
+        showdownu i \texttt{TERMINAL}.
         \\
         \hline
 
         \texttt{FLOP}
         &
-        \texttt{CHECK}
+        \texttt{CHECK}, \texttt{BET\_2X}
         &
-        \texttt{RIVER}
-        &
-        Spalenie jednej karty oraz odkrycie turna i rivera.
-        \\
-        \hline
-
-        \texttt{FLOP}
-        &
-        \texttt{BET\_2X}
-        &
-        \texttt{TERMINAL}
-        &
-        Odkrycie turna i rivera, showdown i rozliczenie Play \(2\times\).
+        \texttt{CHECK} odkrywa turn i river i przechodzi do \texttt{RIVER};
+        \texttt{BET\_2X} prowadzi do showdownu i \texttt{TERMINAL}.
         \\
         \hline
 
         \texttt{RIVER}
         &
-        \texttt{BET\_1X}
+        \texttt{BET\_1X}, \texttt{FOLD}
         &
-        \texttt{TERMINAL}
-        &
-        Showdown i rozliczenie Play \(1\times\).
+        \texttt{BET\_1X} prowadzi do showdownu, a \texttt{FOLD} kończy
+        rozdanie bez showdownu; oba przejścia prowadzą do \texttt{TERMINAL}.
         \\
         \hline
 
-        \texttt{RIVER}
-        &
-        \texttt{FOLD}
-        &
         \texttt{TERMINAL}
         &
-        Zakończenie bez showdownu i rozliczenie spasowania.
+        brak
+        &
+        Stan końcowy z wynikiem i rozliczeniem; kolejne rozdanie wymaga
+        wywołania \texttt{reset()}.
         \\
         \hline
     \end{tabular}
 \end{table}
 
-\subsection{Diagram maszyny stanów}
-\label{subsec:diagram-maszyny-stanow}
-
-Graficzną reprezentację przejść przedstawiono na
-rysunku~\ref{fig:maszyna-stanow-uth}.
 
 \begin{figure}[htbp]
     \centering
@@ -1582,17 +1358,13 @@ rysunku~\ref{fig:maszyna-stanow-uth}.
     \label{fig:maszyna-stanow-uth}
 \end{figure}
 
-\subsection{Zagwarantowanie pojedynczego zakładu Play}
-\label{subsec:pojedynczy-play}
+\subsection{Pojedynczy zakład Play i walidacja decyzji}
+\label{subsec:pojedynczy-play-walidacja}
 
 Struktura maszyny stanów gwarantuje, że zakład Play może zostać wykonany
-najwyżej raz. Każda akcja typu \texttt{BET} prowadzi bezpośrednio do fazy
-terminalnej. Nie istnieje więc przejście, w którym agent po postawieniu Play
-otrzymałby możliwość wykonania kolejnego zakładu.
-
-Akcje \texttt{CHECK} nie tworzą zakładu, lecz przesuwają decyzję do
-późniejszej fazy. Maksymalna liczba decyzji w jednym rozdaniu wynosi zatem
-trzy i występuje w ścieżce
+najwyżej raz: każda akcja typu \texttt{BET} prowadzi bezpośrednio do stanu
+terminalnego, a akcje \texttt{CHECK} jedynie przesuwają decyzję do
+późniejszej fazy. Najdłuższa ścieżka zawiera trzy decyzje
 
 \begin{equation}
     \texttt{PREFLOP}
@@ -1601,226 +1373,31 @@ trzy i występuje w ścieżce
     \xrightarrow{\texttt{CHECK}}
     \texttt{RIVER}
     \xrightarrow{\texttt{BET\_1X}\,\text{lub}\,\texttt{FOLD}}
-    \texttt{TERMINAL}.
+    \texttt{TERMINAL},
 \end{equation}
 
-Najkrótsza ścieżka zawiera jedną decyzję i występuje po wykonaniu zakładu
-\(3\times\) lub \(4\times\) przed flopem.
+natomiast najkrótsza jedną, po zakładzie \(3\times\) lub \(4\times\) przed
+flopem. Zastosowanie osobnych akcji \texttt{BET\_1X}, \texttt{BET\_2X},
+\texttt{BET\_3X} i \texttt{BET\_4X} zamiast jednej ogólnej akcji
+\texttt{BET} wiąże mnożnik Play jednoznacznie z fazą i eliminuje możliwość
+przekazania niepoprawnej wysokości zakładu.
 
-Przed wykonaniem przejścia środowisko sprawdza, czy przekazana akcja należy
-do zbioru legalnego dla bieżącej fazy. Operacje odkrywania kart dodatkowo
-sprawdzają oczekiwaną fazę wejściową. Ogranicza to możliwość pominięcia etapu,
-ponownego odkrycia tych samych kart lub wykonania akcji po zakończeniu
-rozdania.
-\section{Przestrzeń akcji i walidacja decyzji}
-\label{sec:przestrzen-akcji}
+Zbiór legalnych akcji jest wyznaczany przez środowisko i umieszczany
+w obiekcie \texttt{UTHObservation}, dzięki czemu agent nie musi samodzielnie
+odtwarzać reguł legalności. Nie oznacza to jednak, że środowisko ufa
+zwróconej decyzji — każda akcja jest ponownie walidowana przez metodę
+\texttt{step()}. Przed wykonaniem operacji zmieniającej stan sprawdzane jest
+kolejno, czy rozdanie zostało rozpoczęte, czy stan nie jest terminalny, czy
+przekazana wartość jest obiektem typu \texttt{Action} oraz czy należy do
+zbioru \(\mathcal{A}_{legal}\) dla bieżącej fazy. Naruszenie tych warunków
+powoduje zgłoszenie odpowiednio \texttt{RoundNotStartedError},
+\texttt{RoundFinishedError} albo \texttt{IllegalActionError}.
 
-Pełna przestrzeń akcji środowiska Ultimate Texas Hold’em składa się z sześciu
-decyzji domenowych:
-
-\begin{equation}
-    \mathcal{A} =
-    \{
-        \texttt{CHECK},
-        \texttt{BET\_4X},
-        \texttt{BET\_3X},
-        \texttt{BET\_2X},
-        \texttt{BET\_1X},
-        \texttt{FOLD}
-    \}.
-\end{equation}
-
-Nie wszystkie elementy zbioru \(\mathcal{A}\) są dostępne jednocześnie.
-Zbiór akcji legalnych zależy od aktualnej fazy rozdania. Dla fazy \(p\)
-zdefiniowano funkcję
-
-\begin{equation}
-    \mathcal{A}_{legal}(p) \subseteq \mathcal{A},
-\end{equation}
-
-która zwraca akcje dozwolone w danym momencie rozgrywki.
-
-Zależność pomiędzy fazą i zbiorem legalnych akcji można zapisać następująco:
-
-\begin{equation}
-\mathcal{A}_{legal}(p) =
-\begin{cases}
-    \{
-        \texttt{CHECK},
-        \texttt{BET\_3X},
-        \texttt{BET\_4X}
-    \},
-    &
-    p = \texttt{PREFLOP},
-    \\[2mm]
-
-    \{
-        \texttt{CHECK},
-        \texttt{BET\_2X}
-    \},
-    &
-    p = \texttt{FLOP},
-    \\[2mm]
-
-    \{
-        \texttt{BET\_1X},
-        \texttt{FOLD}
-    \},
-    &
-    p = \texttt{RIVER},
-    \\[2mm]
-
-    \varnothing,
-    &
-    p = \texttt{TERMINAL}.
-\end{cases}
-\end{equation}
-
-Znaczenie poszczególnych akcji przedstawiono w
-tabeli~\ref{tab:przestrzen-akcji-uth}.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Akcje dostępne w środowisku UTH}
-    \label{tab:przestrzen-akcji-uth}
-    \begin{tabular}{
-        |p{0.19\textwidth}
-        |p{0.19\textwidth}
-        |p{0.52\textwidth}|
-    }
-        \hline
-        \textbf{Akcja}
-        &
-        \textbf{Legalna faza}
-        &
-        \textbf{Znaczenie}
-        \\
-        \hline
-
-        \texttt{CHECK}
-        &
-        \texttt{PREFLOP}, \texttt{FLOP}
-        &
-        Odłożenie decyzji o zakładzie Play i przejście do kolejnego etapu
-        rozdania.
-        \\
-        \hline
-
-        \texttt{BET\_4X}
-        &
-        \texttt{PREFLOP}
-        &
-        Postawienie zakładu Play o wartości czterech jednostek Ante
-        i zakończenie części decyzyjnej rozdania.
-        \\
-        \hline
-
-        \texttt{BET\_3X}
-        &
-        \texttt{PREFLOP}
-        &
-        Postawienie zakładu Play o wartości trzech jednostek Ante
-        i zakończenie części decyzyjnej rozdania.
-        \\
-        \hline
-
-        \texttt{BET\_2X}
-        &
-        \texttt{FLOP}
-        &
-        Postawienie zakładu Play o wartości dwóch jednostek Ante
-        po odkryciu flopa.
-        \\
-        \hline
-
-        \texttt{BET\_1X}
-        &
-        \texttt{RIVER}
-        &
-        Postawienie zakładu Play o wartości jednej jednostki Ante
-        po odkryciu wszystkich kart wspólnych.
-        \\
-        \hline
-
-        \texttt{FOLD}
-        &
-        \texttt{RIVER}
-        &
-        Rezygnacja z dalszej gry i zakończenie rozdania bez showdownu.
-        \\
-        \hline
-    \end{tabular}
-\end{table}
-
-\subsection{Akcje legalne jako część obserwacji}
-\label{subsec:legalne-akcje-obserwacja}
-
-Zbiór legalnych akcji jest wyznaczany przez środowisko na podstawie aktualnej
-fazy i umieszczany w obiekcie \texttt{UTHObservation}. Agent nie musi zatem
-samodzielnie odtwarzać reguł legalności na podstawie liczby kart wspólnych
-lub historii poprzednich decyzji.
-
-Takie rozwiązanie ogranicza odpowiedzialność agenta do wyboru jednej akcji
-spośród wartości udostępnionych przez środowisko. Jest to szczególnie
-przydatne dla agentów bazowych, które mogą bezpośrednio losować lub wybierać
-element ze zbioru \texttt{legal\_actions}.
-
-Przechowywanie legalnych akcji w obserwacji nie oznacza, że środowisko ufa
-decyzji zwróconej przez agenta. Każda akcja jest ponownie walidowana przez
-metodę \texttt{step()}. Dzięki temu niepoprawnie zaimplementowany agent nie
-może wymusić przejścia sprzecznego z regułami gry.
-
-\subsection{Walidacja decyzji}
-\label{subsec:walidacja-decyzji}
-
-Przed wykonaniem operacji zmieniającej stan środowisko przeprowadza kolejne
-etapy walidacji:
-
-\begin{enumerate}
-    \item sprawdza, czy rozdanie zostało rozpoczęte,
-    \item sprawdza, czy aktualny stan nie jest terminalny,
-    \item sprawdza, czy przekazana wartość jest obiektem typu
-          \texttt{Action},
-    \item wyznacza zbiór akcji legalnych dla aktualnej fazy,
-    \item sprawdza, czy przekazana akcja należy do tego zbioru.
-\end{enumerate}
-
-Jeżeli rozdanie nie zostało rozpoczęte, zgłaszany jest błąd
-\texttt{RoundNotStartedError}. Próba wykonania decyzji po zakończeniu epizodu
-prowadzi do zgłoszenia \texttt{RoundFinishedError}. Akcja należąca do typu
-\texttt{Action}, lecz niedozwolona w aktualnej fazie, powoduje zgłoszenie
-\texttt{IllegalActionError}.
-
-Przykładem nielegalnej decyzji jest wykonanie \texttt{BET\_2X} przed flopem
-albo próba spasowania w fazie \texttt{FLOP}. Środowisko nie zastępuje takiej
-akcji inną decyzją i nie nakłada automatycznej kary. Przejście jest odrzucane,
-a błąd musi zostać obsłużony przez komponent sterujący eksperymentem.
-
-Walidacja następuje przed dobieraniem nowych kart i przed zapisaniem nowego
-stanu. Oznacza to, że nielegalna decyzja nie zużywa kart z talii, nie zmienia
-fazy rozdania i nie jest dodawana do historii decyzji.
-
-\subsection{Niezmienniki przestrzeni akcji}
-\label{subsec:niezmienniki-przestrzeni-akcji}
-
-Wprowadzone reguły pozwalają sformułować następujące niezmienniki:
-
-\begin{itemize}
-    \item \texttt{CHECK} jest dostępne wyłącznie przed riverem,
-    \item \texttt{FOLD} jest dostępne wyłącznie po odkryciu wszystkich
-          kart wspólnych,
-    \item mnożnik zakładu Play jest jednoznacznie związany z fazą,
-    \item każda akcja typu \texttt{BET} prowadzi do stanu terminalnego,
-    \item po postawieniu zakładu Play nie można wykonać kolejnej decyzji,
-    \item stan terminalny nie udostępnia żadnej akcji.
-\end{itemize}
-
-Wartość mnożnika nie jest przekazywana jako dowolny parametr liczbowy agenta.
-Zamiast jednej ogólnej akcji \texttt{BET} zastosowano osobne wartości
-\texttt{BET\_1X}, \texttt{BET\_2X}, \texttt{BET\_3X} i
-\texttt{BET\_4X}. Ogranicza to możliwość przekazania niepoprawnej wysokości
-zakładu, na przykład \(5\times\) Ante, oraz upraszcza późniejsze odwzorowanie
-akcji na przestrzeń dyskretną w adapterze Gymnasium.
+Walidacja następuje przed dobieraniem kart i zapisaniem nowego stanu, więc
+nielegalna decyzja nie zużywa kart z talii, nie zmienia fazy rozdania i nie
+jest dodawana do historii. Środowisko nie zastępuje nielegalnej akcji inną
+decyzją ani nie nakłada automatycznej kary; obsługa błędu należy do
+komponentu sterującego eksperymentem.
 
 \section{Showdown i rozliczanie zakładów}
 \label{sec:showdown-i-rozliczenie}
