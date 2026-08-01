@@ -143,28 +143,32 @@
   \addtocounter{page}{-1}%
   \newpage
 }
-% Obsługa kolorów i własnych znaczników (TODO, FIXME, NOTE)
+% Obsługa kolorów i roboczych znaczników (TODO, FIXME, NOTE).
 \usepackage{xcolor}
 
-% Definicja niestandardowych kolorów (możesz dostosować odcienie HEX)
-\definecolor{todoYellow}{HTML}{FFDE59}  % Żółty jak flamaster
-\definecolor{fixmePurple}{HTML}{C19A6B} % Jeśli wolisz fiolet, zmień na: {A32CC4}
-\definecolor{noteRed}{HTML}{FF4D4D}     % Czerwony
+% Kolory znaczników.
+\definecolor{todoYellow}{HTML}{FFDE59}
+\definecolor{fixmePurple}{HTML}{A32CC4}
+\definecolor{noteRed}{HTML}{FF4D4D}
 
-% Komenda \TODO{tekst} - żółte tło (jak zakreślacz)
-\newcommand{\TODO}[1]{%
-  \colorbox{todoYellow}{\bfseries\sffamily\small TODO: #1}%
-}
+% Przełącznik trybu roboczego:
+%   \draftnotestrue  -- znaczniki widoczne (wersja lokalna),
+%   \draftnotesfalse -- znaczniki ukryte (wersja dla promotora).
+\newif\ifdraftnotes
+\draftnotesfalse
 
-% Komenda \FIXME{tekst} - fioletowy tekst w ramce lub tło
-\newcommand{\FIXME}[1]{%
-  \colorbox{purple!30}{\bfseries\sffamily\small FIXME: #1}% (fioletowe tło)
+% Znacznik = krótka kolorowa etykieta oraz treść płynąca jak zwykły tekst,
+% dzięki czemu długie uwagi zawijają się i nie wychodzą poza margines.
+% #1 kolor etykiety, #2 nazwa etykiety, #3 treść.
+\newcommand{\draftmark}[3]{%
+  \ifdraftnotes
+    \colorbox{#1}{\sffamily\bfseries\footnotesize #2}%
+    \nobreakspace\textcolor{#1!75!black}{#3}%
+  \fi
 }
-
-% Komenda \NOTE{tekst} - czerwone tło, biały tekst (żeby był czytelny)
-\newcommand{\NOTE}[1]{%
-  \colorbox{noteRed}{\color{white}\bfseries\sffamily\small NOTE: #1}%
-}
+\newcommand{\TODO}[1]{\draftmark{todoYellow}{TODO}{#1}}
+\newcommand{\FIXME}[1]{\draftmark{fixmePurple}{FIXME}{#1}}
+\newcommand{\NOTE}[1]{\draftmark{noteRed}{NOTE}{#1}}
 
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta}
