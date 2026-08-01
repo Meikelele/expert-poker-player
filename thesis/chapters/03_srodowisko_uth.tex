@@ -2616,3 +2616,453 @@ Dokładny zestaw badanych wariantów funkcji nagrody oraz ich parametry
 zostaną przedstawione w rozdziale opisującym metodykę eksperymentów.
 Podstawowym punktem odniesienia pozostanie nagroda terminalna równa
 wynikowi netto rozdania.
+
+\section{Interfejs silnika i integracja z Gymnasium}
+\label{sec:interfejs-silnika}
+
+Silnik domenowy udostępnia niewielki interfejs publiczny, za pomocą którego
+można rozpocząć rozdanie, pobrać obserwację, wykonać decyzję oraz odczytać
+wynik zakończonego epizodu. Interfejs nie zależy od konkretnego algorytmu
+uczenia ani od biblioteki Gymnasium.
+
+Centralnym elementem jest klasa \texttt{UTHGame}. Pojedyncza instancja
+przechowuje stan aktualnego rozdania, źródło kart oraz opcjonalną historię
+decyzji. Po zakończeniu rozdania ta sama instancja może zostać wykorzystana
+ponownie przez wywołanie metody \texttt{reset()}.
+
+\subsection{Tworzenie silnika}
+\label{subsec:tworzenie-silnika}
+
+Konstruktor klasy \texttt{UTHGame} przyjmuje dwa opcjonalne parametry:
+
+\begin{itemize}
+    \item \texttt{seed} -- ziarno nadrzędnego generatora liczb
+          pseudolosowych,
+    \item \texttt{record\_history} -- informację, czy należy rejestrować
+          przebieg kolejnych decyzji.
+\end{itemize}
+
+Ziarno określa powtarzalny strumień talii generowanych dla kolejnych
+rozdawań. Parametr nie ustala pojedynczej, niezmiennej talii dla całej
+instancji. Każde wywołanie \texttt{reset()} tworzy nową talię, której ziarno
+jest pobierane z generatora środowiska.
+
+Rejestrowanie historii jest domyślnie wyłączone. Dzięki temu podstawowe
+wykonywanie dużej liczby rozdań nie wymaga przechowywania dodatkowych
+obiektów diagnostycznych.
+
+\subsection{Rozpoczęcie epizodu}
+\label{subsec:interfejs-reset}
+
+Metoda \texttt{reset()} rozpoczyna nowe rozdanie i zwraca pierwszą obserwację
+w fazie \texttt{PREFLOP}. W standardowym użyciu środowisko samodzielnie
+tworzy przetasowaną talię. Metoda umożliwia również przekazanie własnego
+obiektu implementującego interfejs \texttt{CardSource}, na przykład
+deterministycznej talii \texttt{FixedDeck}.
+
+Sygnaturę operacji można przedstawić jako
+
+\begin{equation}
+    reset :
+    CardSource \cup \{None\}
+    \rightarrow
+    UTHObservation.
+\end{equation}
+
+Rozpoczęcie rozdania obejmuje:
+
+\begin{enumerate}
+    \item wybór lub utworzenie źródła kart,
+    \item rozdanie dwóch kart graczowi i dwóch kart krupierowi,
+    \item utworzenie stanu \texttt{PREFLOP},
+    \item wyzerowanie historii decyzji bieżącego rozdania,
+    \item utworzenie obserwacji gracza.
+\end{enumerate}
+
+Reset jest wykonywany transakcyjnie. Silnik najpierw próbuje pobrać wszystkie
+karty potrzebne do utworzenia stanu początkowego, a dopiero po powodzeniu
+zapisuje nowy stan i źródło kart. Jeżeli przekazane źródło nie może dostarczyć
+wymaganych kart, poprzedni stan silnika nie zostaje zastąpiony stanem
+częściowo utworzonego rozdania.
+
+\subsection{Wykonanie decyzji}
+\label{subsec:interfejs-step}
+
+Metoda \texttt{step()} przyjmuje jedną wartość typu \texttt{Action}
+i wykonuje odpowiadające jej przejście. Jej uproszczona sygnatura ma postać
+
+\begin{equation}
+    step :
+    Action
+    \rightarrow
+    StepResult.
+\end{equation}
+
+Wynikiem operacji jest obiekt \texttt{StepResult}, zawierający:
+
+\begin{itemize}
+    \item obserwację po wykonaniu akcji,
+    \item wynik rozdania, jeżeli osiągnięto stan terminalny,
+    \item rozliczenie zakładów w stanie terminalnym,
+    \item szczegóły showdownu, jeżeli rozdanie nie zakończyło się foldem.
+\end{itemize}
+
+Wynik kroku pośredniego zawiera jedynie kolejną obserwację. Pola dotyczące
+wyniku i rozliczenia pozostają wtedy nieokreślone. W kroku terminalnym
+obiekt zawiera komplet informacji niezbędnych do obliczenia nagrody
+i zarejestrowania wyniku eksperymentu.
+
+Właściwość \texttt{terminated} obiektu \texttt{StepResult} informuje,
+czy wykonana akcja zakończyła rozdanie. Jej wartość jest wyznaczana na
+podstawie fazy zawartej w obserwacji.
+
+\subsection{Właściwości publiczne}
+\label{subsec:wlasciwosci-publiczne}
+
+Poza metodami \texttt{reset()} i \texttt{step()} silnik udostępnia
+właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Publiczny interfejs klasy \texttt{UTHGame}}
+    \label{tab:interfejs-uth-game}
+    \begin{tabular}{
+        |p{0.25\textwidth}
+        |p{0.20\textwidth}
+        |p{0.45\textwidth}|
+    }
+        \hline
+        \textbf{Element}
+        &
+        \textbf{Typ wyniku}
+        &
+        \textbf{Znaczenie}
+        \\
+        \hline
+
+        \texttt{reset()}
+        &
+        \texttt{UTHObservation}
+        &
+        Rozpoczyna nowe rozdanie i zwraca obserwację preflop.
+        \\
+        \hline
+
+        \texttt{step(action)}
+        &
+        \texttt{StepResult}
+        &
+        Wykonuje legalną akcję i zwraca wynik przejścia.
+        \\
+        \hline
+
+        \texttt{observation}
+        &
+        \texttt{UTHObservation}
+        &
+        Zwraca aktualne informacje widoczne dla agenta.
+        \\
+        \hline
+
+        \texttt{state}
+        &
+        \texttt{RoundState}
+        &
+        Zwraca pełny stan wewnętrzny, przeznaczony głównie do testów
+        i diagnostyki.
+        \\
+        \hline
+
+        \texttt{is\_started}
+        &
+        \texttt{bool}
+        &
+        Informuje, czy rozpoczęto co najmniej jedno rozdanie.
+        \\
+        \hline
+
+        \texttt{history\_enabled}
+        &
+        \texttt{bool}
+        &
+        Informuje, czy rejestrowanie historii jest aktywne.
+        \\
+        \hline
+
+        \texttt{trace}
+        &
+        \texttt{RoundTrace} lub \texttt{None}
+        &
+        Zwraca zapis bieżącego rozdania, jeżeli historia jest włączona.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Właściwość \texttt{state} nie jest częścią interfejsu przeznaczonego
+do podejmowania decyzji przez agenta. Udostępniono ją na potrzeby testów,
+diagnostyki i analizy środowiska. Agent powinien otrzymywać wyłącznie
+wartość właściwości \texttt{observation} albo obserwację zwróconą przez
+\texttt{reset()} lub \texttt{step()}.
+\subsection{Rola adaptera Gymnasium}
+\label{subsec:rola-adaptera-gymnasium}
+
+Silnik \texttt{UTHGame} nie implementuje bezpośrednio klasy środowiska
+Gymnasium. Zostanie on opakowany przez osobny adapter, którego zadaniem
+będzie przekształcenie obiektów domenowych na format oczekiwany przez
+algorytmy uczenia przez wzmacnianie.
+
+Adapter nie będzie implementował zasad gry. Wszystkie przejścia, walidacja
+akcji, showdown i rozliczenia pozostaną odpowiedzialnością
+\texttt{UTHGame}. Warstwa integracyjna będzie odpowiadała za:
+
+\begin{itemize}
+    \item numeryczne kodowanie obserwacji,
+    \item odwzorowanie indeksów akcji na wartości \texttt{Action},
+    \item utworzenie maski legalnych akcji,
+    \item przekształcenie wyniku netto w nagrodę,
+    \item utworzenie wartości \texttt{terminated} i \texttt{truncated},
+    \item przygotowanie dodatkowych danych w słowniku \texttt{info}.
+\end{itemize}
+
+Taki podział pozwala zmieniać sposób reprezentacji obserwacji oraz funkcję
+nagrody bez modyfikowania silnika domenowego.
+
+\subsection{Odwzorowanie metody reset}
+\label{subsec:gymnasium-reset}
+
+Metoda \texttt{reset()} adaptera będzie zwracała parę
+
+\begin{equation}
+    \left(
+        o_0,
+        info_0
+    \right),
+\end{equation}
+
+gdzie \(o_0\) oznacza numeryczną reprezentację pierwszej obserwacji,
+a \(info_0\) zawiera dodatkowe dane niewchodzące bezpośrednio w skład
+reprezentacji stanu.
+
+Przebieg operacji będzie następujący:
+
+\begin{enumerate}
+    \item adapter rozpoczyna nowy epizod w \texttt{UTHGame},
+    \item silnik zwraca domenowy obiekt \texttt{UTHObservation},
+    \item wybrany encoder przekształca obserwację do postaci numerycznej,
+    \item adapter tworzy maskę akcji i dane pomocnicze,
+    \item zakodowana obserwacja i słownik \texttt{info} są zwracane agentowi.
+\end{enumerate}
+
+Ziarno przekazane do adaptera będzie wykorzystywane do inicjalizacji
+powtarzalnego przebiegu środowiska. Szczegóły propagowania ziarna zostaną
+ustalone podczas implementacji adaptera, aby zachować zgodność pomiędzy
+generatorem Gymnasium i generatorem silnika domenowego.
+
+\subsection{Odwzorowanie metody step}
+\label{subsec:gymnasium-step}
+
+Metoda \texttt{step()} adaptera będzie zwracała pięć wartości:
+
+\begin{equation}
+    \left(
+        o_{t+1},
+        r_t,
+        terminated_t,
+        truncated_t,
+        info_t
+    \right).
+\end{equation}
+
+Dla pojedynczego przejścia adapter wykona następujące operacje:
+
+\begin{enumerate}
+    \item przekształci indeks akcji na wartość typu \texttt{Action},
+    \item przekaże akcję do metody \texttt{UTHGame.step()},
+    \item zakoduje otrzymaną obserwację,
+    \item wyznaczy nagrodę na podstawie rozliczenia,
+    \item odczyta informację o zakończeniu rozdania,
+    \item utworzy słownik danych pomocniczych.
+\end{enumerate}
+
+Flaga \texttt{terminated} będzie przyjmowała wartość prawdziwą po naturalnym
+zakończeniu rozdania przez showdown albo fold. Podstawowe środowisko nie
+nakłada zewnętrznego limitu kroków, dlatego \texttt{truncated} będzie
+domyślnie fałszywe. Najdłuższe poprawne rozdanie zawiera trzy decyzje,
+więc samo środowisko nie wymaga dodatkowego limitu czasu.
+
+Rozróżnienie tych dwóch flag jest istotne. \texttt{terminated} oznacza
+osiągnięcie rzeczywistego stanu końcowego procesu decyzyjnego, natomiast
+\texttt{truncated} służy do oznaczania przerwania epizodu przez warunek
+zewnętrzny wobec dynamiki gry.
+
+\subsection{Planowana przestrzeń akcji}
+\label{subsec:gymnasium-action-space}
+
+Pełna przestrzeń akcji adaptera będzie stałą przestrzenią dyskretną
+o liczności sześciu:
+
+\begin{equation}
+    \mathcal{A}_{gym}
+    =
+    \{0,1,2,3,4,5\}.
+\end{equation}
+
+Każdy indeks zostanie jednoznacznie przypisany do jednej wartości
+\texttt{Action}. Ponieważ liczba legalnych akcji zmienia się pomiędzy fazami,
+adapter będzie dodatkowo konstruował binarną maskę
+
+\begin{equation}
+    M_t
+    =
+    \left(
+        m_0,
+        m_1,
+        \ldots,
+        m_5
+    \right),
+    \qquad
+    m_i \in \{0,1\}.
+\end{equation}
+
+Wartość \(m_i=1\) będzie oznaczała, że akcja o indeksie \(i\) jest legalna
+w bieżącej obserwacji. Stała liczność przestrzeni umożliwi zastosowanie
+jednej warstwy wyjściowej modelu we wszystkich fazach rozdania.
+
+\subsection{Planowana przestrzeń obserwacji}
+\label{subsec:gymnasium-observation-space}
+
+Ostateczna postać przestrzeni obserwacji nie została jeszcze ustalona,
+ponieważ porównanie reprezentacji stanu stanowi jeden z elementów badawczych
+pracy. Każdy wariant będzie jednak kodował ten sam dozwolony zakres
+informacji wynikający z \texttt{UTHObservation}.
+
+Rozważane reprezentacje mogą obejmować:
+
+\begin{itemize}
+    \item zakodowane identyfikatory kart gracza i kart wspólnych,
+    \item wektor binarny wskazujący obecność poszczególnych kart,
+    \item osobne kodowanie rang i kolorów,
+    \item cechy pochodne opisujące aktualną siłę ręki,
+    \item kod fazy oraz maskę legalnych akcji.
+\end{itemize}
+
+Niezależnie od wariantu obserwacja będzie miała stały rozmiar. Brakujące
+karty wspólne w fazach \texttt{PREFLOP} i \texttt{FLOP} zostaną
+reprezentowane przez ustaloną wartość pustą albo odpowiednie wyzerowanie
+wektora.
+
+Oddzielenie encodera od adaptera pozwoli porównywać różne reprezentacje przy
+zachowaniu identycznej dynamiki środowiska, sekwencji rozdań i sposobu
+rozliczania zakładów.
+
+\subsection{Dane pomocnicze}
+\label{subsec:gymnasium-info}
+
+Słownik \texttt{info} będzie przeznaczony dla danych diagnostycznych
+i wyników, które nie powinny być bezpośrednią częścią obserwacji modelu.
+Może on zawierać między innymi:
+
+\begin{itemize}
+    \item maskę legalnych akcji,
+    \item wynik rozdania,
+    \item łączną wartość postawionych zakładów,
+    \item wynik netto,
+    \item osobne rozliczenia Ante, Blind i Play,
+    \item informację o kwalifikacji krupiera,
+    \item szczegóły showdownu w zakończonym epizodzie.
+\end{itemize}
+
+Dane terminalne zostaną umieszczone w \texttt{info} dopiero po zakończeniu
+rozdania. Nie będą one wykorzystywane jako element wejścia agenta przed
+podjęciem decyzji.
+
+\subsection{Porównanie interfejsów}
+\label{subsec:porownanie-interfejsow}
+
+Relację pomiędzy obecnym interfejsem domenowym a planowanym adapterem
+przedstawiono w tabeli~\ref{tab:interfejs-domain-gymnasium}.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{Odwzorowanie interfejsu domenowego na Gymnasium}
+    \label{tab:interfejs-domain-gymnasium}
+    \begin{tabular}{
+        |p{0.23\textwidth}
+        |p{0.29\textwidth}
+        |p{0.38\textwidth}|
+    }
+        \hline
+        \textbf{Element}
+        &
+        \textbf{Silnik domenowy}
+        &
+        \textbf{Adapter Gymnasium}
+        \\
+        \hline
+
+        Rozpoczęcie epizodu
+        &
+        \texttt{UTHObservation}
+        &
+        Zakodowana obserwacja oraz \texttt{info}.
+        \\
+        \hline
+
+        Akcja
+        &
+        Wartość \texttt{Action}
+        &
+        Indeks ze stałej przestrzeni dyskretnej.
+        \\
+        \hline
+
+        Wynik kroku
+        &
+        \texttt{StepResult}
+        &
+        Obserwacja, nagroda, \texttt{terminated},
+        \texttt{truncated} i \texttt{info}.
+        \\
+        \hline
+
+        Nagroda
+        &
+        Brak bezpośredniej wartości
+        &
+        Obliczana przez wybraną funkcję nagrody.
+        \\
+        \hline
+
+        Legalność akcji
+        &
+        \texttt{frozenset[Action]}
+        &
+        Maska binarna oraz walidacja silnika.
+        \\
+        \hline
+
+        Stan ukryty
+        &
+        \texttt{RoundState}
+        &
+        Nie jest przekazywany agentowi.
+        \\
+        \hline
+
+        Rozliczenie
+        &
+        Dokładne wartości \texttt{Fraction}
+        &
+        Wartości przekształcone do formatu używanego przez eksperyment.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Adapter będzie zatem pełnił rolę warstwy translacyjnej. Nie będzie drugim
+silnikiem gry ani miejscem implementacji dodatkowych reguł. Takie podejście
+zapobiega powstaniu dwóch niezależnych implementacji UTH, które mogłyby
+zwracać różne wyniki dla tego samego rozdania.
+
