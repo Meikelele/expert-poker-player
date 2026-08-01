@@ -1,0 +1,66 @@
+\section{Ograniczenia środowiska}
+\label{sec:ograniczenia-srodowiska}
+
+Zaimplementowane środowisko odwzorowuje podstawowy wariant Ultimate Texas
+Hold’em potrzebny do badania strategii podejmowania decyzji, a nie pełną
+symulację stołu kasynowego. Jego zakres celowo ograniczono do elementów
+wpływających na decyzje Play i końcowy wynik zakładów Ante, Blind i Play.
+Poza tym zakresem pozostają zakłady boczne Trips i Progressive, model wielu
+graczy przy stole, saldo gracza i limity stołu, interfejs graficzny oraz
+numeryczne kodowanie obserwacji.
+
+Zakłady Trips i Progressive nie wprowadzają dodatkowego momentu decyzyjnego,
+ponieważ ich wynik nie zależy od sekwencji akcji Play. Wpływają jednak na
+rozkład końcowych wypłat i utrudniałyby interpretację jakości strategii,
+a Progressive wymagałby dodatkowo modelu puli utrzymywanej pomiędzy
+rozdaniami, co naruszałoby niezależność epizodów. Z tego powodu ocena dotyczy
+wyłącznie zakładów Ante, Blind i Play; oba zakłady boczne można w razie
+potrzeby dołączyć jako rozszerzenie warstwy rozliczeń, bez zmiany kolejności
+faz.
+
+Każde rozdanie jest traktowane jako niezależny epizod. Silnik nie modeluje
+salda gracza, sesji, ryzyka bankructwa ani zarządzania kapitałem, a wartości
+zakładów wyraża w jednostkach Ante, dzięki czemu strategie można porównywać
+niezależnie od nominału. Środowisko reprezentuje pojedynczego gracza wobec
+krupiera i nie symuluje pozostałych miejsc przy stole; zakryte karty innych
+graczy i tak byłyby nieznane, więc rozkład kart widocznych dla gracza
+odpowiada losowaniu bez zwracania ze standardowej talii. Reguły przyjęto
+w jednej konfiguracji: kwalifikacja krupiera od pary, jednostkowe Ante
+i Blind, mnożniki Play od \(1\) do \(4\) oraz jedna tabela wypłat Blind,
+zapisane wprost w module reguł i rozliczeń.
+
+Obserwacja pozostaje obiektem domenowym zawierającym karty, fazę i zbiór
+legalnych akcji. Taka postać jest czytelna i wygodna w testach, lecz nie może
+być bezpośrednio podana modelom uczenia maszynowego. Kodowanie
+\texttt{UTHObservation} do reprezentacji numerycznej wydzielono poza klasę
+\texttt{UTHGame}, ponieważ porównanie reprezentacji stanu jest jednym
+z elementów badawczych pracy; wspólny silnik pozwala przy tym zestawiać różne
+reprezentacje na identycznych rozdaniach i regułach.
+
+\section{Podsumowanie}
+\label{sec:podsumowanie-srodowiska-uth}
+
+W rozdziale przedstawiono projekt i implementację środowiska pojedynczego
+rozdania Ultimate Texas Hold’em. Silnik podzielono na niezależne komponenty
+odpowiedzialne za reprezentację kart, ocenę układów, rozdawanie,
+przechowywanie stanu, walidację akcji, showdown oraz rozliczanie zakładów,
+a przebieg rozdania odwzorowano jako maszynę stanów obejmującą fazy
+\texttt{PREFLOP}, \texttt{FLOP}, \texttt{RIVER} i \texttt{TERMINAL}, w której
+każda akcja \texttt{BET} kończy część decyzyjną i wymusza co najwyżej jeden
+zakład Play.
+
+Kluczowym elementem projektu jest rozdzielenie pełnego stanu
+\texttt{RoundState} od obserwacji \texttt{UTHObservation}: agent otrzymuje
+wyłącznie własne karty, odkryte karty wspólne, fazę i legalne akcje, podczas
+gdy karty krupiera, karty spalone i kolejność talii pozostają wewnętrzne.
+Showdown korzysta z ogólnego evaluatora wybierającego najlepsze pięć kart
+z siedmiu, a rozliczenia Ante, Blind i Play są przechowywane dokładnie za
+pomocą typu \texttt{Fraction}. Deterministyczne źródło \texttt{FixedDeck}
+oraz opcjonalny mechanizm historii zapewniają powtarzalność i możliwość
+analizy przebiegu rozdań.
+
+Środowisko stanowi warstwę domenową projektu; numeryczne kodowanie
+obserwacji, funkcję nagrody na potrzeby uczenia oraz adapter Gymnasium
+wydzielono poza tę warstwę. Gotowy silnik zapewnia podstawę do implementacji
+agentów bazowych, infrastruktury eksperymentalnej oraz metod uczenia przez
+wzmacnianie analizowanych w dalszej części pracy.
