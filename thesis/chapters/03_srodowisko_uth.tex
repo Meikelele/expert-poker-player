@@ -1858,3 +1858,557 @@ Maska pozwoli agentowi ograniczyć wybór do akcji zgodnych z regułami gry,
 nie zmieniając stałego rozmiaru przestrzeni wyjściowej modelu. Niezależnie
 od zastosowania maski adapter nadal będzie przekazywał decyzję do właściwego
 silnika, który zachowa końcową odpowiedzialność za walidację legalności.
+
+\section{Showdown i rozliczanie zakładów}
+\label{sec:showdown-i-rozliczenie}
+
+Każde rozdanie, w którym gracz wykonał zakład Play, kończy się showdownem.
+Środowisko odkrywa wszystkie brakujące karty wspólne, ocenia najlepszą
+pięciokartową rękę gracza i krupiera, a następnie porównuje otrzymane
+wartości. Wynik porównania stanowi podstawę do rozliczenia zakładów Ante,
+Blind oraz Play.
+
+Spasowanie gracza jest obsługiwane oddzielnie. W takim przypadku showdown
+nie jest przeprowadzany, ponieważ wynik rozdania wynika bezpośrednio
+z decyzji gracza.
+
+\subsection{Przebieg showdownu}
+\label{subsec:przebieg-showdownu}
+
+Podczas showdownu każda strona dysponuje siedmioma kartami:
+
+\begin{equation}
+    C^{player}
+    =
+    C^{player}_{private}
+    \cup
+    C^{community},
+\end{equation}
+
+\begin{equation}
+    C^{dealer}
+    =
+    C^{dealer}_{private}
+    \cup
+    C^{community},
+\end{equation}
+
+gdzie \(C^{player}_{private}\) i \(C^{dealer}_{private}\) oznaczają po dwie
+karty własne, natomiast \(C^{community}\) zawiera pięć kart wspólnych.
+
+Evaluator wybiera najlepszy pięciokartowy układ osobno dla gracza
+i krupiera. Wynik tej operacji jest przechowywany w obiekcie
+\texttt{ShowdownResult}, który zawiera:
+
+\begin{itemize}
+    \item najlepszą rękę gracza,
+    \item najlepszą rękę krupiera,
+    \item wynik porównania z perspektywy gracza,
+    \item informację o kwalifikacji krupiera.
+\end{itemize}
+
+Wynik showdownu należy do zbioru
+
+\begin{equation}
+    \mathcal{O}_{showdown}
+    =
+    \{
+        \texttt{PLAYER\_WIN},
+        \texttt{DEALER\_WIN},
+        \texttt{PUSH}
+    \}.
+\end{equation}
+
+Dla wartości rąk \(H_p\) oraz \(H_d\) wynik można zdefiniować jako
+
+\begin{equation}
+    O(H_p,H_d)
+    =
+    \begin{cases}
+        \texttt{PLAYER\_WIN}, & H_p > H_d, \\
+        \texttt{DEALER\_WIN}, & H_p < H_d, \\
+        \texttt{PUSH},        & H_p = H_d.
+    \end{cases}
+\end{equation}
+
+Porównanie rąk jest wykonywane niezależnie od kwalifikacji krupiera.
+Oznacza to, że krupier może wygrać rozdanie również wtedy, gdy jego ręka
+nie spełnia warunku kwalifikacji. Przykładem jest sytuacja, w której obie
+strony mają wyłącznie wysoką kartę, ale wysoka karta krupiera jest silniejsza.
+
+\subsection{Kwalifikacja krupiera}
+\label{subsec:kwalifikacja-krupiera}
+
+W podstawowym wariancie Ultimate Texas Hold’em krupier kwalifikuje się,
+jeżeli posiada co najmniej jedną parę. Warunek kwalifikacji można zapisać
+jako
+
+\begin{equation}
+    Q(H_d)
+    =
+    \begin{cases}
+        1, & rank(H_d) \geq \texttt{ONE\_PAIR}, \\
+        0, & rank(H_d) = \texttt{HIGH\_CARD}.
+    \end{cases}
+\end{equation}
+
+Kwalifikacja nie zmienia wyniku porównania rąk. Wpływa natomiast na sposób
+rozliczenia zakładu Ante:
+
+\begin{itemize}
+    \item jeżeli krupier kwalifikuje się, Ante wygrywa lub przegrywa zgodnie
+          z wynikiem showdownu,
+    \item jeżeli krupier nie kwalifikuje się, Ante jest zwracane niezależnie
+          od tego, która strona ma silniejszą rękę.
+\end{itemize}
+
+Zakład Play jest zawsze rozliczany na podstawie bezpośredniego porównania
+rąk. Zakład Blind jest rozliczany według układu gracza w przypadku jego
+zwycięstwa, zwracany przy remisie oraz przegrywany przy zwycięstwie
+krupiera.
+
+Zależności te przedstawiono w tabeli~\ref{tab:rozliczenie-showdownu}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Rozliczenie zakładów po showdownie}
+    \label{tab:rozliczenie-showdownu}
+    \begin{tabular}{
+        |p{0.18\textwidth}
+        |p{0.18\textwidth}
+        |p{0.17\textwidth}
+        |p{0.17\textwidth}
+        |p{0.17\textwidth}|
+    }
+        \hline
+        \textbf{Wynik}
+        &
+        \textbf{Kwalifikacja}
+        &
+        \textbf{Ante}
+        &
+        \textbf{Blind}
+        &
+        \textbf{Play}
+        \\
+        \hline
+
+        Wygrana gracza
+        &
+        tak
+        &
+        wygrana \(1{:}1\)
+        &
+        według tabeli wypłat
+        &
+        wygrana \(1{:}1\)
+        \\
+        \hline
+
+        Wygrana gracza
+        &
+        nie
+        &
+        zwrot
+        &
+        według tabeli wypłat
+        &
+        wygrana \(1{:}1\)
+        \\
+        \hline
+
+        Remis
+        &
+        dowolna
+        &
+        zwrot
+        &
+        zwrot
+        &
+        zwrot
+        \\
+        \hline
+
+        Wygrana krupiera
+        &
+        tak
+        &
+        przegrana
+        &
+        przegrana
+        &
+        przegrana
+        \\
+        \hline
+
+        Wygrana krupiera
+        &
+        nie
+        &
+        zwrot
+        &
+        przegrana
+        &
+        przegrana
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Ostatni przypadek jest istotny z punktu widzenia poprawności implementacji.
+Brak kwalifikacji krupiera nie oznacza automatycznego zwycięstwa gracza.
+Jeżeli krupier ma silniejszą wysoką kartę, wygrywa porównanie, zakłady Blind
+i Play są przegrywane, natomiast Ante zostaje zwrócone.
+
+\subsection{Model rozliczenia zakładów}
+\label{subsec:model-rozliczenia}
+
+Wynik finansowy każdego zakładu reprezentuje obiekt
+\texttt{WagerSettlement}. Zawiera on dwie wartości:
+
+\begin{itemize}
+    \item \texttt{stake} -- początkową wartość postawionego zakładu,
+    \item \texttt{net\_profit} -- zysk albo stratę netto.
+\end{itemize}
+
+Wszystkie kwoty są wyrażane w jednostkach Ante. Dla pojedynczego zakładu
+o stawce \(s\) i zysku netto \(n\) całkowity zwrot brutto wynosi
+
+\begin{equation}
+    g = s + n.
+\end{equation}
+
+Przykładowe wartości przedstawiono w
+tabeli~\ref{tab:interpretacja-wager-settlement}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Interpretacja wartości pojedynczego rozliczenia}
+    \label{tab:interpretacja-wager-settlement}
+    \begin{tabular}{
+        |c|c|c|p{0.35\textwidth}|
+    }
+        \hline
+        \textbf{Stawka}
+        &
+        \textbf{Zysk netto}
+        &
+        \textbf{Zwrot brutto}
+        &
+        \textbf{Znaczenie}
+        \\
+        \hline
+
+        \(1\)
+        &
+        \(1\)
+        &
+        \(2\)
+        &
+        Wygrana zakładu wypłacanego \(1{:}1\).
+        \\
+        \hline
+
+        \(1\)
+        &
+        \(0\)
+        &
+        \(1\)
+        &
+        Zwrot początkowej stawki.
+        \\
+        \hline
+
+        \(1\)
+        &
+        \(-1\)
+        &
+        \(0\)
+        &
+        Przegrana pełnej stawki.
+        \\
+        \hline
+
+        \(0\)
+        &
+        \(0\)
+        &
+        \(0\)
+        &
+        Zakład nie został postawiony.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Pełne rozliczenie rozdania jest reprezentowane przez obiekt
+\texttt{Settlement}, który zawiera osobne wyniki dla Ante, Blind oraz Play.
+Dzięki temu możliwa jest analiza zarówno łącznego wyniku rozdania, jak
+i wpływu poszczególnych składników.
+
+Dla rozliczenia \(S\) całkowita postawiona kwota wynosi
+
+\begin{equation}
+    S_{stake}
+    =
+    s_{Ante}
+    +
+    s_{Blind}
+    +
+    s_{Play}.
+\end{equation}
+
+Łączny wynik netto jest równy
+
+\begin{equation}
+    S_{net}
+    =
+    n_{Ante}
+    +
+    n_{Blind}
+    +
+    n_{Play},
+\end{equation}
+
+natomiast całkowity zwrot brutto wynosi
+
+\begin{equation}
+    S_{gross}
+    =
+    g_{Ante}
+    +
+    g_{Blind}
+    +
+    g_{Play}.
+\end{equation}
+
+Z definicji zachodzi zależność
+
+\begin{equation}
+    S_{gross}
+    =
+    S_{stake}
+    +
+    S_{net}.
+\end{equation}
+
+Wartości finansowe są reprezentowane za pomocą typu
+\texttt{Fraction}. Pozwala to przechowywać wypłaty takie jak \(3/2\)
+bez stosowania przybliżeń zmiennoprzecinkowych. Ma to znaczenie podczas
+wielokrotnego sumowania wyników w eksperymentach, ponieważ eliminuje błędy
+zaokrągleń na poziomie pojedynczych rozdań.
+
+\subsection{Rozliczenie zakładu Blind}
+\label{subsec:rozliczenie-blind}
+
+Zakład Blind ma stałą stawkę równą jednej jednostce Ante. W przypadku
+zwycięstwa gracza jego zysk zależy od kategorii uzyskanego układu.
+Dla układów słabszych od strita Blind jest zwracany. Dla strita lub
+silniejszego układu stosowana jest tabela wypłat przedstawiona w
+tabeli~\ref{tab:wyplaty-blind-implementacja}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Tabela wypłat zakładu Blind}
+    \label{tab:wyplaty-blind-implementacja}
+    \begin{tabular}{
+        |p{0.38\textwidth}
+        |p{0.24\textwidth}
+        |p{0.24\textwidth}|
+    }
+        \hline
+        \textbf{Układ gracza}
+        &
+        \textbf{Wypłata}
+        &
+        \textbf{Zysk netto}
+        \\
+        \hline
+
+        Wysoka karta
+        &
+        zwrot
+        &
+        \(0\)
+        \\
+        \hline
+
+        Jedna para
+        &
+        zwrot
+        &
+        \(0\)
+        \\
+        \hline
+
+        Dwie pary
+        &
+        zwrot
+        &
+        \(0\)
+        \\
+        \hline
+
+        Trójka
+        &
+        zwrot
+        &
+        \(0\)
+        \\
+        \hline
+
+        Strit
+        &
+        \(1{:}1\)
+        &
+        \(1\)
+        \\
+        \hline
+
+        Kolor
+        &
+        \(3{:}2\)
+        &
+        \(\frac{3}{2}\)
+        \\
+        \hline
+
+        Full
+        &
+        \(3{:}1\)
+        &
+        \(3\)
+        \\
+        \hline
+
+        Kareta
+        &
+        \(10{:}1\)
+        &
+        \(10\)
+        \\
+        \hline
+
+        Poker
+        &
+        \(50{:}1\)
+        &
+        \(50\)
+        \\
+        \hline
+
+        Poker królewski
+        &
+        \(500{:}1\)
+        &
+        \(500\)
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Poker królewski jest w evaluatorze szczególnym przypadkiem pokera z asem
+jako najwyższą kartą. Nie stanowi osobnej kategorii układu, ale jest
+rozpoznawany podczas wyznaczania wypłaty Blind.
+
+Tabela Blind jest stosowana wyłącznie wtedy, gdy gracz wygrał showdown.
+Przy remisie zakład jest zwracany, natomiast przy zwycięstwie krupiera
+pełna stawka Blind zostaje utracona.
+
+\subsection{Rozliczenie Ante i Play}
+\label{subsec:rozliczenie-ante-play}
+
+Zakład Ante ma stałą wartość jednej jednostki. Przy remisie jest zwracany.
+Jeżeli krupier kwalifikuje się, Ante wygrywa albo przegrywa zgodnie
+z wynikiem showdownu. W przypadku braku kwalifikacji zakład jest zwracany.
+
+Wartość zakładu Play jest określona przez moment podjęcia decyzji:
+
+\begin{equation}
+    s_{Play}
+    \in
+    \{1,2,3,4\}.
+\end{equation}
+
+Zakład Play jest wypłacany \(1{:}1\), niezależnie od jego mnożnika.
+Przykładowo wygrany Play \(4\times\) daje zysk netto równy czterem
+jednostkom. Przy porażce tracona jest pełna wartość zakładu, natomiast
+przy remisie cała stawka zostaje zwrócona.
+
+\subsection{Rozliczenie spasowania}
+\label{subsec:rozliczenie-folda}
+
+Jeżeli gracz spasuje na riverze, nie dochodzi do showdownu. Ante i Blind
+zostają przegrane, natomiast Play nie został postawiony.
+
+Rozliczenie folda ma zatem postać
+
+\begin{equation}
+    S_{fold}
+    =
+    \left(
+        n_{Ante}=-1,
+        n_{Blind}=-1,
+        n_{Play}=0
+    \right).
+\end{equation}
+
+Łączna stawka wynosi dwie jednostki, a wynik netto jest równy
+
+\begin{equation}
+    S_{net}^{fold} = -2.
+\end{equation}
+
+W rozliczeniu Play zapisywana jest stawka równa zero. Pozwala to odróżnić
+zakład niepostawiony od postawionego zakładu, który został zwrócony.
+
+\subsection{Przykładowe rozliczenia}
+\label{subsec:przyklady-rozliczen}
+
+Pierwszy przykład zakłada, że gracz wykonał Play \(4\times\), uzyskał kolor
+i pokonał kwalifikującego się krupiera. Poszczególne zyski netto wynoszą
+
+\begin{equation}
+    n_{Ante}=1,
+    \qquad
+    n_{Blind}=\frac{3}{2},
+    \qquad
+    n_{Play}=4.
+\end{equation}
+
+Łączny wynik netto jest równy
+
+\begin{equation}
+    S_{net}
+    =
+    1+\frac{3}{2}+4
+    =
+    \frac{13}{2}.
+\end{equation}
+
+W drugim przykładzie gracz wykonał Play \(2\times\) i wygrał showdown
+wysoką kartą przeciwko niekwalifikującemu się krupierowi. Ante oraz Blind
+są zwracane, a zysk pochodzi wyłącznie z Play:
+
+\begin{equation}
+    S_{net}
+    =
+    0+0+2
+    =
+    2.
+\end{equation}
+
+Trzeci przykład przedstawia przypadek, w którym niekwalifikujący się krupier
+ma wyższą wysoką kartę niż gracz. Przy zakładzie Play \(1\times\) Ante jest
+zwracane, ale Blind i Play zostają przegrane:
+
+\begin{equation}
+    S_{net}
+    =
+    0-1-1
+    =
+    -2.
+\end{equation}
+
+Przypadek ten pokazuje, że warunek kwalifikacji wpływa na rozliczenie Ante,
+lecz nie zastępuje porównania układów.
