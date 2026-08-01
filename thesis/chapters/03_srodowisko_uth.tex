@@ -2412,3 +2412,207 @@ zwracane, ale Blind i Play zostają przegrane:
 
 Przypadek ten pokazuje, że warunek kwalifikacji wpływa na rozliczenie Ante,
 lecz nie zastępuje porównania układów.
+
+\section{Funkcja nagrody i wynik epizodu}
+\label{sec:funkcja-nagrody}
+
+Mechanizm rozliczania zakładów został oddzielony od funkcji nagrody
+wykorzystywanej przez algorytmy uczenia przez wzmacnianie. Silnik domenowy
+odpowiada za poprawne wyznaczenie wyniku finansowego zgodnie z zasadami
+Ultimate Texas Hold’em. Funkcja nagrody będzie natomiast elementem warstwy
+integrującej silnik z agentem uczącym się.
+
+Rozdzielenie tych dwóch odpowiedzialności pozwala wykorzystywać tę samą
+implementację zasad gry podczas eksperymentów z różnymi sposobami
+konstruowania sygnału nagrody. Zmiana funkcji nagrody nie wymaga dzięki temu
+modyfikowania mechanizmu showdownu, kwalifikacji krupiera ani tabel wypłat.
+
+\subsection{Rozliczenie finansowe a nagroda}
+\label{subsec:rozliczenie-a-nagroda}
+
+Rozliczenie \texttt{Settlement} jest obiektem domenowym opisującym rzeczywisty
+wynik rozdania. Zawiera osobne wyniki zakładów Ante, Blind i Play oraz ich
+łączny wynik netto. Nie jest ono bezpośrednio nagrodą w rozumieniu uczenia
+przez wzmacnianie, ponieważ zawiera więcej informacji niż pojedyncza wartość
+skalarna oczekiwana przez większość algorytmów.
+
+Funkcję nagrody można przedstawić jako odwzorowanie
+
+\begin{equation}
+    R :
+    \mathcal{S}
+    \times
+    \mathcal{A}
+    \times
+    \mathcal{S}
+    \rightarrow
+    \mathbb{R},
+\end{equation}
+
+które przypisuje wartość liczbową przejściu ze stanu \(s_t\) do
+\(s_{t+1}\) po wykonaniu akcji \(a_t\).
+
+W podstawowym wariancie źródłem nagrody terminalnej będzie łączny wynik
+netto rozdania:
+
+\begin{equation}
+    R_{net}(S)
+    =
+    S_{net},
+\end{equation}
+
+gdzie \(S_{net}\) oznacza wartość
+\texttt{Settlement.total\_net\_profit}.
+
+Wynik netto został wybrany zamiast zwrotu brutto, ponieważ nie zawiera
+zwracanych stawek początkowych. Przykładowo zwrócony zakład ma dodatni zwrot
+brutto równy jego stawce, ale nie oznacza osiągnięcia zysku. W reprezentacji
+netto taki przypadek otrzymuje wartość zero.
+
+\subsection{Podstawowa nagroda terminalna}
+\label{subsec:nagroda-terminalna}
+
+Pojedyncze rozdanie stanowi jeden epizod. W podstawowej funkcji nagrody
+wszystkie przejścia pośrednie otrzymują wartość zero, natomiast końcowe
+przejście otrzymuje łączny wynik netto rozdania:
+
+\begin{equation}
+    r_t =
+    \begin{cases}
+        0,
+        &
+        s_{t+1} \notin \mathcal{S}_{terminal},
+        \\[2mm]
+
+        S_{net},
+        &
+        s_{t+1} \in \mathcal{S}_{terminal}.
+    \end{cases}
+\end{equation}
+
+Oznacza to, że akcja \texttt{CHECK} nie generuje natychmiastowej nagrody.
+Jej konsekwencje są uwzględniane dopiero w wyniku całego rozdania.
+Wykonanie zakładu Play prowadzi bezpośrednio do showdownu, dlatego rezultat
+finansowy jest zwracany w tym samym kroku, w którym agent wybrał akcję
+\texttt{BET}.
+
+Spasowanie również tworzy nagrodę terminalną. Ponieważ gracz traci Ante
+i Blind, a zakład Play nie został postawiony, podstawowa nagroda wynosi
+
+\begin{equation}
+    r_{fold} = -2.
+\end{equation}
+
+Dla przykładowej wygranej z zyskiem netto równym
+\(\frac{13}{2}\) nagroda terminalna przyjmuje wartość
+
+\begin{equation}
+    r_{terminal} = \frac{13}{2}.
+\end{equation}
+
+Wewnętrzne rozliczenia są reprezentowane dokładnie za pomocą typu
+\texttt{Fraction}. Adapter środowiska będzie przekształcał końcową wartość
+na typ liczbowy wymagany przez bibliotekę uczenia, na przykład
+\texttt{float}, dopiero na granicy interfejsu.
+
+\subsection{Zwrot epizodyczny}
+\label{subsec:zwrot-epizodyczny}
+
+Zwrot uzyskany przez agenta od chwili \(t\) można zapisać jako
+
+\begin{equation}
+    G_t =
+    \sum_{k=0}^{T-t-1}
+    \gamma^k r_{t+k},
+\end{equation}
+
+gdzie \(T\) oznacza koniec epizodu, a \(\gamma\) jest współczynnikiem
+dyskontowania.
+
+Ponieważ w podstawowym wariancie wszystkie nagrody pośrednie są równe zero,
+dla \(\gamma=1\) całkowity zwrot epizodu jest równy wynikowi netto rozdania:
+
+\begin{equation}
+    G_0 = S_{net}.
+\end{equation}
+
+Zastosowanie współczynnika \(\gamma<1\) powodowałoby, że ta sama wartość
+terminalna byłaby silniej dyskontowana w rozdaniach zawierających więcej
+decyzji. Strategia kończąca rozdanie przed flopem mogłaby więc otrzymywać
+inną efektywną wartość niż strategia osiągająca identyczny wynik po dwóch
+akcjach \texttt{CHECK}. Z tego względu wpływ współczynnika dyskontowania
+musi zostać uwzględniony podczas konfiguracji eksperymentów.
+
+\subsection{Brak nagrody za nielegalną akcję}
+\label{subsec:nielegalna-akcja-nagroda}
+
+Nielegalna akcja nie stanowi poprawnego przejścia środowiska. Silnik odrzuca
+ją przez zgłoszenie wyjątku, zanim zostanie zmieniony stan lub pobrane
+zostaną kolejne karty. Nie jest zatem tworzona nagroda odpowiadająca takiej
+decyzji.
+
+W podstawowej integracji z agentami wybór nielegalnych akcji będzie
+ograniczany za pomocą zbioru legalnych decyzji lub maski akcji. Silnik
+pozostanie końcowym mechanizmem walidującym, natomiast kod sterujący
+eksperymentem powinien traktować wystąpienie nielegalnej decyzji jako błąd
+implementacji agenta, a nie jako normalny element trajektorii uczenia.
+
+Nie przyjęto automatycznej kary za nielegalną akcję. Wprowadzenie takiej
+wartości mieszałoby dwa różne zjawiska: jakość strategii pokerowej oraz
+poprawność techniczną komponentu wybierającego decyzje.
+
+\subsection{Możliwość stosowania alternatywnych funkcji nagrody}
+\label{subsec:alternatywne-funkcje-nagrody}
+
+Jednym z celów pracy jest zbadanie wpływu funkcji nagrody na jakość
+uzyskiwanej strategii. Z tego względu adapter zostanie zaprojektowany tak,
+aby sposób konstruowania nagrody nie był zapisany bezpośrednio w silniku
+domenowym.
+
+Oprócz surowego wyniku netto możliwe jest rozważenie między innymi:
+
+\begin{itemize}
+    \item nagrody znormalizowanej względem liczby postawionych jednostek,
+    \item nagrody ograniczonej do ustalonego przedziału,
+    \item nagrody opisującej jedynie znak wyniku rozdania,
+    \item nagrody pośredniej wspomagającej proces uczenia.
+\end{itemize}
+
+Przykładową nagrodę znormalizowaną można zapisać jako
+
+\begin{equation}
+    R_{normalized}(S)
+    =
+    \frac{S_{net}}{S_{stake}},
+\end{equation}
+
+gdzie \(S_{stake}>0\) oznacza całkowitą wartość zakładów postawionych
+w rozdaniu.
+
+Wariant oparty wyłącznie na znaku wyniku mógłby przyjmować postać
+
+\begin{equation}
+    R_{sign}(S)
+    =
+    \begin{cases}
+        1,  & S_{net}>0, \\
+        0,  & S_{net}=0, \\
+        -1, & S_{net}<0.
+    \end{cases}
+\end{equation}
+
+Takie przekształcenie ogranicza wpływ rzadkich, bardzo wysokich wypłat,
+ale jednocześnie usuwa informację o rzeczywistej wartości finansowej
+decyzji. Przykładowo wygrana jednej jednostki i wygrana wynikająca z pokera
+królewskiego otrzymałyby identyczną wartość.
+
+Nagroda pośrednia mogłaby dostarczać agentowi dodatkowy sygnał przed
+zakończeniem rozdania. Jej zastosowanie wymaga jednak ostrożności, ponieważ
+niepoprawnie zaprojektowane kształtowanie nagrody może skłonić model do
+optymalizacji pomocniczego kryterium zamiast długoterminowego wyniku
+finansowego.
+
+Dokładny zestaw badanych wariantów funkcji nagrody oraz ich parametry
+zostaną przedstawione w rozdziale opisującym metodykę eksperymentów.
+Podstawowym punktem odniesienia pozostanie nagroda terminalna równa
+wynikowi netto rozdania.
