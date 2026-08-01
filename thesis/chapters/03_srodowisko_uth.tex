@@ -793,3 +793,333 @@ Poker królewski nie stanowi osobnej kategorii \texttt{HandRank}. Jest
 reprezentowany jako poker z asem jako najwyższą kartą. Obiekt
 \texttt{HandValue} udostępnia właściwość pozwalającą rozpoznać ten przypadek,
 co jest potrzebne przy naliczaniu najwyższej wypłaty zakładu Blind.
+
+\section{Stan wewnętrzny i obserwacja agenta}
+\label{sec:stan-i-obserwacja}
+
+Ultimate Texas Hold’em jest grą z niepełną informacją. W momencie podejmowania
+decyzji gracz zna własne karty oraz dotychczas odkryte karty wspólne, ale nie
+zna kart krupiera, kart spalonych ani kolejności pozostałych kart w talii.
+Poprawne odwzorowanie tej własności wymaga rozdzielenia pełnego stanu
+środowiska od informacji udostępnianych agentowi.
+
+W implementacji zastosowano dwa odrębne modele danych:
+
+\begin{itemize}
+    \item \texttt{RoundState}, reprezentujący pełny stan wewnętrzny rozdania,
+    \item \texttt{UTHObservation}, reprezentujący obserwację dostępną agentowi.
+\end{itemize}
+
+Agent nie otrzymuje bezpośredniego odwołania do obiektu
+\texttt{RoundState}. Każda obserwacja jest tworzona na jego podstawie przez
+osobną funkcję projekcji, która kopiuje wyłącznie informacje dozwolone
+z perspektywy gracza.
+
+\subsection{Pełny stan rozdania}
+\label{subsec:round-state}
+
+Obiekt \texttt{RoundState} zawiera wszystkie dane potrzebne do kontynuowania
+i rozstrzygnięcia rozdania. Obejmuje on:
+
+\begin{itemize}
+    \item aktualną fazę gry,
+    \item dwie karty własne gracza,
+    \item dwie ukryte karty krupiera,
+    \item odkryte karty wspólne,
+    \item karty spalone,
+    \item mnożnik wykonanego zakładu Play,
+    \item końcowy wynik rozdania,
+    \item szczegółowe rozliczenie zakładów,
+    \item rezultat showdownu.
+\end{itemize}
+
+Nie wszystkie pola są aktywne jednocześnie. W stanach pośrednich wynik
+rozdania, rozliczenie, rezultat showdownu oraz mnożnik zakładu Play pozostają
+nieokreślone. Pola te otrzymują wartości dopiero po przejściu do stanu
+terminalnego.
+
+Liczba kart wspólnych i spalonych jest uzależniona od aktualnej fazy.
+Zależność tę przedstawiono w tabeli~\ref{tab:karty-w-fazach}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Liczba kart przechowywanych w stanie w poszczególnych fazach}
+    \label{tab:karty-w-fazach}
+    \begin{tabular}{|p{0.24\textwidth}|c|c|p{0.32\textwidth}|}
+        \hline
+        \textbf{Faza}
+        &
+        \textbf{Karty wspólne}
+        &
+        \textbf{Karty spalone}
+        &
+        \textbf{Znaczenie}
+        \\
+        \hline
+
+        \texttt{PREFLOP}
+        &
+        0
+        &
+        0
+        &
+        Rozdano wyłącznie karty własne gracza i krupiera.
+        \\
+        \hline
+
+        \texttt{FLOP}
+        &
+        3
+        &
+        1
+        &
+        Spalono jedną kartę i odkryto flop.
+        \\
+        \hline
+
+        \texttt{RIVER}
+        &
+        5
+        &
+        2
+        &
+        Odkryto komplet kart wspólnych.
+        \\
+        \hline
+
+        \texttt{TERMINAL}
+        &
+        5
+        &
+        2
+        &
+        Rozdanie zostało zakończone foldem albo showdownem.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Obiekt stanu jest niemodyfikowalny. Każde przejście środowiska prowadzi
+do utworzenia nowej instancji \texttt{RoundState}, zamiast modyfikowania
+istniejącego obiektu. Upraszcza to analizę przejść, ogranicza ryzyko
+częściowej aktualizacji oraz ułatwia tworzenie deterministycznych testów.
+
+Podczas tworzenia stanu sprawdzane są między innymi:
+
+\begin{itemize}
+    \item poprawny typ fazy,
+    \item obecność dokładnie dwóch kart gracza i dwóch kart krupiera,
+    \item liczba kart wspólnych właściwa dla danej fazy,
+    \item liczba kart spalonych właściwa dla danej fazy,
+    \item brak zduplikowanych kart w całym stanie,
+    \item zgodność pól końcowych z fazą rozdania.
+\end{itemize}
+
+Walidacja obejmuje również zależności semantyczne pomiędzy polami. Stan
+niekońcowy nie może zawierać wyniku ani rozliczenia. Stan zakończony foldem
+nie może zawierać mnożnika Play ani rezultatu showdownu. Z kolei stan
+zakończony showdownem musi zawierać zarówno mnożnik wykonanego zakładu,
+jak i szczegóły ocenionych rąk.
+
+\subsection{Obserwacja agenta}
+\label{subsec:uth-observation}
+
+Obiekt \texttt{UTHObservation} zawiera wyłącznie dane, które mogą zostać
+wykorzystane przez agenta podczas podejmowania decyzji. Są to:
+
+\begin{itemize}
+    \item aktualna faza gry,
+    \item dwie karty własne gracza,
+    \item dotychczas odkryte karty wspólne,
+    \item zbiór legalnych akcji,
+    \item mnożnik zakładu Play w obserwacji terminalnej.
+\end{itemize}
+
+Obserwacja celowo nie zawiera:
+
+\begin{itemize}
+    \item kart krupiera,
+    \item kart spalonych,
+    \item pozostałych kart w talii,
+    \item kolejności przyszłego dobierania kart,
+    \item wyniku evaluacji ręki krupiera przed zakończeniem rozdania.
+\end{itemize}
+
+Zbiór legalnych akcji jest umieszczony bezpośrednio w obserwacji. Agent nie
+musi zatem samodzielnie odtwarzać zasad gry na podstawie fazy. Rozwiązanie
+to ułatwia implementację agentów bazowych, a w przyszłym adapterze Gymnasium
+umożliwi utworzenie maski akcji.
+
+Obserwacja, podobnie jak pełny stan, jest obiektem niemodyfikowalnym.
+Sprawdzana jest liczba widocznych kart, brak duplikatów oraz zgodność zbioru
+legalnych akcji z aktualną fazą gry. Dzięki temu błędnie skonstruowana
+obserwacja jest odrzucana przed przekazaniem jej agentowi.
+
+\subsection{Projekcja stanu na obserwację}
+\label{subsec:projekcja-stanu}
+
+Proces tworzenia obserwacji można przedstawić jako funkcję projekcji
+
+\begin{equation}
+    O_t = \phi(S_t),
+\end{equation}
+
+gdzie \(S_t\) jest pełnym stanem środowiska w chwili \(t\), natomiast
+\(O_t\) oznacza obserwację udostępnioną agentowi.
+
+Dla zaimplementowanego środowiska projekcja ma postać
+
+\begin{equation}
+    \phi(S_t) =
+    \left(
+        p_t,
+        C_t^{player},
+        C_t^{community},
+        A_t^{legal},
+        m_t
+    \right),
+\end{equation}
+
+gdzie:
+
+\begin{itemize}
+    \item \(p_t\) oznacza aktualną fazę gry,
+    \item \(C_t^{player}\) oznacza karty własne gracza,
+    \item \(C_t^{community}\) oznacza odkryte karty wspólne,
+    \item \(A_t^{legal}\) oznacza zbiór legalnych akcji,
+    \item \(m_t\) oznacza mnożnik zakładu Play, jeżeli został już wykonany.
+\end{itemize}
+
+Elementy takie jak karty krupiera, karty spalone i zawartość pozostałej talii
+należą do \(S_t\), ale nie są elementami \(O_t\).
+
+Porównanie zawartości pełnego stanu i obserwacji przedstawiono w
+tabeli~\ref{tab:stan-obserwacja}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Porównanie pełnego stanu środowiska i obserwacji agenta}
+    \label{tab:stan-obserwacja}
+    \begin{tabular}{|p{0.40\textwidth}|c|c|}
+        \hline
+        \textbf{Informacja}
+        &
+        \textbf{\texttt{RoundState}}
+        &
+        \textbf{\texttt{UTHObservation}}
+        \\
+        \hline
+
+        Aktualna faza
+        &
+        tak
+        &
+        tak
+        \\
+        \hline
+
+        Karty własne gracza
+        &
+        tak
+        &
+        tak
+        \\
+        \hline
+
+        Odkryte karty wspólne
+        &
+        tak
+        &
+        tak
+        \\
+        \hline
+
+        Karty krupiera
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Karty spalone
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Kolejność pozostałej talii
+        &
+        dostępna wewnętrznie silnikowi
+        &
+        nie
+        \\
+        \hline
+
+        Legalne akcje
+        &
+        wyznaczane na podstawie fazy
+        &
+        tak
+        \\
+        \hline
+
+        Mnożnik zakładu Play
+        &
+        tak
+        &
+        tylko po wykonaniu zakładu
+        \\
+        \hline
+
+        Końcowy wynik rozdania
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Szczegółowe rozliczenie
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Szczegóły showdownu
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Wynik rozdania, rozliczenie i szczegóły showdownu są po zakończeniu epizodu
+zwracane przez obiekt \texttt{StepResult}, a nie przez samą obserwację.
+Informacje te pojawiają się dopiero po wykonaniu ostatniej decyzji, dlatego
+nie mogą wpłynąć na wybór akcji w bieżącym rozdaniu.
+
+\subsection{Ochrona przed wyciekiem informacji}
+\label{subsec:ochrona-przed-wyciekiem}
+
+Rozdzielenie stanu i obserwacji pełni rolę ochrony przed wyciekiem informacji
+ukrytej. Funkcja tworząca obserwację nie usuwa niepożądanych pól z kopii
+pełnego stanu. Zamiast tego jawnie konstruuje nowy obiekt, przekazując
+wyłącznie dozwolone wartości.
+
+Podejście to można określić jako tworzenie obserwacji zgodnie z listą
+dozwolonych informacji. Jest ono bezpieczniejsze niż stosowanie listy pól
+zabronionych. Po dodaniu nowego pola do \texttt{RoundState} nie zostanie ono
+automatycznie ujawnione agentowi. Aby znalazło się w obserwacji, musi zostać
+jawnie dodane do modelu \texttt{UTHObservation} oraz do funkcji projekcji.
+
+Istotne jest również rozróżnienie pomiędzy interfejsem przeznaczonym dla
+agenta a interfejsem diagnostycznym. Pełny stan może być wykorzystywany
+przez testy, rejestrowanie przebiegu rozdania i analizę zakończonych epizodów,
+ale nie powinien być przekazywany metodzie wybierającej akcję agenta.
