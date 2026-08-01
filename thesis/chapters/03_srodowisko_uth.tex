@@ -532,3 +532,264 @@ rozdań. Jeżeli dwa eksperymenty zostaną uruchomione z tym samym ziarnem
 środowiska i zachowają tę samą kolejność wywołań, otrzymają identyczne
 strumienie talii. Ogranicza to wpływ losowego doboru kart na ocenę różnic
 pomiędzy badanymi strategiami.
+
+\section{Ocena układów pokerowych}
+\label{sec:ocena-ukladow}
+
+Moduł oceny układów pokerowych został zaimplementowany niezależnie od reguł
+Ultimate Texas Hold’em. Jego zadaniem jest określenie wartości dowolnego
+poprawnego układu pięciokartowego oraz wybranie najlepszej możliwej ręki
+z pięciu, sześciu lub siedmiu dostępnych kart. W środowisku UTH evaluator
+jest wykorzystywany podczas showdownu osobno dla gracza i krupiera.
+
+Hierarchię układów pokerowych oraz ich znaczenie przedstawiono w rozdziale
+teoretycznym. W niniejszej sekcji opisano sposób odwzorowania tej hierarchii
+w implementacji oraz mechanizm jednoznacznego porównywania dwóch rąk.
+
+\subsection{Reprezentacja wartości ręki}
+\label{subsec:wartosc-reki}
+
+Kategorię układu reprezentuje typ wyliczeniowy \texttt{HandRank}. Kolejnym
+kategoriom przypisano rosnące wartości liczbowe, począwszy od wysokiej karty,
+a kończąc na pokerze. Dzięki temu porównanie kategorii może zostać wykonane
+przez porównanie odpowiadających im wartości całkowitych.
+
+Sama kategoria nie wystarcza jednak do rozstrzygnięcia wszystkich przypadków.
+Dwie ręce mogą należeć do tej samej kategorii, lecz różnić się rangą kart
+tworzących układ albo kart dodatkowych. Z tego względu pełna wartość ręki
+jest reprezentowana przez obiekt \texttt{HandValue}, zawierający:
+
+\begin{itemize}
+    \item kategorię układu \texttt{rank},
+    \item uporządkowaną krotkę wartości rozstrzygających remis
+          \texttt{tiebreak}.
+\end{itemize}
+
+Klucz porównawczy ręki można zapisać jako
+
+\begin{equation}
+    K(h) =
+    \left(
+        r(h),
+        t_1(h),
+        t_2(h),
+        \ldots,
+        t_n(h)
+    \right),
+\end{equation}
+
+gdzie \(r(h)\) oznacza wartość kategorii układu, natomiast
+\(t_1(h),\ldots,t_n(h)\) są kolejnymi wartościami rozstrzygającymi remis.
+Dwa klucze porównywane są leksykograficznie. W pierwszej kolejności
+porównywana jest kategoria układu, a dopiero w przypadku jej równości
+kolejne elementy krotki \texttt{tiebreak}.
+
+Przykładowo wartość pary asów z królem, dziesiątką i dziewiątką jako kartami
+dodatkowymi może zostać zapisana w postaci
+
+\begin{equation}
+    K(h) =
+    \left(
+        \text{ONE\_PAIR},
+        14,
+        13,
+        10,
+        9
+    \right).
+\end{equation}
+
+Jeżeli druga ręka również zawiera parę asów, porównanie przechodzi kolejno
+do króla, dziesiątki i dziewiątki. Kolory kart nie uczestniczą w rozstrzyganiu
+remisów, zgodnie ze standardowymi zasadami pokera.
+
+Sposób budowy krotki rozstrzygającej dla każdej kategorii przedstawiono
+w tabeli~\ref{tab:tiebreak-ukladow}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Wartości wykorzystywane do rozstrzygania remisów}
+    \label{tab:tiebreak-ukladow}
+    \begin{tabular}{|p{0.25\textwidth}|p{0.14\textwidth}|p{0.51\textwidth}|}
+        \hline
+        \textbf{Kategoria}
+        &
+        \textbf{Liczba wartości}
+        &
+        \textbf{Kolejność elementów \texttt{tiebreak}}
+        \\
+        \hline
+
+        Wysoka karta
+        &
+        5
+        &
+        Wszystkie rangi w kolejności malejącej.
+        \\
+        \hline
+
+        Jedna para
+        &
+        4
+        &
+        Ranga pary, a następnie trzy pozostałe rangi malejąco.
+        \\
+        \hline
+
+        Dwie pary
+        &
+        3
+        &
+        Wyższa para, niższa para oraz karta dodatkowa.
+        \\
+        \hline
+
+        Trójka
+        &
+        3
+        &
+        Ranga trójki oraz dwie pozostałe rangi malejąco.
+        \\
+        \hline
+
+        Strit
+        &
+        1
+        &
+        Ranga najwyższej karty strita.
+        \\
+        \hline
+
+        Kolor
+        &
+        5
+        &
+        Wszystkie rangi w kolejności malejącej.
+        \\
+        \hline
+
+        Full
+        &
+        2
+        &
+        Ranga trójki, a następnie ranga pary.
+        \\
+        \hline
+
+        Kareta
+        &
+        2
+        &
+        Ranga karety oraz ranga karty dodatkowej.
+        \\
+        \hline
+
+        Poker
+        &
+        1
+        &
+        Ranga najwyższej karty pokera.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Obiekt \texttt{HandValue} sprawdza zgodność długości krotki
+\texttt{tiebreak} z kategorią układu. Walidowane jest również, czy wszystkie
+jej elementy są liczbami całkowitymi odpowiadającymi poprawnym rangom kart.
+Ogranicza to możliwość utworzenia wartości ręki, która nie mogłaby powstać
+w prawidłowym rozdaniu.
+
+\subsection{Ocena układu pięciokartowego}
+\label{subsec:ocena-pieciu-kart}
+
+Funkcja \texttt{evaluate\_five\_card\_hand()} przyjmuje dokładnie pięć
+unikalnych kart. Przed rozpoczęciem oceny sprawdzana jest liczba kart, typ
+każdego elementu oraz brak duplikatów.
+
+W pierwszym kroku obliczana jest liczba wystąpień każdej rangi. Na tej
+podstawie możliwe jest wykrycie par, dwóch par, trójki, fulla oraz karety.
+Niezależnie sprawdzane są dwa warunki:
+
+\begin{itemize}
+    \item czy wszystkie karty mają ten sam kolor,
+    \item czy pięć różnych rang tworzy ciąg kolejnych wartości.
+\end{itemize}
+
+Kategorie sprawdzane są od najsilniejszej do najsłabszej. Jeżeli spełnione
+są jednocześnie warunki strita i koloru, zwracany jest poker. W przeciwnym
+razie sprawdzane są kolejno kareta, full, kolor, strit, trójka, dwie pary,
+jedna para oraz wysoka karta.
+
+Wartość \texttt{tiebreak} jest budowana bezpośrednio podczas rozpoznawania
+kategorii. Wynikiem funkcji nie jest zatem jedynie nazwa układu, lecz kompletna
+wartość umożliwiająca porównanie z dowolną inną poprawną ręką.
+
+\subsection{Obsługa niskiego strita z asem}
+\label{subsec:niski-strit-as}
+
+W podstawowym modelu rang as otrzymuje wartość 14 i jest najwyższą kartą.
+W przypadku strita \(A\)-\(2\)-\(3\)-\(4\)-\(5\) musi jednak pełnić funkcję
+karty niższej od dwójki. Układ ten jest obsługiwany jako szczególny przypadek.
+
+Dla zestawu rang
+
+\begin{equation}
+    \{14,5,4,3,2\}
+\end{equation}
+
+evaluator zwraca strita o najwyższej karcie równej 5. Jego klucz porównawczy
+jest zatem słabszy od klucza strita zakończonego szóstką. Pozwala to zachować
+naturalną kolejność wszystkich możliwych stritów bez zmieniania podstawowej
+wartości asa w pozostałych kategoriach.
+
+\subsection{Wybór najlepszej ręki}
+\label{subsec:wybor-najlepszej-reki}
+
+Podczas showdownu gracz i krupier dysponują łącznie siedmioma kartami:
+dwiema kartami własnymi oraz pięcioma kartami wspólnymi. Rękę pokerową
+tworzy jednak dokładnie pięć kart. Funkcja \texttt{evaluate\_best\_hand()}
+generuje wszystkie możliwe pięciokartowe podzbiory dostępnych kart, ocenia
+każdy z nich, a następnie wybiera układ o największej wartości
+\texttt{HandValue}.
+
+Liczba sprawdzanych kombinacji dla \(n\) dostępnych kart wynosi
+
+\begin{equation}
+    N(n) = \binom{n}{5}.
+\end{equation}
+
+Dla liczby kart obsługiwanych przez evaluator otrzymuje się:
+
+\begin{equation}
+    \binom{5}{5} = 1,
+    \qquad
+    \binom{6}{5} = 6,
+    \qquad
+    \binom{7}{5} = 21.
+\end{equation}
+
+W przypadku standardowego showdownu UTH konieczne jest zatem sprawdzenie
+21 kombinacji dla gracza oraz 21 kombinacji dla krupiera. Ze względu na
+niewielką i stałą liczbę możliwości pełne przeszukanie jest wystarczająco
+proste, jednoznaczne oraz łatwe do zweryfikowania w testach. Nie było potrzeby
+stosowania bardziej złożonego, specjalizowanego algorytmu ewaluacji.
+
+Przed wygenerowaniem kombinacji sprawdzane jest, czy przekazano od pięciu
+do siedmiu kart, czy wszystkie elementy są kartami oraz czy żadna karta
+nie występuje więcej niż raz.
+
+Wynikiem operacji jest obiekt \texttt{EvaluatedHand}, który przechowuje
+zarówno wartość \texttt{HandValue}, jak i dokładnie pięć kart tworzących
+wybrany układ. Zachowanie kart składowych jest przydatne podczas:
+
+\begin{itemize}
+    \item prezentowania wyniku showdownu,
+    \item analizy decyzji agentów,
+    \item diagnozowania błędów evaluatora,
+    \item identyfikowania rzadkich lub szczególnie wartościowych rozdań.
+\end{itemize}
+
+Poker królewski nie stanowi osobnej kategorii \texttt{HandRank}. Jest
+reprezentowany jako poker z asem jako najwyższą kartą. Obiekt
+\texttt{HandValue} udostępnia właściwość pozwalającą rozpoznać ten przypadek,
+co jest potrzebne przy naliczaniu najwyższej wypłaty zakładu Blind.
