@@ -293,35 +293,20 @@ pozostają ukryte za tą warstwą.
 \subsection{Przepływ danych podczas wykonania akcji}
 \label{subsec:przeplyw-akcji}
 
-Po rozpoczęciu rozdania metoda \texttt{reset()} zwraca pierwszą obserwację
-agenta. Na jej podstawie agent wybiera akcję należącą do zbioru akcji
-legalnych w aktualnej fazie gry. Wybrana wartość jest następnie przekazywana
-do metody \texttt{step()}, która realizuje pojedyncze przejście środowiska.
+Metoda \texttt{reset()} zwraca pierwszą obserwację, na podstawie której agent
+wybiera akcję ze zbioru legalnego dla bieżącej fazy i przekazuje ją do metody
+\texttt{step()}. Silnik najpierw sprawdza, czy rozdanie nie zostało
+zakończone oraz czy akcja jest poprawna i legalna; odrzucenie następuje przed
+jakąkolwiek zmianą stanu i pobraniem kart, co zapobiega częściowemu wykonaniu
+niedozwolonego przejścia. Po pozytywnej walidacji wykonywana jest operacja
+właściwa dla fazy, prowadząca do odkrycia kolejnych kart albo do showdownu
+i rozliczenia.
 
-W pierwszej kolejności silnik sprawdza, czy rozdanie nie zostało już
-zakończone, czy przekazana wartość jest poprawnym obiektem reprezentującym
-akcję oraz czy dana akcja jest legalna w aktualnej fazie. Odrzucenie
-niepoprawnej akcji następuje przed jakąkolwiek zmianą stanu lub pobraniem
-kart z talii. Zapobiega to częściowemu wykonaniu niedozwolonego przejścia.
-
-Po pozytywnej walidacji sterowanie jest przekazywane do operacji właściwej
-dla aktualnej fazy: preflop, flopa albo rivera. Akcja oczekiwania powoduje
-odkrycie kart wymaganych do przejścia do następnej fazy. Wykonanie zakładu
-Play prowadzi natomiast do odkrycia wszystkich pozostałych kart wspólnych,
-oceny układów gracza i krupiera, określenia wyniku oraz rozliczenia aktywnych
-zakładów. Spasowanie na riverze kończy rozdanie bez wykonywania showdownu.
-
-Po pomyślnym przeprowadzeniu operacji tworzony jest nowy obiekt
-\texttt{RoundState}. Na jego podstawie budowana jest obserwacja przeznaczona
-dla agenta oraz obiekt \texttt{StepResult}. Wynik kroku zawiera informację,
-czy rozdanie zostało zakończone, a w stanie terminalnym również rezultat
-rozgrywki, szczegółowe rozliczenie zakładów i dane dotyczące showdownu.
-
-Jeżeli rejestrowanie historii jest włączone, obserwacja sprzed wykonania
-akcji i wybrana decyzja są zapisywane jako \texttt{DecisionRecord}.
-Rejestracja następuje dopiero po prawidłowym zakończeniu przejścia. Jeżeli
-podczas odkrywania kart lub aktualizacji stanu wystąpi wyjątek, decyzja nie
-jest dodawana do historii, a poprzedni stan środowiska pozostaje aktualny.
-Rozwiązanie to zapewnia spójność pomiędzy zapisanym przebiegiem rozdania
-a rzeczywiście wykonanymi przejściami.
+Wynikiem przejścia jest nowy, niemodyfikowalny obiekt \texttt{RoundState},
+na podstawie którego budowane są obserwacja agenta oraz obiekt
+\texttt{StepResult} z informacją o zakończeniu rozdania i, w stanie
+terminalnym, o jego wyniku i rozliczeniu. Jeżeli rejestrowanie historii jest
+włączone, obserwacja sprzed decyzji i wybrana akcja są zapisywane dopiero po
+udanym przejściu, dzięki czemu historia pozostaje spójna z rzeczywiście
+wykonanymi krokami.
 

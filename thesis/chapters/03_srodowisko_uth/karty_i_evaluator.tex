@@ -22,11 +22,7 @@ umożliwia bezpośrednie porównywanie rang podczas oceny układów pokerowych.
 W podstawowej reprezentacji as jest kartą najwyższą, natomiast szczególny
 przypadek strita od asa do piątki obsługiwany jest przez evaluator układów.
 
-Zbiór kolorów obejmuje trefle, karo, kiery i piki. Każdemu kolorowi oraz
-każdej randze przypisano również symbol tekstowy, umożliwiający czytelne
-przedstawienie kart, na przykład \texttt{A\(\spadesuit\)} lub
-\texttt{10\(\heartsuit\)}. Reprezentacja tekstowa jest wykorzystywana
-głównie w testach, diagnostyce oraz zapisie przebiegu rozdania.
+Zbiór kolorów obejmuje trefle, karo, kiery i piki.
 
 Obiekty kart są niemodyfikowalne po ich utworzeniu. Pozwala to bezpiecznie
 umieszczać je w krotkach i zbiorach, a także wykorzystywać porównanie
@@ -46,11 +42,7 @@ Liczba kart w pełnej talii wynosi zatem
 \end{equation}
 
 Ponieważ każda kombinacja rangi i koloru występuje dokładnie raz,
-wygenerowana talia zawiera 52 unikalne karty. Karty są przechowywane
-wewnętrznie w modyfikowalnej kolekcji, jednak publiczny podgląd zawartości
-talii zwracany jest w postaci krotki. Uniemożliwia to zewnętrzną zmianę
-kolejności lub usunięcie karty z pominięciem operacji zdefiniowanych przez
-talię.
+wygenerowana talia zawiera 52 unikalne karty.
 
 Podstawową operacją jest metoda \texttt{draw()}, która pobiera jedną kartę
 z wierzchu talii i jednocześnie usuwa ją z kolekcji. Dostępna jest również
@@ -91,17 +83,9 @@ poprawnymi obiektami \texttt{Card} oraz czy żadna karta nie występuje więcej
 niż raz. Dzięki temu błąd w danych testowych nie może doprowadzić do
 przeprowadzenia rozdania zawierającego dwie identyczne karty.
 
-Deterministyczne źródło umożliwia przygotowanie testów dla ściśle określonych
-sytuacji, takich jak:
-
-\begin{itemize}
-    \item wygrana gracza przy niekwalifikującym się krupierze,
-    \item remis obu stron,
-    \item uzyskanie konkretnego układu wypłacanego przez zakład Blind,
-    \item sprawdzenie kolejności kart gracza i krupiera,
-    \item weryfikacja kart spalonych przed flopem oraz przed turnem,
-    \item próba wykonania przejścia przy niewystarczającej liczbie kart.
-\end{itemize}
+Deterministyczne źródło umożliwia przygotowanie powtarzalnych testów
+obejmujących ściśle określone scenariusze rozgrywki, kwalifikacji krupiera
+i rozliczenia zakładów.
 
 \subsection{Powtarzalność losowych rozdań}
 \label{subsec:powtarzalnosc-talii}
@@ -147,13 +131,9 @@ przez porównanie odpowiadających im wartości całkowitych.
 Sama kategoria nie wystarcza jednak do rozstrzygnięcia wszystkich przypadków.
 Dwie ręce mogą należeć do tej samej kategorii, lecz różnić się rangą kart
 tworzących układ albo kart dodatkowych. Z tego względu pełna wartość ręki
-jest reprezentowana przez obiekt \texttt{HandValue}, zawierający:
-
-\begin{itemize}
-    \item kategorię układu \texttt{rank},
-    \item uporządkowaną krotkę wartości rozstrzygających remis
-          \texttt{tiebreak}.
-\end{itemize}
+jest reprezentowana przez obiekt \texttt{HandValue}, zawierający kategorię
+układu \texttt{rank} oraz uporządkowaną krotkę wartości rozstrzygających
+remis \texttt{tiebreak}.
 
 Klucz porównawczy ręki można zapisać jako
 
@@ -207,12 +187,8 @@ każdego elementu oraz brak duplikatów.
 
 W pierwszym kroku obliczana jest liczba wystąpień każdej rangi. Na tej
 podstawie możliwe jest wykrycie par, dwóch par, trójki, fulla oraz karety.
-Niezależnie sprawdzane są dwa warunki:
-
-\begin{itemize}
-    \item czy wszystkie karty mają ten sam kolor,
-    \item czy pięć różnych rang tworzy ciąg kolejnych wartości.
-\end{itemize}
+Niezależnie sprawdzane są dwa warunki: czy wszystkie karty mają ten sam
+kolor oraz czy pięć różnych rang tworzy ciąg kolejnych wartości.
 
 Kategorie sprawdzane są od najsilniejszej do najsłabszej. Jeżeli spełnione
 są jednocześnie warunki strita i koloru, zwracany jest poker. W przeciwnym
@@ -221,25 +197,10 @@ jedna para oraz wysoka karta.
 
 Wartość \texttt{tiebreak} jest budowana bezpośrednio podczas rozpoznawania
 kategorii. Wynikiem funkcji nie jest zatem jedynie nazwa układu, lecz kompletna
-wartość umożliwiająca porównanie z dowolną inną poprawną ręką.
-
-\subsection{Obsługa niskiego strita z asem}
-\label{subsec:niski-strit-as}
-
-W podstawowym modelu rang as otrzymuje wartość 14 i jest najwyższą kartą.
-W przypadku strita \(A\)-\(2\)-\(3\)-\(4\)-\(5\) musi jednak pełnić funkcję
-karty niższej od dwójki. Układ ten jest obsługiwany jako szczególny przypadek.
-
-Dla zestawu rang
-
-\begin{equation}
-    \{14,5,4,3,2\}
-\end{equation}
-
-evaluator zwraca strita o najwyższej karcie równej 5. Jego klucz porównawczy
-jest zatem słabszy od klucza strita zakończonego szóstką. Pozwala to zachować
-naturalną kolejność wszystkich możliwych stritów bez zmieniania podstawowej
-wartości asa w pozostałych kategoriach.
+wartość umożliwiająca porównanie z dowolną inną poprawną ręką. Szczególnym
+przypadkiem jest strit \(A\)-\(2\)-\(3\)-\(4\)-\(5\), w którym as pełni rolę
+najniższej karty; evaluator zwraca wtedy strita o najwyższej karcie równej 5,
+bez zmiany wartości asa w pozostałych kategoriach.
 
 \subsection{Wybór najlepszej ręki}
 \label{subsec:wybor-najlepszej-reki}
@@ -279,14 +240,8 @@ nie występuje więcej niż raz.
 
 Wynikiem operacji jest obiekt \texttt{EvaluatedHand}, który przechowuje
 zarówno wartość \texttt{HandValue}, jak i dokładnie pięć kart tworzących
-wybrany układ. Zachowanie kart składowych jest przydatne podczas:
-
-\begin{itemize}
-    \item prezentowania wyniku showdownu,
-    \item analizy decyzji agentów,
-    \item diagnozowania błędów evaluatora,
-    \item identyfikowania rzadkich lub szczególnie wartościowych rozdań.
-\end{itemize}
+wybrany układ, co jest przydatne przy prezentowaniu wyniku showdownu oraz
+diagnostyce evaluatora.
 
 Poker królewski nie stanowi osobnej kategorii \texttt{HandRank}. Jest
 reprezentowany jako poker z asem jako najwyższą kartą. Obiekt
