@@ -1123,3 +1123,150 @@ Istotne jest również rozróżnienie pomiędzy interfejsem przeznaczonym dla
 agenta a interfejsem diagnostycznym. Pełny stan może być wykorzystywany
 przez testy, rejestrowanie przebiegu rozdania i analizę zakończonych epizodów,
 ale nie powinien być przekazywany metodzie wybierającej akcję agenta.
+
+Granica pomiędzy pełnym stanem środowiska a informacjami przekazywanymi
+agentowi została przedstawiona na rysunku~\ref{fig:granica-informacji}.
+Obserwacja nie jest bezpośrednim widokiem pełnego stanu, lecz wynikiem
+jawnie zdefiniowanej projekcji. Informacje ukryte pozostają dostępne
+wyłącznie wewnętrznym komponentom środowiska.
+
+\begin{figure}[htbp]
+    \centering
+
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+        node distance=14mm and 30mm,
+        every node/.style={
+            font=\small
+        },
+        state/.style={
+            draw,
+            rounded corners,
+            align=left,
+            minimum width=42mm,
+            minimum height=31mm,
+            inner sep=4mm
+        },
+        projection/.style={
+            draw,
+            rounded corners,
+            align=center,
+            minimum width=29mm,
+            minimum height=17mm
+        },
+        observation/.style={
+            draw,
+            rounded corners,
+            align=left,
+            minimum width=42mm,
+            minimum height=31mm,
+            inner sep=4mm
+        },
+        agent/.style={
+            draw,
+            very thick,
+            rounded corners,
+            align=center,
+            minimum width=28mm,
+            minimum height=14mm
+        },
+        hidden/.style={
+            draw,
+            dashed,
+            rounded corners,
+            align=left,
+            minimum width=42mm,
+            minimum height=25mm,
+            inner sep=4mm
+        },
+        flow/.style={
+            -{Latex[length=2.5mm]},
+            thick
+        },
+        relation/.style={
+            -{Latex[length=2.2mm]},
+            dashed
+        }
+    ]
+
+        \node[state] (roundstate) {
+            \textbf{\texttt{RoundState}}\\[1mm]
+            faza gry\\
+            karty gracza\\
+            karty wspólne\\
+            legalne akcje\\
+            dane końcowe
+        };
+
+        \node[projection, right=of roundstate] (projection) {
+            Jawna projekcja\\
+            \(\phi(S_t)\)
+        };
+
+        \node[observation, right=of projection] (observation) {
+            \textbf{\texttt{UTHObservation}}\\[1mm]
+            faza gry\\
+            karty gracza\\
+            odkryte karty wspólne\\
+            legalne akcje
+        };
+
+        \node[agent, right=of observation] (agent) {
+            Agent
+        };
+
+        \node[hidden, below=of roundstate] (hidden) {
+            \textbf{Informacje ukryte}\\[1mm]
+            karty krupiera\\
+            karty spalone\\
+            kolejność talii\\
+            przyszłe karty wspólne
+        };
+
+        \draw[flow]
+            (roundstate)
+            --
+            node[above] {wybrane pola}
+            (projection);
+
+        \draw[flow]
+            (projection)
+            --
+            (observation);
+
+        \draw[flow]
+            (observation)
+            --
+            node[above] {dane wejściowe}
+            (agent);
+
+        \draw[relation]
+            (roundstate)
+            --
+            node[right] {zawiera}
+            (hidden);
+
+    \end{tikzpicture}%
+    }
+
+    \caption{Oddzielenie pełnego stanu środowiska od obserwacji agenta}
+    \label{fig:granica-informacji}
+\end{figure}
+
+Informacje ukryte są częścią stanu potrzebnego do poprawnego prowadzenia
+rozgrywki, lecz nie uczestniczą w tworzeniu obserwacji. Przykładowo silnik
+musi przechowywać karty krupiera, aby po zakończeniu rozdania przeprowadzić
+showdown, ale agent nie może korzystać z nich podczas wyboru akcji.
+
+Podobnie karty spalone i kolejność pozostałych kart są potrzebne do
+kontynuowania rozdania oraz zapewnienia jego deterministycznego odtworzenia,
+jednak ich ujawnienie zmieniałoby problem decyzyjny. Agent znałby wówczas
+przyszłe zdarzenia losowe, co prowadziłoby do sztucznie zawyżonej jakości
+strategii.
+
+Jawna funkcja projekcji stanowi zatem część definicji środowiska z niepełną
+informacją. Zapewnia ona, że każda metoda wyboru akcji, niezależnie od
+zastosowanego algorytmu, otrzymuje ten sam zakres informacji. W przyszłych
+eksperymentach zmianie może podlegać sposób numerycznego kodowania
+obserwacji, natomiast zbiór informacji dostępnych agentowi pozostanie
+niezmieniony.
