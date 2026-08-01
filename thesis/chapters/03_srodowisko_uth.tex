@@ -3421,4 +3421,313 @@ Informuje jedynie, że testy wykonały wszystkie mierzone linie i gałęzie
 programu. Z tego względu został uzupełniony testami opartymi na konkretnych
 scenariuszach domenowych oraz walidacją niezmienników.
 
+\section{Ograniczenia i kierunki dalszego rozwoju}
+\label{sec:ograniczenia-srodowiska}
 
+Zaimplementowane środowisko odwzorowuje podstawowy wariant Ultimate Texas
+Hold’em potrzebny do prowadzenia eksperymentów nad strategiami podejmowania
+decyzji. Celem silnika nie jest pełna symulacja działalności stołu
+kasynowego, lecz dostarczenie jednoznacznego, deterministycznie testowalnego
+modelu procesu decyzyjnego gracza.
+
+Zakres implementacji został celowo ograniczony do elementów wpływających
+na decyzje Play i końcowy wynik podstawowych zakładów. Pozostałe mechanizmy
+mogą zostać dodane w przyszłości jako osobne rozszerzenia, bez zmieniania
+głównej maszyny stanów.
+
+\subsection{Zakres podstawowego środowiska}
+\label{subsec:zakres-podstawowego-srodowiska}
+
+Zaimplementowany wariant środowiska obejmuje:
+
+\begin{itemize}
+    \item jednego gracza rozgrywającego rozdanie przeciwko krupierowi,
+    \item standardową talię 52 kart bez jokerów,
+    \item zakłady Ante, Blind i Play,
+    \item decyzje Play wykonywane przed flopem, po flopie i po odkryciu
+          całego stołu,
+    \item kwalifikację krupiera od pary,
+    \item standardową tabelę wypłat zakładu Blind,
+    \item zakończenie przez showdown albo fold,
+    \item dokładne rozliczenie finansowe w jednostkach Ante,
+    \item kontrolowane źródło losowości i deterministyczne talie testowe,
+    \item opcjonalne rejestrowanie przebiegu rozdania.
+\end{itemize}
+
+Elementy znajdujące się poza zakresem podstawowego silnika przedstawiono
+w tabeli~\ref{tab:ograniczenia-srodowiska}.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{Elementy nieuwzględnione w podstawowym środowisku}
+    \label{tab:ograniczenia-srodowiska}
+    \begin{tabular}{
+        |p{0.27\textwidth}
+        |p{0.28\textwidth}
+        |p{0.35\textwidth}|
+    }
+        \hline
+        \textbf{Element}
+        &
+        \textbf{Stan}
+        &
+        \textbf{Uzasadnienie}
+        \\
+        \hline
+
+        Zakład Trips
+        &
+        Nieuwzględniony
+        &
+        Nie zmienia sekwencji decyzji Play, ale wprowadza dodatkowy składnik
+        końcowego wyniku finansowego.
+        \\
+        \hline
+
+        Zakład Progressive
+        &
+        Nieuwzględniony
+        &
+        Wymaga modelowania dodatkowej tabeli wypłat lub wartości puli
+        narastającej pomiędzy rozdaniami.
+        \\
+        \hline
+
+        Wielu graczy przy stole
+        &
+        Nieuwzględnieni
+        &
+        Badany problem dotyczy decyzji pojedynczego gracza przeciwko
+        krupierowi.
+        \\
+        \hline
+
+        Saldo gracza
+        &
+        Nieuwzględnione
+        &
+        Każde rozdanie jest niezależnym epizodem, a wynik wyrażany jest
+        w jednostkach Ante.
+        \\
+        \hline
+
+        Limity i nominały stołu
+        &
+        Nieuwzględnione
+        &
+        Nie wpływają na względną jakość strategii ocenianej za pomocą
+        znormalizowanego wyniku finansowego.
+        \\
+        \hline
+
+        Interfejs graficzny
+        &
+        Nieuwzględniony
+        &
+        Środowisko jest przeznaczone do automatycznych eksperymentów,
+        a nie do interaktywnej rozgrywki.
+        \\
+        \hline
+
+        Adapter Gymnasium
+        &
+        Planowany
+        &
+        Zostanie dodany jako osobna warstwa nad gotowym silnikiem domenowym.
+        \\
+        \hline
+
+        Numeryczne kodowanie obserwacji
+        &
+        Planowane
+        &
+        Różne reprezentacje stanu będą jednym z elementów porównania
+        eksperymentalnego.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Pominięcie zakładów dodatkowych}
+\label{subsec:pominiecie-zakladow-dodatkowych}
+
+Zakład Trips jest rozliczany na podstawie końcowego układu gracza niezależnie
+od wyniku porównania z krupierem. Nie wprowadza kolejnego momentu decyzyjnego
+podczas rozdania, ponieważ jego wartość jest ustalana przed rozdaniem kart.
+Wpływa jednak na rozkład końcowych wypłat.
+
+Uwzględnienie Trips w podstawowej wersji środowiska utrudniałoby interpretację
+wyników strategii Play. Agent mógłby uzyskiwać wysokie lub niskie wyniki
+wynikające z zakładu, na który nie ma wpływu podczas właściwej sekwencji
+decyzyjnej. Z tego względu bazowe eksperymenty będą oceniały wyłącznie wynik
+Ante, Blind i Play.
+
+Progressive również nie zmienia późniejszych decyzji Play, ale wymaga
+dodatkowego modelu wypłat. W wariancie z narastającym jackpotem wartość
+potencjalnej nagrody zależy ponadto od stanu utrzymywanego pomiędzy
+rozdaniami. Oznaczałoby to, że epizody nie byłyby w pełni niezależne bez
+dodatkowego modelowania wartości puli.
+
+Oba zakłady mogą zostać w przyszłości dodane jako rozszerzenia warstwy
+rozliczeń. Nie wymagają zmiany podstawowej kolejności faz
+\texttt{PREFLOP}, \texttt{FLOP}, \texttt{RIVER} i \texttt{TERMINAL}, ale
+zmieniają końcową funkcję wypłaty.
+
+\subsection{Brak modelu salda i sesji}
+\label{subsec:brak-modelu-salda}
+
+Silnik traktuje każde rozdanie jako niezależny epizod. Nie przechowuje salda
+gracza, historii wyników pomiędzy rozdaniami ani ograniczeń wynikających
+z dostępnego kapitału.
+
+Ante i Blind mają stałą wartość jednej jednostki, natomiast Play jest
+wielokrotnością Ante wynikającą bezpośrednio z wybranej akcji. Dzięki temu
+wyniki różnych strategii mogą być porównywane niezależnie od przyjętego
+nominału pieniężnego.
+
+Brak modelu salda oznacza, że środowisko nie bada między innymi:
+
+\begin{itemize}
+    \item ryzyka bankructwa,
+    \item doboru wysokości podstawowej stawki,
+    \item zarządzania kapitałem pomiędzy rozdaniami,
+    \item warunków zakończenia całej sesji,
+    \item wpływu limitów stołu.
+\end{itemize}
+
+Zagadnienia te dotyczą zarządzania kapitałem, a nie samej strategii decyzji
+Play. Mogłyby zostać dodane jako zewnętrzna warstwa zarządzająca serią
+epizodów.
+
+\subsection{Model pojedynczego gracza}
+\label{subsec:model-pojedynczego-gracza}
+
+Środowisko reprezentuje jednego gracza oraz jednego krupiera. Nie symuluje
+innych miejsc przy stole ani kart rozdanych pozostałym uczestnikom.
+
+W rzeczywistej grze obecność innych graczy wpływa na liczbę kart zużytych
+z talii, ale zakryte karty tych osób pozostają nieznane badanemu graczowi.
+Modelowanie pełnego stołu zwiększałoby złożoność procesu rozdawania bez
+zmiany informacji dostępnych agentowi w podstawowym problemie decyzyjnym.
+
+Przyjęte uproszczenie oznacza, że wszystkie niewidoczne karty poza kartami
+krupiera, kartami spalonymi i odkrytym stołem pozostają w źródle kart.
+Rozkład kart widocznych dla pojedynczego gracza jest dzięki temu zgodny
+z losowaniem bez zwracania ze standardowej talii.
+
+\subsection{Ograniczenie do jednej konfiguracji reguł}
+\label{subsec:jedna-konfiguracja-regul}
+
+Obecna implementacja wykorzystuje jedną konfigurację zasad:
+
+\begin{itemize}
+    \item krupier kwalifikuje się od jednej pary,
+    \item Ante i Blind mają wartość jednej jednostki,
+    \item dostępne mnożniki Play wynoszą \(1\), \(2\), \(3\) i \(4\),
+    \item stosowana jest jedna tabela wypłat Blind.
+\end{itemize}
+
+Niektóre kasyna lub materiały źródłowe mogą stosować inne tabele wypłat
+zakładów dodatkowych albo lokalne warianty zasad. W aktualnym silniku
+wartości podstawowej konfiguracji są jawnie zapisane w module reguł
+i rozliczeń.
+
+Możliwym rozszerzeniem jest wprowadzenie niemodyfikowalnego obiektu
+konfiguracyjnego przekazywanego do silnika. Pozwoliłby on wybierać tabelę
+Blind, warunek kwalifikacji oraz aktywne zakłady bez modyfikowania kodu
+mechanizmu rozliczeń. Rozszerzenie to nie jest konieczne dla eksperymentów
+prowadzonych w jednej, wcześniej ustalonej konfiguracji.
+
+\subsection{Brak numerycznej reprezentacji obserwacji}
+\label{subsec:brak-numerycznej-obserwacji}
+
+Obecna obserwacja jest obiektem domenowym zawierającym karty, fazę oraz zbiór
+legalnych akcji. Taka postać jest czytelna, jednoznaczna i wygodna podczas
+testowania, ale nie może zostać bezpośrednio przekazana do większości modeli
+uczenia maszynowego.
+
+Przed rozpoczęciem uczenia konieczne będzie utworzenie encoderów
+przekształcających \texttt{UTHObservation} do wektorów lub struktur
+numerycznych o stałym rozmiarze. Sposób kodowania nie zostanie umieszczony
+w klasie \texttt{UTHGame}, ponieważ porównanie reprezentacji stanu stanowi
+jeden z elementów badawczych pracy.
+
+Oddzielenie encodera od silnika umożliwi wykorzystanie identycznych rozdań
+i reguł przy porównywaniu różnych reprezentacji. Różnice w wynikach nie będą
+wówczas wynikały z odmiennego działania mechanizmu gry.
+
+\subsection{Planowane etapy rozwoju}
+\label{subsec:planowane-etapy-rozwoju}
+
+Dalsza realizacja projektu będzie przebiegała etapowo. Pierwszym krokiem
+będzie utworzenie wspólnego interfejsu agentów oraz mechanizmu uruchamiania
+wielu rozdań. Następnie zaimplementowani zostaną agenci bazowi:
+
+\begin{itemize}
+    \item agent wybierający losową legalną akcję,
+    \item agent oparty na ustalonych regułach strategicznych.
+\end{itemize}
+
+Agenci bazowi będą służyli do weryfikacji infrastruktury eksperymentalnej
+oraz jako punkty odniesienia dla metod uczących się.
+
+Kolejny etap obejmie:
+
+\begin{itemize}
+    \item implementację adaptera zgodnego z Gymnasium,
+    \item utworzenie numerycznych reprezentacji obserwacji,
+    \item implementację wymiennych funkcji nagrody,
+    \item zdefiniowanie metryk i procesu oceny strategii,
+    \item implementację wybranych metod uczenia przez wzmacnianie,
+    \item przeprowadzenie eksperymentów dla wielu ziaren losowych.
+\end{itemize}
+
+Architektura silnika umożliwia realizację tych etapów bez ponownego
+implementowania zasad UTH. Agenci i adapter będą korzystali z publicznego
+interfejsu \texttt{reset()} oraz \texttt{step()}, natomiast evaluator,
+maszyna stanów i moduł rozliczeń pozostaną wspólne dla wszystkich metod.
+
+\section{Podsumowanie}
+\label{sec:podsumowanie-srodowiska-uth}
+
+W rozdziale przedstawiono projekt i implementację środowiska pojedynczego
+rozdania Ultimate Texas Hold’em. Silnik został podzielony na niezależne
+komponenty odpowiedzialne za reprezentację kart, ocenę układów, rozdawanie,
+przechowywanie stanu, walidację akcji, przeprowadzanie showdownu oraz
+rozliczanie zakładów.
+
+Przebieg rozdania odwzorowano jako maszynę stanów obejmującą fazy
+\texttt{PREFLOP}, \texttt{FLOP}, \texttt{RIVER} i \texttt{TERMINAL}.
+Zbiór legalnych akcji zależy od bieżącej fazy, a każda akcja typu
+\texttt{BET} kończy część decyzyjną rozdania. Konstrukcja ta gwarantuje,
+że zakład Play zostanie wykonany najwyżej jeden raz.
+
+Istotnym elementem projektu jest rozdzielenie pełnego stanu
+\texttt{RoundState} od obserwacji \texttt{UTHObservation}. Agent otrzymuje
+wyłącznie własne karty, odkryte karty wspólne, aktualną fazę oraz legalne
+akcje. Karty krupiera, karty spalone i kolejność pozostałej talii pozostają
+wewnętrznymi informacjami środowiska. Zapobiega to wykorzystaniu przez
+agenta informacji niedostępnych graczowi w rzeczywistym rozdaniu.
+
+Showdown wykorzystuje ogólny evaluator pokerowy wybierający najlepsze pięć
+kart z siedmiu. Rozliczenie Ante, Blind i Play jest wykonywane na podstawie
+wyniku porównania, kwalifikacji krupiera, mnożnika Play oraz kategorii ręki
+gracza. Wszystkie wartości finansowe są przechowywane dokładnie za pomocą
+typu \texttt{Fraction}.
+
+Silnik umożliwia zarówno losowe, jak i deterministyczne rozdawanie kart.
+Wstrzykiwane źródło \texttt{FixedDeck} pozwala tworzyć powtarzalne scenariusze
+testowe obejmujące pełną kolejność kart. Opcjonalny mechanizm historii
+zapisuje obserwacje widoczne przed decyzjami oraz końcowy pełny stan
+diagnostyczny.
+
+Zaimplementowane środowisko stanowi warstwę domenową projektu. Nie zawiera
+jeszcze numerycznego kodowania obserwacji, funkcji nagrody zwracanej przez
+interfejs uczenia ani adaptera Gymnasium. Elementy te zostaną utworzone jako
+osobne warstwy, dzięki czemu możliwe będzie porównywanie reprezentacji stanu,
+funkcji nagrody i algorytmów przy zachowaniu identycznych zasad gry.
+
+Gotowy silnik zapewnia podstawę do implementacji agentów bazowych,
+infrastruktury eksperymentalnej oraz metod uczenia przez wzmacnianie
+analizowanych w dalszej części pracy.
