@@ -1270,3 +1270,345 @@ zastosowanego algorytmu, otrzymuje ten sam zakres informacji. W przyszłych
 eksperymentach zmianie może podlegać sposób numerycznego kodowania
 obserwacji, natomiast zbiór informacji dostępnych agentowi pozostanie
 niezmieniony.
+
+\section{Przebieg rozdania i maszyna stanów}
+\label{sec:maszyna-stanow}
+
+Przebieg pojedynczego rozdania Ultimate Texas Hold’em odwzorowano jako
+deterministyczną maszynę stanów. Aktualna faza określa zakres informacji
+widocznych dla agenta, zbiór legalnych akcji oraz operacje wykonywane
+przez środowisko po otrzymaniu decyzji.
+
+Zbiór faz środowiska ma postać
+
+\begin{equation}
+    \mathcal{P} =
+    \{
+        \texttt{PREFLOP},
+        \texttt{FLOP},
+        \texttt{RIVER},
+        \texttt{TERMINAL}
+    \}.
+\end{equation}
+
+Każde poprawne wykonanie metody \texttt{step()} prowadzi do przejścia
+do następnej fazy albo do zakończenia rozdania. Agent nie może pozostać
+w tej samej fazie po wykonaniu akcji.
+
+\subsection{Rozpoczęcie rozdania}
+\label{subsec:rozpoczecie-rozdania}
+
+Nowe rozdanie rozpoczynane jest przez metodę \texttt{reset()}. Jeżeli nie
+przekazano zewnętrznego źródła kart, środowisko tworzy nową przetasowaną
+talię. Następnie dobierane są cztery karty własne w kolejności
+
+\begin{equation}
+    P_1 \rightarrow D_1 \rightarrow P_2 \rightarrow D_2,
+\end{equation}
+
+gdzie \(P_i\) oznacza kartę gracza, a \(D_i\) kartę krupiera. Utworzony stan
+znajduje się w fazie \texttt{PREFLOP}. Agent widzi swoje dwie karty, lecz
+karty krupiera pozostają ukryte.
+
+Na tym etapie nie są jeszcze dobierane karty wspólne ani karty spalone.
+Metoda \texttt{reset()} zwraca pierwszą obserwację, na podstawie której
+agent podejmuje decyzję przed flopem.
+
+\subsection{Faza preflop}
+\label{subsec:faza-preflop}
+
+W fazie \texttt{PREFLOP} dostępne są trzy akcje:
+
+\begin{itemize}
+    \item \texttt{CHECK},
+    \item \texttt{BET\_3X},
+    \item \texttt{BET\_4X}.
+\end{itemize}
+
+Akcja \texttt{CHECK} oznacza odłożenie decyzji o zakładzie Play. Środowisko
+spala jedną kartę, odkrywa trzy karty flopa i przechodzi do fazy
+\texttt{FLOP}.
+
+Wykonanie \texttt{BET\_3X} albo \texttt{BET\_4X} ustala wartość zakładu
+Play odpowiednio na trzy lub cztery jednostki Ante. Po postawieniu zakładu
+agent nie podejmuje już kolejnych decyzji. Środowisko odkrywa wszystkie
+pozostałe karty wspólne, przeprowadza showdown, rozlicza zakłady i przechodzi
+bezpośrednio do fazy \texttt{TERMINAL}.
+
+\subsection{Faza flopa}
+\label{subsec:faza-flopa}
+
+Przejście do fazy \texttt{FLOP} następuje wyłącznie po wykonaniu akcji
+\texttt{CHECK} przed flopem. Stan zawiera wówczas trzy odkryte karty wspólne
+i jedną kartę spaloną.
+
+Agent może wykonać jedną z dwóch akcji:
+
+\begin{itemize}
+    \item \texttt{CHECK},
+    \item \texttt{BET\_2X}.
+\end{itemize}
+
+Ponowne wykonanie \texttt{CHECK} powoduje spalenie kolejnej karty oraz
+jednoczesne odkrycie turna i rivera. Środowisko przechodzi następnie do fazy
+\texttt{RIVER}.
+
+Akcja \texttt{BET\_2X} ustala zakład Play na dwie jednostki Ante. Środowisko
+odkrywa turn i river, przeprowadza showdown i kończy rozdanie.
+
+\subsection{Faza rivera}
+\label{subsec:faza-rivera}
+
+W fazie \texttt{RIVER} wszystkie pięć kart wspólnych jest już odkrytych.
+Nazwa fazy oznacza ostatni etap decyzyjny, a nie samo odkrycie pojedynczej
+karty rivera. Turn i river są odkrywane razem, ponieważ pomiędzy nimi gracz
+nie podejmuje żadnej decyzji.
+
+W tej fazie agent musi wybrać jedną z dwóch akcji:
+
+\begin{itemize}
+    \item \texttt{BET\_1X},
+    \item \texttt{FOLD}.
+\end{itemize}
+
+Akcja \texttt{BET\_1X} ustala zakład Play na jedną jednostkę Ante
+i prowadzi do showdownu. Akcja \texttt{FOLD} kończy rozdanie bez porównywania
+układów. W obu przypadkach kolejną fazą jest \texttt{TERMINAL}.
+
+\subsection{Faza terminalna}
+\label{subsec:faza-terminalna}
+
+Faza \texttt{TERMINAL} oznacza zakończenie epizodu. Stan zawiera końcowy
+wynik rozdania oraz rozliczenie zakładów. W przypadku zakończenia przez
+zakład Play zawiera również rezultat showdownu i wartość mnożnika Play.
+
+Stan terminalny nie udostępnia żadnych legalnych akcji. Próba ponownego
+wywołania metody \texttt{step()} jest traktowana jako błąd domenowy.
+Rozpoczęcie kolejnego epizodu wymaga ponownego wywołania metody
+\texttt{reset()}.
+
+\subsection{Tabela przejść}
+\label{subsec:tabela-przejsc}
+
+Pełny zbiór przejść pomiędzy fazami przedstawiono w
+tabeli~\ref{tab:przejscia-uth}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Przejścia pomiędzy fazami środowiska UTH}
+    \label{tab:przejscia-uth}
+    \begin{tabular}{
+        |p{0.16\textwidth}
+        |p{0.16\textwidth}
+        |p{0.17\textwidth}
+        |p{0.40\textwidth}|
+    }
+        \hline
+        \textbf{Faza}
+        &
+        \textbf{Akcja}
+        &
+        \textbf{Następna faza}
+        &
+        \textbf{Operacje środowiska}
+        \\
+        \hline
+
+        \texttt{PREFLOP}
+        &
+        \texttt{CHECK}
+        &
+        \texttt{FLOP}
+        &
+        Spalenie jednej karty i odkrycie trzech kart flopa.
+        \\
+        \hline
+
+        \texttt{PREFLOP}
+        &
+        \texttt{BET\_3X}
+        &
+        \texttt{TERMINAL}
+        &
+        Odkrycie całego stołu, showdown i rozliczenie Play \(3\times\).
+        \\
+        \hline
+
+        \texttt{PREFLOP}
+        &
+        \texttt{BET\_4X}
+        &
+        \texttt{TERMINAL}
+        &
+        Odkrycie całego stołu, showdown i rozliczenie Play \(4\times\).
+        \\
+        \hline
+
+        \texttt{FLOP}
+        &
+        \texttt{CHECK}
+        &
+        \texttt{RIVER}
+        &
+        Spalenie jednej karty oraz odkrycie turna i rivera.
+        \\
+        \hline
+
+        \texttt{FLOP}
+        &
+        \texttt{BET\_2X}
+        &
+        \texttt{TERMINAL}
+        &
+        Odkrycie turna i rivera, showdown i rozliczenie Play \(2\times\).
+        \\
+        \hline
+
+        \texttt{RIVER}
+        &
+        \texttt{BET\_1X}
+        &
+        \texttt{TERMINAL}
+        &
+        Showdown i rozliczenie Play \(1\times\).
+        \\
+        \hline
+
+        \texttt{RIVER}
+        &
+        \texttt{FOLD}
+        &
+        \texttt{TERMINAL}
+        &
+        Zakończenie bez showdownu i rozliczenie spasowania.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Diagram maszyny stanów}
+\label{subsec:diagram-maszyny-stanow}
+
+Graficzną reprezentację przejść przedstawiono na
+rysunku~\ref{fig:maszyna-stanow-uth}.
+
+\begin{figure}[htbp]
+    \centering
+
+    \begin{tikzpicture}[
+        node distance=26mm and 28mm,
+        phase/.style={
+            draw,
+            rounded corners,
+            minimum width=29mm,
+            minimum height=13mm,
+            align=center,
+            font=\small
+        },
+        terminal/.style={
+            draw,
+            very thick,
+            double,
+            rounded corners,
+            minimum width=31mm,
+            minimum height=14mm,
+            align=center,
+            font=\small
+        },
+        transition/.style={
+            -{Latex[length=2.5mm]},
+            thick
+        },
+        every node/.style={
+            font=\small
+        }
+    ]
+
+        \node[phase] (preflop) {
+            \texttt{PREFLOP}
+        };
+
+        \node[phase, right=of preflop] (flop) {
+            \texttt{FLOP}
+        };
+
+        \node[phase, right=of flop] (river) {
+            \texttt{RIVER}
+        };
+
+        \node[terminal, below=of flop] (terminal) {
+            \texttt{TERMINAL}
+        };
+
+        \draw[transition]
+            (preflop)
+            --
+            node[above] {\texttt{CHECK}}
+            (flop);
+
+        \draw[transition]
+            (flop)
+            --
+            node[above] {\texttt{CHECK}}
+            (river);
+
+        \draw[transition]
+            (preflop)
+            to[bend right=20]
+            node[below left, align=center] {
+                \texttt{BET\_3X}\\
+                \texttt{BET\_4X}
+            }
+            (terminal);
+
+        \draw[transition]
+            (flop)
+            --
+            node[right] {\texttt{BET\_2X}}
+            (terminal);
+
+        \draw[transition]
+            (river)
+            to[bend left=20]
+            node[below right, align=center] {
+                \texttt{BET\_1X}\\
+                \texttt{FOLD}
+            }
+            (terminal);
+
+    \end{tikzpicture}
+
+    \caption{Maszyna stanów pojedynczego rozdania UTH}
+    \label{fig:maszyna-stanow-uth}
+\end{figure}
+
+\subsection{Zagwarantowanie pojedynczego zakładu Play}
+\label{subsec:pojedynczy-play}
+
+Struktura maszyny stanów gwarantuje, że zakład Play może zostać wykonany
+najwyżej raz. Każda akcja typu \texttt{BET} prowadzi bezpośrednio do fazy
+terminalnej. Nie istnieje więc przejście, w którym agent po postawieniu Play
+otrzymałby możliwość wykonania kolejnego zakładu.
+
+Akcje \texttt{CHECK} nie tworzą zakładu, lecz przesuwają decyzję do
+późniejszej fazy. Maksymalna liczba decyzji w jednym rozdaniu wynosi zatem
+trzy i występuje w ścieżce
+
+\begin{equation}
+    \texttt{PREFLOP}
+    \xrightarrow{\texttt{CHECK}}
+    \texttt{FLOP}
+    \xrightarrow{\texttt{CHECK}}
+    \texttt{RIVER}
+    \xrightarrow{\texttt{BET\_1X}\,\text{lub}\,\texttt{FOLD}}
+    \texttt{TERMINAL}.
+\end{equation}
+
+Najkrótsza ścieżka zawiera jedną decyzję i występuje po wykonaniu zakładu
+\(3\times\) lub \(4\times\) przed flopem.
+
+Przed wykonaniem przejścia środowisko sprawdza, czy przekazana akcja należy
+do zbioru legalnego dla bieżącej fazy. Operacje odkrywania kart dodatkowo
+sprawdzają oczekiwaną fazę wejściową. Ogranicza to możliwość pominięcia etapu,
+ponownego odkrycia tych samych kart lub wykonania akcji po zakończeniu
+rozdania.
