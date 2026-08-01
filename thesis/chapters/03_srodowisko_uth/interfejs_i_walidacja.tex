@@ -164,18 +164,14 @@ wartość właściwości \texttt{observation} albo obserwację zwróconą przez
 \subsection{Integracja z Gymnasium}
 \label{subsec:integracja-gymnasium}
 
-Silnik \texttt{UTHGame} jest niezależny od biblioteki Gymnasium. Integracja
-z algorytmami uczenia przez wzmacnianie zostanie zrealizowana przez osobny
-adapter, który nie będzie implementował zasad gry, lecz jedynie warstwę
-translacyjną: numeryczne kodowanie obserwacji, odwzorowanie indeksów akcji
-na wartości \texttt{Action}, utworzenie maski legalnych akcji oraz
-wyznaczenie nagrody i flag \texttt{terminated} i \texttt{truncated}.
-Wszystkie przejścia, walidacja akcji, showdown i rozliczenia pozostaną
-odpowiedzialnością silnika domenowego, co zapobiega powstaniu dwóch
-niezależnych implementacji UTH.
+Silnik \texttt{UTHGame} jest niezależny od biblioteki Gymnasium.
+W projekcie integrację z algorytmami uczenia przez wzmacnianie przypisano
+osobnemu adapterowi, stanowiącemu warstwę translacyjną pomiędzy obiektami
+domenowymi a interfejsem biblioteki. Zakres obecnej implementacji nie
+obejmuje jeszcze tego adaptera. Reguły gry, przejścia, walidacja akcji,
+showdown i rozliczenia są realizowane wyłącznie przez silnik domenowy.
 
-% TODO: uzupełnić szczegóły adaptera Gymnasium (przestrzenie akcji
-% i obserwacji, słownik info, mapowanie reset/step) po jego implementacji.
+% TODO: uzupełnić szczegóły adaptera Gymnasium po jego implementacji.
 
 \section{Rejestrowanie przebiegu i walidacja środowiska}
 \label{sec:rejestrowanie-i-walidacja}

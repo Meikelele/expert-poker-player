@@ -191,8 +191,9 @@ gdzie:
     \item \(m_t\) oznacza mnożnik zakładu Play, jeżeli został już wykonany.
 \end{itemize}
 
-Elementy takie jak karty krupiera, karty spalone i zawartość pozostałej talii
-należą do \(S_t\), ale nie są elementami \(O_t\).
+Karty krupiera i karty spalone należą do \(S_t\), natomiast kolejność
+pozostałej talii jest przechowywana przez wewnętrzne źródło kart.
+Żadna z tych informacji nie jest elementem \(O_t\).
 
 Porównanie zawartości pełnego stanu i obserwacji przedstawiono w
 tabeli~\ref{tab:stan-obserwacja}.
@@ -327,7 +328,9 @@ warstwą domenową, natomiast zbiór informacji dostępnych agentowi jest stały
 \label{sec:maszyna-stanow}
 
 Przebieg pojedynczego rozdania Ultimate Texas Hold’em odwzorowano jako
-deterministyczną maszynę stanów. Aktualna faza określa zakres informacji
+maszynę stanów. Następna faza jest jednoznacznie wyznaczona przez bieżącą
+fazę i akcję, natomiast konkretna zawartość kolejnego stanu zależy od kart
+zwróconych przez źródło. Aktualna faza określa zakres informacji
 widocznych dla agenta, zbiór legalnych akcji oraz operacje wykonywane przez
 środowisko po otrzymaniu decyzji. Zbiór faz ma postać
 
