@@ -348,3 +348,187 @@ podczas odkrywania kart lub aktualizacji stanu wystąpi wyjątek, decyzja nie
 jest dodawana do historii, a poprzedni stan środowiska pozostaje aktualny.
 Rozwiązanie to zapewnia spójność pomiędzy zapisanym przebiegiem rozdania
 a rzeczywiście wykonanymi przejściami.
+
+\section{Model kart i sterowanie talią}
+\label{sec:model-kart-talii}
+
+Reprezentacja kart i mechanizm sterowania talią stanowią podstawową warstwę
+środowiska. Elementy te zostały zaprojektowane niezależnie od zasad
+Ultimate Texas Hold’em, dzięki czemu mogą być wykorzystywane także przez
+inne warianty pokera oraz przez moduł oceniający układy.
+
+\subsection{Reprezentacja karty}
+\label{subsec:reprezentacja-karty}
+
+Pojedyncza karta jest reprezentowana przez niemodyfikowalny obiekt
+\texttt{Card}, zawierający dwa pola: rangę oraz kolor. Rangi zapisano za
+pomocą typu wyliczeniowego \texttt{Rank}, natomiast kolory za pomocą typu
+\texttt{Suit}. Zastosowanie typów wyliczeniowych ogranicza możliwość
+utworzenia karty zawierającej niepoprawną wartość.
+
+Rangi kart przyjmują wartości liczbowe od 2 do 14. Karty od dwójki do
+dziesiątki zachowują swoje naturalne wartości, natomiast walet, dama, król
+i as otrzymują odpowiednio wartości 11, 12, 13 i 14. Przyjęta reprezentacja
+umożliwia bezpośrednie porównywanie rang podczas oceny układów pokerowych.
+W podstawowej reprezentacji as jest kartą najwyższą, natomiast szczególny
+przypadek strita od asa do piątki obsługiwany jest przez evaluator układów.
+
+Zbiór kolorów obejmuje trefle, karo, kiery i piki. Każdemu kolorowi oraz
+każdej randze przypisano również symbol tekstowy, umożliwiający czytelne
+przedstawienie kart, na przykład \texttt{A\(\spadesuit\)} lub
+\texttt{10\(\heartsuit\)}. Reprezentacja tekstowa jest wykorzystywana
+głównie w testach, diagnostyce oraz zapisie przebiegu rozdania.
+
+Obiekty kart są niemodyfikowalne po ich utworzeniu. Pozwala to bezpiecznie
+umieszczać je w krotkach i zbiorach, a także wykorzystywać porównanie
+liczności zbioru do wykrywania zduplikowanych kart. Konstruktor dodatkowo
+sprawdza, czy przekazana ranga i kolor należą do odpowiednich typów
+wyliczeniowych.
+
+\subsection{Standardowa talia}
+\label{subsec:standardowa-talia}
+
+Standardową talię reprezentuje klasa \texttt{Deck}. Podczas jej tworzenia
+generowane są wszystkie kombinacje trzynastu rang i czterech kolorów.
+Liczba kart w pełnej talii wynosi zatem
+
+\begin{equation}
+    |\mathcal{D}| = 13 \cdot 4 = 52.
+\end{equation}
+
+Ponieważ każda kombinacja rangi i koloru występuje dokładnie raz,
+wygenerowana talia zawiera 52 unikalne karty. Karty są przechowywane
+wewnętrznie w modyfikowalnej kolekcji, jednak publiczny podgląd zawartości
+talii zwracany jest w postaci krotki. Uniemożliwia to zewnętrzną zmianę
+kolejności lub usunięcie karty z pominięciem operacji zdefiniowanych przez
+talię.
+
+Podstawową operacją jest metoda \texttt{draw()}, która pobiera jedną kartę
+z wierzchu talii i jednocześnie usuwa ją z kolekcji. Dostępna jest również
+operacja pobrania wielu kart. Próba pobrania karty z pustej talii lub większej
+liczby kart niż liczba pozostałych elementów powoduje zgłoszenie wyjątku.
+Takie zachowanie umożliwia szybkie wykrycie niepoprawnej implementacji
+przebiegu rozdania.
+
+Domyślnie talia jest tasowana bezpośrednio po utworzeniu. Możliwe jest także
+utworzenie talii w kolejności początkowej, co bywa użyteczne podczas testowania
+samego modelu kart. Tasowanie wykonywane jest przy użyciu lokalnego generatora
+liczb pseudolosowych, a nie globalnego stanu losowości programu.
+
+\subsection{Abstrakcja źródła kart}
+\label{subsec:zrodlo-kart}
+
+Silnik rozdania nie zależy bezpośrednio od klasy \texttt{Deck}. Zamiast tego
+korzysta z abstrakcji \texttt{CardSource}, która wymaga jedynie udostępnienia
+operacji \texttt{draw()}. Każdy obiekt spełniający ten kontrakt może zostać
+użyty jako źródło kolejnych kart.
+
+Minimalny interfejs źródła kart oddziela logikę rozdania od sposobu
+przechowywania i wybierania kart. W normalnej rozgrywce źródłem jest
+pseudolosowo przetasowana talia, natomiast w testach można przekazać źródło
+deterministyczne. Moduł odpowiedzialny za rozdawanie wykonuje w obu
+przypadkach te same operacje i nie musi rozpoznawać rodzaju używanej talii.
+
+\subsection{Deterministyczna talia testowa}
+\label{subsec:fixed-deck}
+
+Do testowania konkretnych scenariuszy wprowadzono klasę
+\texttt{FixedDeck}. Podczas jej tworzenia przekazywana jest jawna sekwencja
+kart określająca kolejność dobierania. Pierwszy element przekazanej sekwencji
+jest pierwszą kartą zwracaną przez metodę \texttt{draw()}.
+
+Przed zapisaniem sekwencji sprawdzane jest, czy wszystkie jej elementy są
+poprawnymi obiektami \texttt{Card} oraz czy żadna karta nie występuje więcej
+niż raz. Dzięki temu błąd w danych testowych nie może doprowadzić do
+przeprowadzenia rozdania zawierającego dwie identyczne karty.
+
+Deterministyczne źródło umożliwia przygotowanie testów dla ściśle określonych
+sytuacji, takich jak:
+
+\begin{itemize}
+    \item wygrana gracza przy niekwalifikującym się krupierze,
+    \item remis obu stron,
+    \item uzyskanie konkretnego układu wypłacanego przez zakład Blind,
+    \item sprawdzenie kolejności kart gracza i krupiera,
+    \item weryfikacja kart spalonych przed flopem oraz przed turnem,
+    \item próba wykonania przejścia przy niewystarczającej liczbie kart.
+\end{itemize}
+
+Porównanie dwóch dostępnych źródeł kart przedstawiono w
+tabeli~\ref{tab:zrodla-kart}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Porównanie źródeł kart wykorzystywanych przez środowisko}
+    \label{tab:zrodla-kart}
+    \begin{tabular}{|p{0.24\textwidth}|p{0.33\textwidth}|p{0.33\textwidth}|}
+        \hline
+        \textbf{Cecha}
+        &
+        \textbf{\texttt{Deck}}
+        &
+        \textbf{\texttt{FixedDeck}}
+        \\
+        \hline
+
+        Zastosowanie
+        &
+        Standardowe rozdania i eksperymenty
+        &
+        Testy deterministyczne i odtwarzanie scenariuszy
+        \\
+        \hline
+
+        Kolejność kart
+        &
+        Ustalana przez tasowanie
+        &
+        Jawnie przekazywana podczas tworzenia
+        \\
+        \hline
+
+        Obsługa ziarna
+        &
+        Tak
+        &
+        Nie jest wymagana
+        \\
+        \hline
+
+        Kontrola duplikatów
+        &
+        Wynika ze sposobu generowania pełnej talii
+        &
+        Walidowana podczas tworzenia obiektu
+        \\
+        \hline
+
+        Pierwsza dobierana karta
+        &
+        Wynika z kolejności po tasowaniu
+        &
+        Pierwszy element zadanej sekwencji
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Powtarzalność losowych rozdań}
+\label{subsec:powtarzalnosc-talii}
+
+Powtarzalność eksperymentów zapewniono przez możliwość przekazania ziarna
+generatora liczb pseudolosowych. Utworzenie dwóch talii z tym samym ziarnem
+prowadzi do uzyskania tej samej kolejności kart, o ile wykonano na nich tę
+samą sekwencję operacji.
+
+Na poziomie klasy \texttt{UTHGame} zastosowano dodatkowy generator nadrzędny.
+Przy każdym rozpoczęciu nowego rozdania generuje on osobne ziarno przekazywane
+do nowej talii. W rezultacie kolejne rozdania w obrębie jednego eksperymentu
+różnią się od siebie, ale cała ich sekwencja może zostać odtworzona przez
+ponowne uruchomienie środowiska z tym samym ziarnem początkowym.
+
+Rozwiązanie to pozwala porównywać agentów na odpowiadających sobie sekwencjach
+rozdań. Jeżeli dwa eksperymenty zostaną uruchomione z tym samym ziarnem
+środowiska i zachowają tę samą kolejność wywołań, otrzymają identyczne
+strumienie talii. Ogranicza to wpływ losowego doboru kart na ocenę różnic
+pomiędzy badanymi strategiami.
