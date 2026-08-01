@@ -315,8 +315,9 @@ nie uczestniczą w tworzeniu obserwacji. Silnik musi przechowywać karty
 krupiera, aby przeprowadzić showdown, a karty spalone i kolejność talii są
 potrzebne do deterministycznego odtworzenia rozdania; ich ujawnienie
 zmieniałoby jednak problem decyzyjny, dając agentowi wiedzę o przyszłych
-zdarzeniach losowych. Z tego powodu pełny stan służy wyłącznie testom,
-rejestrowaniu przebiegu i analizie zakończonych epizodów, a nie jest
+zdarzeniach losowych. Z tego powodu pełny stan jest wykorzystywany przez wewnętrzne komponenty
+silnika, natomiast poza nimi udostępnia się go wyłącznie na potrzeby testów,
+rejestrowania przebiegu i analizy zakończonych epizodów. Nie jest on
 przekazywany metodzie wybierającej akcję agenta.
 
 Jawna funkcja projekcji stanowi zatem część definicji środowiska z niepełną
