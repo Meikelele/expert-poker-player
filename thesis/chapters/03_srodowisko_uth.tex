@@ -3066,3 +3066,359 @@ silnikiem gry ani miejscem implementacji dodatkowych reguł. Takie podejście
 zapobiega powstaniu dwóch niezależnych implementacji UTH, które mogłyby
 zwracać różne wyniki dla tego samego rozdania.
 
+\section{Rejestrowanie przebiegu i walidacja środowiska}
+\label{sec:rejestrowanie-i-walidacja}
+
+Poprawność środowiska ma bezpośredni wpływ na wyniki eksperymentów.
+Błąd w kolejności rozdawania kart, rozliczaniu zakładów albo udostępnianiu
+obserwacji mógłby zostać błędnie zinterpretowany jako zachowanie wyuczone
+przez agenta. Z tego względu implementację uzupełniono o opcjonalny mechanizm
+rejestrowania przebiegu rozdania oraz zestaw testów weryfikujących zarówno
+pojedyncze komponenty, jak i pełne ścieżki rozgrywki.
+
+\subsection{Opcjonalne rejestrowanie historii}
+\label{subsec:opcjonalna-historia}
+
+Rejestrowanie historii jest aktywowane parametrem
+\texttt{record\_history} przekazywanym podczas tworzenia obiektu
+\texttt{UTHGame}. Domyślnie mechanizm pozostaje wyłączony, aby standardowe
+wykonywanie dużej liczby epizodów nie wymagało tworzenia dodatkowych
+obiektów diagnostycznych.
+
+Po włączeniu historii każde poprawnie rozpoczęte rozdanie otrzymuje dodatni,
+rosnący identyfikator \texttt{round\_id}. Lista decyzji jest zerowana przy
+każdym poprawnym wywołaniu metody \texttt{reset()}.
+
+Właściwość \texttt{trace} zwraca obiekt \texttt{RoundTrace}. Jeżeli historia
+jest wyłączona albo nie rozpoczęto jeszcze rozdania, jej wartością jest
+\texttt{None}.
+
+Mechanizm historii nie stanowi pamięci agenta i nie jest częścią obserwacji.
+Jest przeznaczony do:
+
+\begin{itemize}
+    \item diagnozowania nieoczekiwanych decyzji,
+    \item odtwarzania przebiegu wybranych rozdań,
+    \item analizy działania agentów bazowych i uczących się,
+    \item zapisywania przykładów błędów podczas eksperymentów,
+    \item weryfikowania zgodności decyzji z legalną przestrzenią akcji.
+\end{itemize}
+
+\subsection{Rekord pojedynczej decyzji}
+\label{subsec:decision-record}
+
+Pojedynczą decyzję reprezentuje niemodyfikowalny obiekt
+\texttt{DecisionRecord}. Zawiera on:
+
+\begin{itemize}
+    \item obserwację dostępną agentowi przed wykonaniem decyzji,
+    \item wybraną akcję.
+\end{itemize}
+
+Rekord można przedstawić jako parę
+
+\begin{equation}
+    d_t =
+    \left(
+        O_t,
+        A_t
+    \right),
+\end{equation}
+
+gdzie \(O_t\) oznacza obserwację przed wykonaniem akcji, a \(A_t\) oznacza
+decyzję agenta.
+
+Zapisanie obserwacji sprzed przejścia jest istotne, ponieważ pozwala
+odtworzyć informacje, na podstawie których agent rzeczywiście podjął
+decyzję. Zapis obserwacji po wykonaniu akcji prowadziłby do niejednoznaczności:
+mógłby zawierać karty odkryte dopiero jako skutek tej decyzji.
+
+Podczas tworzenia rekordu sprawdzane jest, czy:
+
+\begin{itemize}
+    \item obserwacja jest obiektem \texttt{UTHObservation},
+    \item akcja jest wartością typu \texttt{Action},
+    \item obserwacja nie jest terminalna,
+    \item akcja należy do zbioru legalnego dla zapisanej obserwacji.
+\end{itemize}
+
+Dzięki temu historia nie może zawierać decyzji wykonanej po zakończeniu
+rozdania ani akcji sprzecznej z fazą zapisaną w obserwacji.
+
+\subsection{Ślad całego rozdania}
+\label{subsec:round-trace}
+
+Obiekt \texttt{RoundTrace} reprezentuje niemodyfikowalny zapis aktualnego
+przebiegu rozdania. Zawiera:
+
+\begin{itemize}
+    \item dodatni identyfikator rozdania,
+    \item uporządkowaną krotkę obiektów \texttt{DecisionRecord},
+    \item aktualny pełny stan \texttt{RoundState}.
+\end{itemize}
+
+Dla rozdania zawierającego \(n\) decyzji jego ślad można zapisać jako
+
+\begin{equation}
+    \tau =
+    \left(
+        id,
+        d_0,
+        d_1,
+        \ldots,
+        d_{n-1},
+        S_n
+    \right).
+\end{equation}
+
+Obserwacje znajdujące się w rekordach decyzji zawierają wyłącznie informacje
+dostępne agentowi. Końcowy element \(S_n\) jest natomiast pełnym stanem
+diagnostycznym i może zawierać karty krupiera, karty spalone oraz rozliczenie
+rozdania.
+
+Z tego powodu \texttt{RoundTrace} nie może być przekazywany agentowi jako
+obserwacja. Jest to obiekt przeznaczony dla kodu eksperymentalnego, testów
+i narzędzi analitycznych.
+
+Ślad udostępnia również właściwości pomocnicze:
+
+\begin{itemize}
+    \item \texttt{completed} -- informację, czy osiągnięto stan terminalny,
+    \item \texttt{outcome} -- końcowy wynik rozdania,
+    \item \texttt{settlement} -- rozliczenie Ante, Blind i Play,
+    \item \texttt{showdown} -- szczegóły porównania rąk, jeżeli do niego
+          doszło.
+\end{itemize}
+
+Przed zakończeniem rozdania właściwości związane z wynikiem mogą zwracać
+wartość \texttt{None}. Po foldzie dostępne jest rozliczenie i wynik, ale
+nie występują szczegóły showdownu.
+
+\subsection{Transakcyjne zapisywanie decyzji}
+\label{subsec:transakcyjne-zapisywanie}
+
+Metoda \texttt{step()} najpierw zapisuje bieżącą obserwację w zmiennej
+lokalnej, następnie próbuje wykonać właściwe przejście, a dopiero po jego
+powodzeniu dodaje rekord do historii.
+
+Kolejność operacji ma postać
+
+\begin{equation}
+    O_t
+    \rightarrow
+    \operatorname{validate}(A_t)
+    \rightarrow
+    \operatorname{transition}(S_t,A_t)
+    \rightarrow
+    S_{t+1}
+    \rightarrow
+    \operatorname{record}(O_t,A_t).
+\end{equation}
+
+Jeżeli walidacja lub wykonywanie przejścia zakończy się wyjątkiem, etap
+\(\operatorname{record}\) nie zostaje osiągnięty. Historia zawiera zatem
+wyłącznie decyzje, dla których środowisko utworzyło poprawny kolejny stan.
+
+Takie zachowanie zabezpiecza między innymi przed zapisaniem:
+
+\begin{itemize}
+    \item akcji nielegalnej w aktualnej fazie,
+    \item decyzji po zakończeniu rozdania,
+    \item akcji, podczas której źródło kart zwróciło niepoprawną wartość,
+    \item niedokończonego przejścia wynikającego z pustej talii.
+\end{itemize}
+
+Ta sama zasada jest stosowana podczas resetowania środowiska. Nowy stan,
+źródło kart, identyfikator rozdania i pusta historia są zapisywane dopiero
+po poprawnym rozdaniu wszystkich czterech kart początkowych.
+
+\subsection{Testy deterministyczne}
+\label{subsec:testy-deterministyczne}
+
+Znaczna część testów pełnych rozdań wykorzystuje deterministyczne źródło
+\texttt{FixedDeck}. Jawne określenie kolejności kart pozwala przygotować
+scenariusz, którego wynik nie zależy od generatora pseudolosowego.
+
+Deterministyczny scenariusz może określać kolejno:
+
+\begin{equation}
+    P_1,
+    D_1,
+    P_2,
+    D_2,
+    B_1,
+    F_1,
+    F_2,
+    F_3,
+    B_2,
+    T,
+    R,
+\end{equation}
+
+gdzie \(P\) i \(D\) oznaczają karty własne gracza i krupiera, \(B\) karty
+spalone, \(F\) karty flopa, \(T\) turn, a \(R\) river.
+
+Tak przygotowane źródło umożliwia kontrolowanie jednocześnie:
+
+\begin{itemize}
+    \item kart obu stron,
+    \item końcowego układu gracza i krupiera,
+    \item kwalifikacji krupiera,
+    \item wyniku showdownu,
+    \item wypłaty zakładu Blind,
+    \item łącznego wyniku netto.
+\end{itemize}
+
+W przeciwieństwie do testu opartego wyłącznie na ziarnie
+\texttt{FixedDeck} jednoznacznie pokazuje w kodzie testowym, jakie karty
+mają zostać dobrane. Ułatwia to analizę nieudanego przypadku i ogranicza
+zależność testu od szczegółów algorytmu tasowania.
+
+\subsection{Poziomy testowania}
+\label{subsec:poziomy-testowania}
+
+Testy środowiska podzielono według odpowiedzialności sprawdzanych
+komponentów. Najważniejsze obszary przedstawiono w
+tabeli~\ref{tab:obszary-testowania-uth}.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{Główne obszary testowania środowiska UTH}
+    \label{tab:obszary-testowania-uth}
+    \begin{tabular}{
+        |p{0.25\textwidth}
+        |p{0.29\textwidth}
+        |p{0.36\textwidth}|
+    }
+        \hline
+        \textbf{Obszar}
+        &
+        \textbf{Przykładowe przypadki}
+        &
+        \textbf{Weryfikowana własność}
+        \\
+        \hline
+
+        Model kart i talia
+        &
+        Pełna talia, brak duplikatów, pusta talia, stałe ziarno
+        &
+        Poprawność źródła kart i kolejności dobierania.
+        \\
+        \hline
+
+        Evaluator
+        &
+        Kategorie układów, remisy, niski strit, najlepsze pięć z siedmiu
+        &
+        Jednoznaczne porównywanie rąk.
+        \\
+        \hline
+
+        Modele stanu
+        &
+        Liczba kart w fazach, duplikaty, pola terminalne
+        &
+        Zachowanie niezmienników \texttt{RoundState} i obserwacji.
+        \\
+        \hline
+
+        Rozdawanie
+        &
+        Karty początkowe, flop, turn i river, karty spalone
+        &
+        Poprawna kolejność i dozwolone przejścia faz.
+        \\
+        \hline
+
+        Legalność akcji
+        &
+        Akcje dozwolone i zabronione w każdej fazie
+        &
+        Odrzucanie decyzji sprzecznych z zasadami.
+        \\
+        \hline
+
+        Showdown
+        &
+        Wygrana gracza, wygrana krupiera, remis
+        &
+        Poprawne wyznaczenie \texttt{RoundOutcome}.
+        \\
+        \hline
+
+        Rozliczenia
+        &
+        Kwalifikacja, tabela Blind, różne mnożniki Play, fold
+        &
+        Poprawność wyniku Ante, Blind, Play i wyniku łącznego.
+        \\
+        \hline
+
+        Pełne rozdania
+        &
+        Wszystkie ścieżki maszyny stanów
+        &
+        Integracja komponentów od \texttt{reset()} do stanu terminalnego.
+        \\
+        \hline
+
+        Historia
+        &
+        Jedna, dwie i trzy decyzje, błędne przejście
+        &
+        Rejestrowanie wyłącznie zakończonych sukcesem decyzji.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Testy jednostkowe sprawdzają komponenty w izolacji, natomiast testy
+integracyjne wykonują kompletne rozdania. Samo poprawne przetestowanie
+evaluatora i modułu rozliczeń nie gwarantuje bowiem, że silnik przekaże im
+właściwe karty i mnożnik zakładu Play.
+
+\subsection{Walidowane niezmienniki}
+\label{subsec:walidowane-niezmienniki}
+
+Poza sprawdzaniem przykładowych wyników testy weryfikują niezmienniki
+obowiązujące dla wszystkich poprawnych rozdań. Należą do nich między innymi:
+
+\begin{itemize}
+    \item brak powtarzających się kart w stanie,
+    \item dokładnie dwie karty własne każdej strony,
+    \item liczba kart wspólnych zgodna z fazą,
+    \item liczba kart spalonych zgodna z fazą,
+    \item brak danych terminalnych w stanie pośrednim,
+    \item obecność wyniku i rozliczenia w stanie terminalnym,
+    \item brak showdownu po spasowaniu,
+    \item dokładnie jeden zakład Play albo brak tego zakładu po foldzie,
+    \item zgodność mnożnika Play z akcją kończącą część decyzyjną,
+    \item zgodność wyniku \texttt{RoundState}, \texttt{StepResult}
+          i \texttt{ShowdownResult},
+    \item brak kart krupiera i kart spalonych w obserwacji,
+    \item brak zmiany stanu po odrzuconej akcji.
+\end{itemize}
+
+Walidacja nie ogranicza się zatem do testowania typowych scenariuszy
+zwycięstwa i porażki. Uwzględnia również przypadki brzegowe oraz próby
+utworzenia stanów, które naruszałyby reguły domenowe.
+
+\subsection{Pokrycie kodu}
+\label{subsec:pokrycie-kodu}
+
+Zestaw testów uruchamiany jest za pomocą biblioteki \texttt{pytest}.
+Podczas prac nad silnikiem analizowano zarówno pokrycie instrukcji, jak
+i pokrycie rozgałęzień. Pozwoliło to wykryć nieprzetestowane ścieżki
+walidacji, przypadki brzegowe evaluatora oraz alternatywne sposoby
+rozliczania zakładów.
+
+Na etapie zakończenia implementacji podstawowego silnika uzyskano pełne
+pokrycie instrukcji i rozgałęzień dla objętych pomiarem modułów. Wynik
+pokrycia nie stanowi samodzielnego dowodu poprawności implementacji.
+Informuje jedynie, że testy wykonały wszystkie mierzone linie i gałęzie
+programu. Z tego względu został uzupełniony testami opartymi na konkretnych
+scenariuszach domenowych oraz walidacją niezmienników.
+
+
