@@ -1,8 +1,8 @@
 % Minimalne ustawienia pracy dyplomowej
 % Zostawione głównie: marginesy, font, język, interlinia, nagłówki, podpisy, bibliografia i linki.
 
-% Marginesy strony.
-% inner = większy margines od strony oprawy przy druku dwustronnym.
+% Marginesy strony (druk dwustronny, lustrzane odbicie zgodnie z wymogami
+% wydziału: wewnętrzny/oprawowy 3,5 cm, zewnętrzny 2,5 cm).
 \usepackage[
   top=2.5cm,
   bottom=2.5cm,
@@ -28,27 +28,27 @@
 
 \usepackage[indentafter]{titlesec}
 
-% Nowoczesne formatowanie dla \chapter (Rozdział) - bez kursywy, wielkie litery, rozmiar 14pt (lub dostosuj)
+% Rozdział (nagłówek 1. stopnia): 12 pt, wersaliki, pogrubienie.
 \titleformat{\chapter}[block]
-  {\normalfont\large\bfseries\MakeUppercase}
+  {\normalfont\normalsize\bfseries\MakeUppercase}
   {\thechapter.}{0.5em}{}
-\titlespacing*{\chapter}{0pt}{12pt}{40pt}
+\titlespacing*{\chapter}{0pt}{12pt}{6pt}
 
-% Nowoczesne formatowanie dla \section (Podrozdział) - pogrubiony, prosty, brak kursywy
+% Podrozdział (nagłówek 2. stopnia): 10 pt, pogrubienie.
 \titleformat{\section}[block]
-  {\normalfont\normalsize\bfseries}
+  {\normalfont\fontsize{10pt}{12pt}\selectfont\bfseries}
   {\thesection.}{0.5em}{}
 \titlespacing*{\section}{0pt}{12pt}{6pt}
 
-% Nowoczesne formatowanie dla \subsection (Pod-podrozdział) - pogrubiony, prosty, brak kursywy
+% Punkt podrozdziału (nagłówek 3. stopnia): 10 pt, pogrubienie.
 \titleformat{\subsection}[block]
-  {\normalfont\normalsize\bfseries}
+  {\normalfont\fontsize{10pt}{12pt}\selectfont\bfseries}
   {\thesubsection.}{0.5em}{}
 \titlespacing*{\subsection}{0pt}{12pt}{6pt}
 
-% Nowoczesne formatowanie dla \subsubsection
+% Nagłówek 4. stopnia: 10 pt, pogrubienie.
 \titleformat{\subsubsection}[block]
-  {\normalfont\normalsize\bfseries}
+  {\normalfont\fontsize{10pt}{12pt}\selectfont\bfseries}
   {\thesubsubsection.}{0.5em}{}
 \titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
 
@@ -71,9 +71,14 @@
 % Estetyczne tabele: \toprule, \midrule, \bottomrule.
 \usepackage{booktabs}
 
+% Treść wszystkich tabel składana czcionką 10 pt (wymóg wydziału).
+\usepackage{etoolbox}
+\AtBeginEnvironment{tabular}{\footnotesize}
+
 % Formatowanie podpisów rysunków i tabel (usunięto kursywę dla czystości inżynierskiej).
 \usepackage[
   format=plain,
+  font=footnotesize,
   labelfont=bf,
   textfont=normalfont,
   labelsep=period,
@@ -82,6 +87,7 @@
 
 % Podstawowe środowiska i symbole matematyczne.
 \usepackage{amsmath}
+\usepackage{amssymb}
 
 % Nagłówki i stopki.
 \usepackage{fancyhdr}
@@ -107,9 +113,10 @@
 % Plik bibliografii.
 \addbibresource{bibliografia.bib}
 
-% Numerowanie rysunków i tabel w obrębie rozdziału, np. 2.1, 2.2.
+% Numerowanie rysunków, tabel i wzorów w obrębie rozdziału, np. 3.1, 3.2.
 \counterwithin{figure}{chapter}
 \counterwithin{table}{chapter}
+\counterwithin{equation}{chapter}
 
 % Polska, krótka nazwa podpisu rysunku: "Rys." zamiast "Rysunek".
 \addto\captionspolish{\renewcommand{\figurename}{Rys.}}
@@ -142,25 +149,32 @@
   \addtocounter{page}{-1}%
   \newpage
 }
-% Obsługa kolorów i własnych znaczników (TODO, FIXME, NOTE)
+% Obsługa kolorów i roboczych znaczników (TODO, FIXME, NOTE).
 \usepackage{xcolor}
 
-% Definicja niestandardowych kolorów (możesz dostosować odcienie HEX)
-\definecolor{todoYellow}{HTML}{FFDE59}  % Żółty jak flamaster
-\definecolor{fixmePurple}{HTML}{C19A6B} % Jeśli wolisz fiolet, zmień na: {A32CC4}
-\definecolor{noteRed}{HTML}{FF4D4D}     % Czerwony
+% Kolory znaczników.
+\definecolor{todoYellow}{HTML}{FFDE59}
+\definecolor{fixmePurple}{HTML}{A32CC4}
+\definecolor{noteRed}{HTML}{FF4D4D}
 
-% Komenda \TODO{tekst} - żółte tło (jak zakreślacz)
-\newcommand{\TODO}[1]{%
-  \colorbox{todoYellow}{\bfseries\sffamily\small TODO: #1}%
-}
+% Przełącznik trybu roboczego:
+%   \draftnotestrue  -- znaczniki widoczne (wersja lokalna),
+%   \draftnotesfalse -- znaczniki ukryte (wersja dla promotora).
+\newif\ifdraftnotes
+\draftnotesfalse
 
-% Komenda \FIXME{tekst} - fioletowy tekst w ramce lub tło
-\newcommand{\FIXME}[1]{%
-  \colorbox{purple!30}{\bfseries\sffamily\small FIXME: #1}% (fioletowe tło)
+% Znacznik = krótka kolorowa etykieta oraz treść płynąca jak zwykły tekst,
+% dzięki czemu długie uwagi zawijają się i nie wychodzą poza margines.
+% #1 kolor etykiety, #2 nazwa etykiety, #3 treść.
+\newcommand{\draftmark}[3]{%
+  \ifdraftnotes
+    \colorbox{#1}{\sffamily\bfseries\footnotesize #2}%
+    \nobreakspace\textcolor{#1!75!black}{#3}%
+  \fi
 }
+\newcommand{\TODO}[1]{\draftmark{todoYellow}{TODO}{#1}}
+\newcommand{\FIXME}[1]{\draftmark{fixmePurple}{FIXME}{#1}}
+\newcommand{\NOTE}[1]{\draftmark{noteRed}{NOTE}{#1}}
 
-% Komenda \NOTE{tekst} - czerwone tło, biały tekst (żeby był czytelny)
-\newcommand{\NOTE}[1]{%
-  \colorbox{noteRed}{\color{white}\bfseries\sffamily\small NOTE: #1}%
-}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}

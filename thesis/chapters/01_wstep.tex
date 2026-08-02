@@ -1,43 +1,99 @@
 \chapter{Wstęp}
 
-Gry karciane stanowią interesujący obszar zastosowań metod sztucznej inteligencji, ponieważ łączą element losowości, niepełnej informacji oraz sekwencyjnego podejmowania decyzji. W przeciwieństwie do wielu klasycznych problemów uczenia maszynowego, w których model uczy się na podstawie gotowego zbioru danych, w grach agent musi samodzielnie podejmować decyzje, obserwować ich konsekwencje i stopniowo poprawiać swoją strategię.
+Gry karciane stanowią interesujący obszar zastosowań metod sztucznej
+inteligencji, ponieważ łączą element losowości, niepełnej informacji oraz
+sekwencyjnego podejmowania decyzji. W przeciwieństwie do wielu klasycznych
+problemów uczenia maszynowego, w których model uczy się na podstawie gotowego
+zbioru danych, w grach agent musi samodzielnie podejmować decyzje, obserwować
+ich konsekwencje i stopniowo poprawiać swoją strategię.
 
-Szczególnie interesującym przypadkiem są gry pokerowe, w których wynik pojedynczego rozdania zależy nie tylko od jakości posiadanych kart, ale również od decyzji podejmowanych w kolejnych etapach gry. Ultimate Texas Hold’em jest kasynową odmianą pokera opartą na zasadach Texas Hold’em, w której gracz rywalizuje z krupierem, a nie z innymi graczami. Gra ta posiada ograniczoną liczbę możliwych akcji, jasno określone reguły wypłat oraz sekwencyjny przebieg rozdania, co czyni ją odpowiednim środowiskiem do modelowania jako problem uczenia przez wzmacnianie.
+Szczególnie interesującym przypadkiem są gry pokerowe, w których wynik
+pojedynczego rozdania zależy nie tylko od jakości posiadanych kart, ale również
+od decyzji podejmowanych w kolejnych etapach gry. Ultimate Texas Hold’em jest
+kasynową odmianą pokera opartą na zasadach Texas Hold’em, w której gracz
+rywalizuje z krupierem, a nie z innymi graczami. Gra ta posiada ograniczoną
+liczbę możliwych akcji, jasno określone reguły wypłat oraz sekwencyjny przebieg
+rozdania, co czyni ją odpowiednim środowiskiem do modelowania jako problem
+uczenia przez wzmacnianie.
 
-Uczenie przez wzmacnianie (ang. \emph{reinforcement learning}, RL) pozwala analizować sytuacje, w których agent uczy się strategii poprzez interakcję ze środowiskiem. W przypadku Ultimate Texas Hold’em środowiskiem może być symulator gry, stanem aktualna sytuacja w rozdaniu, akcją decyzja gracza, natomiast nagrodą końcowy wynik finansowy rozdania. Takie podejście umożliwia badanie, w jaki sposób różne reprezentacje stanu oraz różne definicje funkcji nagrody wpływają na jakość wyuczonej strategii.
+Uczenie przez wzmacnianie (ang. \emph{reinforcement learning}, RL) pozwala
+analizować sytuacje, w których agent uczy się strategii poprzez interakcję ze
+środowiskiem. W przypadku Ultimate Texas Hold’em środowiskiem może być symulator
+gry, obserwacją informacje dostępne graczowi w bieżącym etapie rozdania, akcją
+decyzja gracza, natomiast nagrodą końcowy wynik finansowy rozdania. Takie
+podejście umożliwia badanie,
+w jaki sposób różne reprezentacje stanu oraz różne definicje funkcji nagrody
+wpływają na jakość wyuczonej strategii.
 
 \section{Cel pracy}
 
-Głównym celem pracy jest porównanie wybranych metod uczenia przez wzmacnianie w zadaniu uczenia strategii gry w Ultimate Texas Hold’em. Szczególny nacisk położony zostanie na analizę wpływu reprezentacji stanu oraz funkcji nagrody na jakość strategii uzyskiwanej przez agenta.
+Głównym celem pracy jest ocena przydatności wybranych metod uczenia przez
+wzmacnianie do podejmowania decyzji w Ultimate Texas Hold’em. Analizie
+podlega wpływ sposobu reprezentacji obserwacji oraz konstrukcji funkcji
+nagrody na przebieg uczenia i jakość otrzymywanej strategii.
 
-Celem praktycznym pracy jest implementacja środowiska symulującego rozgrywkę w Ultimate Texas Hold’em oraz przygotowanie agentów podejmujących decyzje w kolejnych etapach rozdania. Uzyskane strategie zostaną porównane ze strategiami bazowymi, takimi jak agent losowy oraz prosty agent regułowy.
+Celem praktycznym jest zaprojektowanie i implementacja kompletnego procesu
+badawczego obejmującego środowisko gry, agentów bazowych i uczących się,
+mechanizm prowadzenia treningu oraz powtarzalną ocenę uzyskanych strategii.
+Porównanie obejmuje zarówno różnice pomiędzy metodami uczenia, jak i ich
+odniesienie do strategii bazowych, w tym agenta losowego i agenta
+regułowego.
 
 \section{Zakres pracy}
 
-Zakres pracy obejmuje zaprojektowanie i implementację uproszczonego środowiska gry Ultimate Texas Hold’em, w którym uwzględnione zostaną podstawowe elementy rozgrywki: karty gracza i krupiera, karty wspólne, obowiązkowe zakłady Ante i Blind oraz decyzyjny zakład Play. W podstawowej wersji środowiska pominięte zostaną zakłady poboczne, takie jak Trips oraz Progressive, ponieważ nie są one bezpośrednio związane z głównym procesem decyzyjnym agenta.
+Zakres pracy obejmuje zaprojektowanie i implementację środowiska
+odwzorowującego podstawowy wariant Ultimate Texas Hold’em, w którym
+uwzględnione zostaną podstawowe elementy
+rozgrywki: karty gracza i krupiera, karty wspólne, obowiązkowe zakłady Ante
+i Blind oraz decyzyjny zakład Play. W podstawowej wersji środowiska pominięte
+zostaną zakłady poboczne, takie jak Trips oraz Progressive, ponieważ nie są one
+bezpośrednio związane z głównym procesem decyzyjnym agenta.
 
-W ramach pracy zostaną przygotowane różne warianty reprezentacji stanu gry. Reprezentacja stanu może obejmować między innymi informacje o kartach gracza, kartach wspólnych, aktualnym etapie rozdania oraz dostępnych akcjach. Analizie podlegać będzie również sposób definiowania funkcji nagrody, w szczególności to, czy agent otrzymuje nagrodę wyłącznie na końcu rozdania, czy także dodatkowe informacje pośrednie wspierające proces uczenia.
+W ramach pracy zostaną przygotowane różne warianty numerycznej reprezentacji
+obserwacji agenta, utworzonej na podstawie dostępnej części stanu gry.
+Reprezentacja obserwacji może obejmować między innymi informacje o kartach
+gracza, kartach wspólnych, aktualnym etapie rozdania oraz dostępnych akcjach.
+Analizie podlegać będzie również wpływ sposobu przekształcania finansowego
+wyniku rozdania w sygnał nagrody.
 
 Założenia niniejszej pracy są następujące:
 
 \begin{enumerate}
-    \item Implementacja środowiska symulującego rozgrywkę w Ultimate Texas Hold’em zgodnie z podstawowymi zasadami gry.
-    \item Implementacja mechanizmu oceny układów pokerowych oraz rozstrzygania wyniku rozdania pomiędzy graczem a krupierem.
-    \item Przygotowanie agentów bazowych, w szczególności agenta losowego oraz prostego agenta regułowego.
-    \item Implementacja i porównanie wybranych metod uczenia przez wzmacnianie w zadaniu podejmowania decyzji w Ultimate Texas Hold’em.
-    \item Analiza wpływu różnych reprezentacji stanu na jakość wyuczonej strategii.
-    \item Analiza wpływu różnych funkcji nagrody na stabilność procesu uczenia oraz końcowy wynik agenta.
-    \item Ocena agentów z wykorzystaniem metryk takich jak średni wynik na rozdanie, wartość oczekiwana strategii oraz porównanie względem strategii bazowych.
+    \item Implementacja środowiska odwzorowującego podstawowy wariant
+          Ultimate Texas Hold’em.
+    \item Implementacja mechanizmu oceny układów, przebiegu rozdania
+          i rozliczania zakładów.
+    \item Przygotowanie agentów bazowych stanowiących punkty odniesienia
+          dla metod uczących się.
+    \item Implementacja wybranych metod uczenia przez wzmacnianie.
+    \item Przygotowanie i porównanie różnych reprezentacji obserwacji.
+    \item Przygotowanie i porównanie wybranych funkcji nagrody.
+    \item Opracowanie powtarzalnej procedury treningu i oceny agentów.
+    \item Analiza jakości strategii, przebiegu uczenia oraz wyników uzyskanych
+          względem pozostałych metod i strategii bazowych.
 \end{enumerate}
 
 \section{Problem badawczy}
 
-Problem badawczy rozważany w pracy można sformułować następująco: w jaki sposób wybór reprezentacji stanu oraz funkcji nagrody wpływa na skuteczność metod uczenia przez wzmacnianie w grze Ultimate Texas Hold’em?
+Problem badawczy rozważany w pracy dotyczy wpływu wyboru metody uczenia,
+reprezentacji obserwacji oraz funkcji nagrody na przebieg uczenia i jakość
+strategii uzyskiwanej w Ultimate Texas Hold’em.
 
-W pracy analizowane będzie, czy agent uczony metodami reinforcement learning jest w stanie uzyskać strategię lepszą od strategii losowej oraz prostych heurystyk. Ze względu na konstrukcję gier kasynowych celem nie jest wykazanie, że agent może trwale osiągnąć dodatnią wartość oczekiwaną przeciwko kasynu, lecz sprawdzenie, czy możliwe jest nauczenie strategii minimalizującej oczekiwaną stratę.
+Analizie podlegać będzie, które konfiguracje pozwalają osiągnąć najwyższy
+średni wynik netto i najmniejszą oczekiwaną stratę, jak stabilny jest proces
+uczenia oraz czy uzyskane strategie przewyższają przyjęte strategie bazowe.
+Agenci bazowi nie stanowią jedynego przedmiotu porównania, lecz dostarczają
+punktów odniesienia do oceny metod uczących się.
 
 \section{Struktura pracy}
 
-Praca składa się z kilku rozdziałów. W rozdziale pierwszym przedstawiono cel, zakres oraz problem badawczy pracy. Rozdział drugi zawiera podstawy teoretyczne dotyczące pokera, Texas Hold’em, Ultimate Texas Hold’em, wartości oczekiwanej, przewagi kasyna oraz uczenia przez wzmacnianie.
+Praca składa się z kilku rozdziałów. W rozdziale pierwszym przedstawiono cel,
+zakres oraz problem badawczy pracy. Rozdział drugi zawiera podstawy teoretyczne
+dotyczące pokera, Texas Hold’em, Ultimate Texas Hold’em, wartości oczekiwanej,
+przewagi kasyna oraz uczenia przez wzmacnianie.
 
-W kolejnych rozdziałach opisany zostanie projekt środowiska symulacyjnego, sposób reprezentacji stanu gry, funkcja nagrody oraz zastosowane metody uczenia przez wzmacnianie. Następnie przedstawione zostaną eksperymenty, uzyskane wyniki oraz analiza porównawcza agentów. Ostatni rozdział będzie zawierał podsumowanie pracy, wnioski oraz możliwe kierunki dalszego rozwoju.
+W kolejnych rozdziałach opisany zostanie projekt środowiska symulacyjnego,
+sposób reprezentacji stanu gry, funkcja nagrody oraz zastosowane metody uczenia
+przez wzmacnianie. Następnie przedstawione zostaną eksperymenty, uzyskane
+wyniki oraz analiza porównawcza agentów. Ostatni rozdział będzie zawierał
+podsumowanie pracy, wnioski oraz możliwe kierunki dalszego rozwoju.

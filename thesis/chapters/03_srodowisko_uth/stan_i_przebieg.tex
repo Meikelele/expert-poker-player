@@ -1,0 +1,536 @@
+\section{Stan wewnętrzny i obserwacja agenta}
+\label{sec:stan-i-obserwacja}
+
+Ultimate Texas Hold’em jest grą z niepełną informacją. W momencie podejmowania
+decyzji gracz zna własne karty oraz dotychczas odkryte karty wspólne, ale nie
+zna kart krupiera, kart spalonych ani kolejności pozostałych kart w talii.
+Poprawne odwzorowanie tej własności wymaga rozdzielenia pełnego stanu
+środowiska od informacji udostępnianych agentowi.
+
+W implementacji zastosowano dwa odrębne modele danych: \texttt{RoundState}
+reprezentujący pełny stan wewnętrzny rozdania oraz \texttt{UTHObservation}
+reprezentujący obserwację dostępną agentowi.
+
+Agent nie otrzymuje bezpośredniego odwołania do obiektu
+\texttt{RoundState}. Każda obserwacja jest tworzona na jego podstawie przez
+osobną funkcję projekcji, która kopiuje wyłącznie informacje dozwolone
+z perspektywy gracza.
+
+\subsection{Pełny stan rozdania}
+\label{subsec:round-state}
+
+Obiekt \texttt{RoundState} zawiera wszystkie dane potrzebne do kontynuowania
+i rozstrzygnięcia rozdania. Obejmuje on:
+
+\begin{itemize}
+    \item aktualną fazę gry,
+    \item dwie karty własne gracza,
+    \item dwie ukryte karty krupiera,
+    \item odkryte karty wspólne,
+    \item karty spalone,
+    \item mnożnik wykonanego zakładu Play,
+    \item końcowy wynik rozdania,
+    \item szczegółowe rozliczenie zakładów,
+    \item rezultat showdownu.
+\end{itemize}
+
+Nie wszystkie pola są aktywne jednocześnie. W stanach pośrednich wynik
+rozdania, rozliczenie, rezultat showdownu oraz mnożnik zakładu Play pozostają
+nieokreślone. Pola te otrzymują wartości dopiero po przejściu do stanu
+terminalnego.
+
+Liczba kart wspólnych i spalonych jest uzależniona od aktualnej fazy.
+Zależność tę przedstawiono w tabeli~\ref{tab:karty-w-fazach}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Liczba kart przechowywanych w stanie w poszczególnych fazach}
+    \label{tab:karty-w-fazach}
+    \begin{tabular}{|p{0.24\textwidth}|c|c|p{0.32\textwidth}|}
+        \hline
+        \textbf{Faza}
+        &
+        \textbf{Karty wspólne}
+        &
+        \textbf{Karty spalone}
+        &
+        \textbf{Znaczenie}
+        \\
+        \hline
+
+        \texttt{PREFLOP}
+        &
+        0
+        &
+        0
+        &
+        Rozdano wyłącznie karty własne gracza i krupiera.
+        \\
+        \hline
+
+        \texttt{FLOP}
+        &
+        3
+        &
+        1
+        &
+        Spalono jedną kartę i odkryto flop.
+        \\
+        \hline
+
+        \texttt{RIVER}
+        &
+        5
+        &
+        2
+        &
+        Odkryto komplet kart wspólnych.
+        \\
+        \hline
+
+        \texttt{TERMINAL}
+        &
+        5
+        &
+        2
+        &
+        Rozdanie zostało zakończone foldem albo showdownem.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Obiekt stanu jest niemodyfikowalny. Każde przejście środowiska prowadzi
+do utworzenia nowej instancji \texttt{RoundState}, zamiast modyfikowania
+istniejącego obiektu. Upraszcza to analizę przejść, ogranicza ryzyko
+częściowej aktualizacji oraz ułatwia tworzenie deterministycznych testów.
+
+Podczas tworzenia stanu sprawdzane są między innymi:
+
+\begin{itemize}
+    \item poprawny typ fazy,
+    \item obecność dokładnie dwóch kart gracza i dwóch kart krupiera,
+    \item liczba kart wspólnych właściwa dla danej fazy,
+    \item liczba kart spalonych właściwa dla danej fazy,
+    \item brak zduplikowanych kart w całym stanie,
+    \item zgodność pól końcowych z fazą rozdania.
+\end{itemize}
+
+Walidacja obejmuje również zależności semantyczne pomiędzy polami. Stan
+niekońcowy nie może zawierać wyniku ani rozliczenia. Stan zakończony foldem
+nie może zawierać mnożnika Play ani rezultatu showdownu. Z kolei stan
+zakończony showdownem musi zawierać zarówno mnożnik wykonanego zakładu,
+jak i szczegóły ocenionych rąk.
+
+\subsection{Obserwacja agenta}
+\label{subsec:uth-observation}
+
+Obiekt \texttt{UTHObservation} zawiera wyłącznie dane, które mogą zostać
+wykorzystane przez agenta podczas podejmowania decyzji. Są to:
+
+\begin{itemize}
+    \item aktualna faza gry,
+    \item dwie karty własne gracza,
+    \item dotychczas odkryte karty wspólne,
+    \item zbiór legalnych akcji,
+    \item mnożnik zakładu Play w obserwacji terminalnej.
+\end{itemize}
+
+Obserwacja celowo nie zawiera:
+
+\begin{itemize}
+    \item kart krupiera,
+    \item kart spalonych,
+    \item pozostałych kart w talii,
+    \item kolejności przyszłego dobierania kart,
+    \item wyniku evaluacji ręki krupiera przed zakończeniem rozdania.
+\end{itemize}
+
+Zbiór legalnych akcji jest umieszczony bezpośrednio w obserwacji. Agent nie
+musi zatem samodzielnie odtwarzać zasad gry na podstawie fazy. Rozwiązanie
+to ułatwia implementację agentów bazowych i pozwala warstwie integracyjnej
+zbudować maskę akcji bez sięgania do wewnętrznego stanu.
+
+Obserwacja, podobnie jak pełny stan, jest obiektem niemodyfikowalnym.
+Sprawdzana jest liczba widocznych kart, brak duplikatów oraz zgodność zbioru
+legalnych akcji z aktualną fazą gry. Dzięki temu błędnie skonstruowana
+obserwacja jest odrzucana przed przekazaniem jej agentowi.
+
+\subsection{Projekcja stanu na obserwację}
+\label{subsec:projekcja-stanu}
+
+Proces tworzenia obserwacji można przedstawić jako funkcję projekcji
+
+\begin{equation}
+    O_t = \phi(S_t),
+\end{equation}
+
+gdzie \(S_t\) jest pełnym stanem środowiska w chwili \(t\), natomiast
+\(O_t\) oznacza obserwację udostępnioną agentowi.
+
+Dla zaimplementowanego środowiska projekcja ma postać
+
+\begin{equation}
+    \phi(S_t) =
+    \left(
+        p_t,
+        C_t^{player},
+        C_t^{community},
+        A_t^{legal},
+        m_t
+    \right),
+\end{equation}
+
+gdzie:
+
+\begin{itemize}
+    \item \(p_t\) oznacza aktualną fazę gry,
+    \item \(C_t^{player}\) oznacza karty własne gracza,
+    \item \(C_t^{community}\) oznacza odkryte karty wspólne,
+    \item \(A_t^{legal}\) oznacza zbiór legalnych akcji,
+    \item \(m_t\) oznacza mnożnik zakładu Play, jeżeli został już wykonany.
+\end{itemize}
+
+Karty krupiera i karty spalone należą do \(S_t\), natomiast kolejność
+pozostałej talii jest przechowywana przez wewnętrzne źródło kart.
+Żadna z tych informacji nie jest elementem \(O_t\).
+
+Porównanie zawartości pełnego stanu i obserwacji przedstawiono w
+tabeli~\ref{tab:stan-obserwacja}.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \caption{Porównanie pełnego stanu środowiska i obserwacji agenta}
+    \label{tab:stan-obserwacja}
+    \begin{tabular}{|p{0.30\textwidth}|p{0.25\textwidth}|p{0.25\textwidth}|}
+        \hline
+        \textbf{Informacja}
+        &
+        \textbf{\texttt{RoundState}}
+        &
+        \textbf{\texttt{UTHObservation}}
+        \\
+        \hline
+
+        Aktualna faza
+        &
+        tak
+        &
+        tak
+        \\
+        \hline
+
+        Karty własne gracza
+        &
+        tak
+        &
+        tak
+        \\
+        \hline
+
+        Odkryte karty wspólne
+        &
+        tak
+        &
+        tak
+        \\
+        \hline
+
+        Karty krupiera
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Karty spalone
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Legalne akcje
+        &
+        wyznaczane na podstawie fazy
+        &
+        tak
+        \\
+        \hline
+
+        Mnożnik zakładu Play
+        &
+        tak
+        &
+        tylko po wykonaniu zakładu
+        \\
+        \hline
+
+        Końcowy wynik rozdania
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Szczegółowe rozliczenie
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+
+        Szczegóły showdownu
+        &
+        tak
+        &
+        nie
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Wynik rozdania, rozliczenie i szczegóły showdownu są po zakończeniu epizodu
+zwracane przez obiekt \texttt{StepResult}, a nie przez samą obserwację.
+Informacje te pojawiają się dopiero po wykonaniu ostatniej decyzji, dlatego
+nie mogą wpłynąć na wybór akcji w bieżącym rozdaniu.
+
+\subsection{Ochrona przed wyciekiem informacji}
+\label{subsec:ochrona-przed-wyciekiem}
+
+Rozdzielenie stanu i obserwacji pełni rolę ochrony przed wyciekiem informacji
+ukrytej. Funkcja tworząca obserwację nie usuwa niepożądanych pól z kopii
+pełnego stanu, lecz jawnie konstruuje nowy obiekt wyłącznie z dozwolonych
+wartości. Takie podejście oparte na liście pól dozwolonych jest
+bezpieczniejsze niż lista pól zabronionych: nowe pole \texttt{RoundState} nie
+zostaje ujawnione agentowi, dopóki nie doda się go jawnie do modelu
+\texttt{UTHObservation} i do funkcji projekcji.
+
+Informacje ukryte są częścią stanu potrzebnego do prowadzenia rozgrywki, lecz
+nie uczestniczą w tworzeniu obserwacji. Silnik musi przechowywać karty
+krupiera, aby przeprowadzić showdown, a karty spalone i kolejność talii są
+potrzebne do deterministycznego odtworzenia rozdania. Ich ujawnienie
+zmieniałoby jednak problem decyzyjny, dając agentowi wiedzę o przyszłych
+zdarzeniach losowych. Z tego powodu pełny stan jest wykorzystywany przez wewnętrzne komponenty
+silnika, natomiast poza nimi udostępnia się go wyłącznie na potrzeby testów,
+rejestrowania przebiegu i analizy zakończonych epizodów. Nie jest on
+przekazywany metodzie wybierającej akcję agenta.
+
+Jawna funkcja projekcji stanowi zatem część definicji środowiska z niepełną
+informacją i zapewnia, że każda metoda wyboru akcji otrzymuje ten sam zakres
+informacji. Sposób numerycznego kodowania obserwacji pozostaje przy tym poza
+warstwą domenową, natomiast zbiór informacji dostępnych agentowi jest stały.
+
+\section{Maszyna stanów i przestrzeń akcji}
+\label{sec:maszyna-stanow}
+
+Przebieg pojedynczego rozdania Ultimate Texas Hold’em odwzorowano jako
+maszynę stanów. Następna faza jest jednoznacznie wyznaczona przez bieżącą
+fazę i akcję, natomiast konkretna zawartość kolejnego stanu zależy od kart
+zwróconych przez źródło. Aktualna faza określa zakres informacji
+widocznych dla agenta, zbiór legalnych akcji oraz operacje wykonywane przez
+środowisko po otrzymaniu decyzji. Zbiór faz ma postać
+
+\begin{equation}
+    \mathcal{P} =
+    \{
+        \texttt{PREFLOP},
+        \texttt{FLOP},
+        \texttt{RIVER},
+        \texttt{TERMINAL}
+    \}.
+\end{equation}
+
+Rozdanie rozpoczyna metoda \texttt{reset()}, która rozdaje po dwie karty
+graczowi i krupierowi w kolejności \(P_1, D_1, P_2, D_2\), tworzy stan
+\texttt{PREFLOP} i zwraca pierwszą obserwację. Karty wspólne i spalone nie są
+jeszcze dobierane. Każde poprawne wykonanie metody \texttt{step()} przesuwa
+rozdanie do kolejnej fazy albo do stanu terminalnego. Agent nie może pozostać
+w tej samej fazie po wykonaniu akcji.
+
+Pełna przestrzeń akcji zawiera sześć decyzji domenowych, a zbiór akcji
+legalnych zależy od fazy:
+
+\begin{equation}
+    \mathcal{A} =
+    \{
+        \texttt{CHECK},
+        \texttt{BET\_4X},
+        \texttt{BET\_3X},
+        \texttt{BET\_2X},
+        \texttt{BET\_1X},
+        \texttt{FOLD}
+    \},
+\end{equation}
+
+\begin{equation}
+\mathcal{A}_{legal}(p) =
+\begin{cases}
+    \{\texttt{CHECK}, \texttt{BET\_3X}, \texttt{BET\_4X}\},
+    & p = \texttt{PREFLOP}, \\[1mm]
+    \{\texttt{CHECK}, \texttt{BET\_2X}\},
+    & p = \texttt{FLOP}, \\[1mm]
+    \{\texttt{BET\_1X}, \texttt{FOLD}\},
+    & p = \texttt{RIVER}, \\[1mm]
+    \varnothing,
+    & p = \texttt{TERMINAL}.
+\end{cases}
+\end{equation}
+
+Akcja \texttt{CHECK} odkłada decyzję o zakładzie Play i przesuwa rozdanie do
+następnej fazy, spalając kartę oraz odkrywając flop albo turn i river. Każda
+akcja typu \texttt{BET} ustala mnożnik Play wynikający z fazy: \(4\times\)
+lub \(3\times\) przed flopem, \(2\times\) po flopie i \(1\times\) na riverze.
+Po zakładzie środowisko odkrywa pozostałe karty wspólne, przeprowadza
+showdown i przechodzi do stanu terminalnego. Akcja \texttt{FOLD} kończy
+rozdanie na riverze bez showdownu. Zbiór legalnych akcji w poszczególnych
+fazach zestawiono w tabeli~\ref{tab:fazy-akcje}, a przejścia przedstawiono na
+rysunku~\ref{fig:maszyna-stanow-uth}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Legalne akcje w poszczególnych fazach środowiska UTH}
+    \label{tab:fazy-akcje}
+    \begin{tabular}{|p{0.22\textwidth}|p{0.55\textwidth}|}
+        \hline
+        \textbf{Faza} & \textbf{Legalne akcje} \\
+        \hline
+        \texttt{PREFLOP} & \texttt{CHECK}, \texttt{BET\_3X}, \texttt{BET\_4X} \\
+        \hline
+        \texttt{FLOP} & \texttt{CHECK}, \texttt{BET\_2X} \\
+        \hline
+        \texttt{RIVER} & \texttt{BET\_1X}, \texttt{FOLD} \\
+        \hline
+        \texttt{TERMINAL} & brak \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+\begin{figure}[htbp]
+    \centering
+
+    \begin{tikzpicture}[
+        node distance=26mm and 28mm,
+        phase/.style={
+            draw,
+            rounded corners,
+            minimum width=29mm,
+            minimum height=13mm,
+            align=center,
+            font=\small
+        },
+        terminal/.style={
+            draw,
+            very thick,
+            double,
+            rounded corners,
+            minimum width=31mm,
+            minimum height=14mm,
+            align=center,
+            font=\small
+        },
+        transition/.style={
+            -{Latex[length=2.5mm]},
+            thick
+        },
+        every node/.style={
+            font=\small
+        }
+    ]
+
+        \node[phase] (preflop) {
+            \texttt{PREFLOP}
+        };
+
+        \node[phase, right=of preflop] (flop) {
+            \texttt{FLOP}
+        };
+
+        \node[phase, right=of flop] (river) {
+            \texttt{RIVER}
+        };
+
+        \node[terminal, below=of flop] (terminal) {
+            \texttt{TERMINAL}
+        };
+
+        \draw[transition]
+            (preflop)
+            --
+            node[above] {\texttt{CHECK}}
+            (flop);
+
+        \draw[transition]
+            (flop)
+            --
+            node[above] {\texttt{CHECK}}
+            (river);
+
+        \draw[transition]
+            (preflop)
+            to[bend right=20]
+            node[below left, align=center] {
+                \texttt{BET\_3X}\\
+                \texttt{BET\_4X}
+            }
+            (terminal);
+
+        \draw[transition]
+            (flop)
+            --
+            node[right] {\texttt{BET\_2X}}
+            (terminal);
+
+        \draw[transition]
+            (river)
+            to[bend left=20]
+            node[below right, align=center] {
+                \texttt{BET\_1X}\\
+                \texttt{FOLD}
+            }
+            (terminal);
+
+    \end{tikzpicture}
+
+    \caption{Maszyna stanów pojedynczego rozdania UTH}
+    \label{fig:maszyna-stanow-uth}
+\end{figure}
+
+\subsection{Pojedynczy zakład Play i walidacja decyzji}
+\label{subsec:pojedynczy-play-walidacja}
+
+Struktura maszyny stanów gwarantuje, że zakład Play może zostać wykonany
+najwyżej raz: każda akcja typu \texttt{BET} prowadzi bezpośrednio do stanu
+terminalnego, a akcje \texttt{CHECK} jedynie przesuwają decyzję do
+późniejszej fazy. Najdłuższa ścieżka zawiera trzy decyzje (\texttt{CHECK},
+\texttt{CHECK}, a następnie \texttt{BET\_1X} albo \texttt{FOLD}), a najkrótsza
+jedną, po zakładzie \(3\times\) lub \(4\times\) przed flopem. Zastosowanie
+osobnych akcji \texttt{BET\_1X}, \texttt{BET\_2X}, \texttt{BET\_3X} i
+\texttt{BET\_4X} zamiast jednej ogólnej akcji \texttt{BET} wiąże mnożnik Play
+jednoznacznie z fazą i eliminuje możliwość przekazania niepoprawnej wysokości
+zakładu.
+
+Zbiór legalnych akcji jest wyznaczany przez środowisko i umieszczany
+w obiekcie \texttt{UTHObservation}, dzięki czemu agent nie musi samodzielnie
+odtwarzać reguł legalności. Nie oznacza to jednak, że środowisko ufa
+zwróconej decyzji - każda akcja jest ponownie walidowana przez metodę
+\texttt{step()}. Przed wykonaniem operacji zmieniającej stan sprawdzane jest
+kolejno, czy rozdanie zostało rozpoczęte, czy stan nie jest terminalny, czy
+przekazana wartość jest obiektem typu \texttt{Action} oraz czy należy do
+zbioru \(\mathcal{A}_{legal}\) dla bieżącej fazy. Naruszenie tych warunków
+powoduje zgłoszenie odpowiednio \texttt{RoundNotStartedError},
+\texttt{RoundFinishedError} albo \texttt{IllegalActionError}.
+
+Walidacja następuje przed dobieraniem kart i zapisaniem nowego stanu, więc
+nielegalna decyzja nie zużywa kart z talii, nie zmienia fazy rozdania i nie
+jest dodawana do historii. Środowisko nie zastępuje nielegalnej akcji inną
+decyzją ani nie nakłada automatycznej kary, a obsługa błędu należy do
+komponentu sterującego eksperymentem.
+

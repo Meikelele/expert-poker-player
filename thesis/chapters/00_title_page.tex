@@ -1,66 +1,68 @@
-\begin{titlepage}
-    \thispagestyle{empty}
-    \newgeometry{left=2cm,right=2cm,bottom=2cm,top=2cm}
-    % ── Nagłówek z logami ──────────────────────────────────────
-    \begin{center}
-    \begin{tabular}{p{2.5cm}p{8cm}p{2.5cm}}
-        \includegraphics[height=1.8cm]{figures/logo_pk.jpg} &
-        \begin{center}
-            {\fontsize{16}{19}\selectfont\bfseries Politechnika Krakowska\\
-            im. Tadeusza Kościuszki\\[0.2cm]}
-            {\fontsize{14}{16}\selectfont Wydział Informatyki i Matematyki}
-        \end{center} &
-        \raggedleft\includegraphics[height=1.8cm]{figures/logo_wiit.jpg}
-    \end{tabular}
-    \end{center}
-    \vspace{2.0cm}   % ← dodaj lub zwiększ ten odstęp
-    % ── Imię, nazwisko i numer albumu POZA tabelą ─────────────
-    \begin{center}
-        {\fontsize{14}{16}\selectfont\bfseries Michał Ciurej}\\[0.2cm]
-        {\fontsize{12}{14}\selectfont Numer albumu: 157266}
-    \end{center}
-    \vspace{1cm}
+% Strona tytułowa — numer strony niewidoczny (str. 1).
+% Numeracja widoczna od spisu treści (str. 2). Marginesy symetryczne tylko tutaj.
+\thispagestyle{empty}
+\newgeometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
 
-    \begin{center}
-    % ── Tytuł PL ──────────────────────────────────────────────
-    {\fontsize{18}{22}\selectfont\bfseries
-    Diagnostyka raka płuc ze zdjęć tomografii komputerowych\\
-    przy użyciu algorytmów uczenia maszynowego}
-    \end{center}
+\begin{center}
 
-    \vspace{0.8cm}
+\vspace*{0.5cm}
 
-    \begin{center}
-    % ── Tytuł EN ──────────────────────────────────────────────
-    {\fontsize{14}{17}\selectfont\bfseries
-    Lung cancer diagnosis from computed tomography images\\
-    using machine learning algorithms}
-    \end{center}
+\noindent
+\begin{minipage}[c]{0.22\textwidth}
+    \centering
+    \includegraphics[height=2cm,keepaspectratio]{images_uczelnia_logo.jpeg}
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.50\textwidth}
+    \centering
+    {\bfseries Politechnika Krakowska\\ im.~Tadeusza Kościuszki}\\[2mm]
+    Wydział Informatyki i~Telekomunikacji
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.22\textwidth}
+    \centering
+    \includegraphics[height=2cm,keepaspectratio]{images_wydzial_logo.jpeg}
+\end{minipage}
 
-    \vspace{1cm}
+\vspace{2.5cm}
 
-    \begin{center}
-    % ── Typ pracy ─────────────────────────────────────────────
-    {\fontsize{14}{17}\selectfont\bfseries
-    Praca dyplomowa magisterska\\
-    na kierunku Informatyka\\
-    specjalność Data Science}
-    \end{center}
+{\bfseries Michał Bąk}\\[1mm]
+Numer albumu: 144753
 
-    \vfill
+\vspace{1.2cm}
 
-    % ── Promotor ──────────────────────────────────────────────
-    \begin{flushright}
-        {\fontsize{12}{14}\selectfont
-        Praca wykonana pod kierunkiem:\\[0.2cm]
-        \textbf{dr inż. Wojciech Książek}}
-    \end{flushright}
+{\large\bfseries
+Porównanie metod uczenia przez wzmacnianie w~Ultimate Texas Hold’em
+z~niepełną informacją: wpływ reprezentacji stanu i~funkcji nagrody
+na jakość strategii\par}
 
-    \vspace{1cm}
+\vspace{0.8cm}
 
-    \begin{center}
-    {\fontsize{12}{14}\selectfont\bfseries Kraków, 2026}
-    \end{center}
+{\bfseries
+Comparison of reinforcement learning methods in Ultimate Texas Hold’em
+under imperfect information: the impact of state representation and reward
+function on strategy quality\par}
 
-    \restoregeometry
-\end{titlepage}
+\vspace{1.5cm}
+
+{\bfseries Praca dyplomowa magisterska\\ na kierunku Informatyka}
+
+\end{center}
+
+\vspace{1.5cm}
+
+\hfill
+\begin{minipage}{0.55\textwidth}
+    \raggedleft
+    Praca wykonana pod kierunkiem:\\
+    \textbf{mgr inż. Piotr Biskup}
+\end{minipage}
+
+\vfill
+
+\begin{center}
+    {\bfseries Kraków, 2026}
+\end{center}
+
+\clearpage
+\restoregeometry

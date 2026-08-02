@@ -1,0 +1,312 @@
+\section{Założenia projektowe środowiska}
+\label{sec:zalozenia-srodowiska}
+
+Podstawową jednostką interakcji ze środowiskiem jest jedno kompletne rozdanie.
+Rozdanie rozpoczyna się od utworzenia talii i przekazania graczowi oraz
+krupierowi po dwóch kart własnych, a kończy się spasowaniem gracza albo
+automatycznym rozstrzygnięciem układów. Z punktu widzenia uczenia przez
+wzmacnianie pojedyncze rozdanie stanowi jeden epizod.
+
+Agent podejmuje decyzje wyłącznie w trzech etapach: przed flopem, po odkryciu
+flopa oraz po odkryciu wszystkich pięciu kart wspólnych. W zależności od etapu
+może czekać, wykonać zakład Play o odpowiednim mnożniku albo spasować.
+Po wykonaniu zakładu Play środowisko automatycznie odkrywa pozostałe karty,
+ocenia ręce gracza i krupiera oraz przechodzi do stanu końcowego. W ramach
+jednego rozdania zakład Play może zostać wykonany tylko raz.
+
+Środowisko modeluje podstawowy wariant Ultimate Texas Hold’em obejmujący
+zakłady Ante, Blind oraz Play. Zakłady boczne Trips i Progressive zostały
+pominięte. Nie wpływają one na przestrzeń decyzji podstawowej gry, natomiast
+zmieniają rozkład wyników finansowych i utrudniają ocenę jakości strategii
+decyzyjnej agenta. Uzasadnienie tego ograniczenia przedstawiono szerzej
+w dalszej części rozdziału.
+
+Wartości zakładów wyrażono w jednostkach względnych, gdzie jedna jednostka
+odpowiada wartości zakładu Ante. Zakłady Ante i Blind mają zatem wartość
+jednej jednostki, natomiast wartość zakładu Play zależy od momentu jego
+wykonania i może wynosić od jednej do czterech jednostek. Takie rozwiązanie
+uniezależnia środowisko od konkretnej waluty i nominalnej wysokości stawki,
+a także ułatwia porównywanie wyników pomiędzy eksperymentami.
+
+Silnik zwraca szczegółowe rozliczenie poszczególnych zakładów oraz łączny
+wynik netto rozdania. Wynik netto stanowi podstawę nagrody terminalnej,
+a krokom pośrednim przypisano nagrodę zero. Rozdzielenie mechanizmu
+rozliczania gry od funkcji nagrody pozwala badać alternatywne warianty
+nagrody bez ingerencji w reguły Ultimate Texas Hold’em.
+
+Istotnym założeniem była również powtarzalność eksperymentów. Standardowa
+talia może być tasowana przy użyciu zadanego ziarna generatora liczb
+pseudolosowych, dzięki czemu możliwe jest odtworzenie całej sekwencji rozdań.
+W testach jednostkowych stosowana jest dodatkowo talia deterministyczna,
+pozwalająca jednoznacznie określić kolejność dobieranych kart i zweryfikować
+konkretne przypadki przebiegu oraz rozliczenia rozdania.
+
+\section{Architektura rozwiązania}
+\label{sec:architektura-srodowiska}
+
+Środowisko Ultimate Texas Hold’em zaprojektowano jako zestaw niezależnych
+modułów domenowych. Każdy moduł odpowiada za jeden wyraźnie określony obszar,
+taki jak reprezentacja kart, ocena układów, sterowanie przebiegiem rozdania
+albo rozliczanie zakładów. Centralnym elementem rozwiązania jest klasa
+\texttt{UTHGame}, która koordynuje działanie pozostałych komponentów, ale nie
+implementuje bezpośrednio wszystkich reguł gry.
+
+Przyjęty podział ogranicza zależności pomiędzy poszczególnymi częściami
+systemu. Model kart i evaluator układów mogą być rozwijane oraz testowane
+niezależnie od zasad Ultimate Texas Hold’em. Analogicznie mechanizm
+rozliczania zakładów nie odpowiada za odkrywanie kart ani za walidację
+dozwolonych akcji. Dzięki temu zmiana jednego elementu, na przykład
+reprezentacji obserwacji agenta, nie wymaga modyfikowania sposobu oceny
+układów lub obliczania wypłat.
+
+Najniższą warstwę rozwiązania stanowią moduły \texttt{cards} i
+\texttt{hands}. Pierwszy z nich definiuje karty oraz talię, natomiast drugi
+odpowiada za ocenę i porównywanie układów pokerowych. Moduły te nie zawierają
+reguł charakterystycznych dla Ultimate Texas Hold’em i mogą zostać ponownie
+wykorzystane w innych odmianach pokera.
+
+Warstwę domenową gry tworzy pakiet \texttt{uth}. Zawiera on modele stanu,
+reguły legalności akcji, mechanizm rozdawania kart, sposób rozliczania
+zakładów oraz logikę sterującą kolejnymi fazami rozdania. Klasa
+\texttt{UTHGame} pełni rolę koordynatora tej warstwy. Na podstawie aktualnego
+stanu i wybranej akcji wywołuje odpowiednie operacje, aktualizuje stan
+rozdania oraz zwraca rezultat kroku.
+
+Agent nie komunikuje się bezpośrednio z talią, evaluatorem ani pełnym stanem
+wewnętrznym gry. Otrzymuje obiekt \texttt{UTHObservation}, a swoją decyzję
+przekazuje do metody \texttt{step}. Rezultatem wykonania akcji jest obiekt
+\texttt{StepResult}, zawierający kolejną obserwację oraz, w przypadku
+zakończenia rozdania, jego wynik i szczegółowe rozliczenie. Takie rozwiązanie
+tworzy jednoznaczną granicę pomiędzy logiką środowiska a implementacją agenta.
+
+Tabela~\ref{tab:moduly-srodowiska} przedstawia najważniejsze moduły
+rozwiązania i zakres ich odpowiedzialności.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Podział odpowiedzialności pomiędzy modułami środowiska UTH}
+    \label{tab:moduly-srodowiska}
+    \begin{tabular}{|p{0.27\textwidth}|p{0.63\textwidth}|}
+        \hline
+        \textbf{Moduł} & \textbf{Odpowiedzialność} \\
+        \hline
+        \texttt{cards}
+        &
+        Reprezentacja rang, kolorów, pojedynczych kart oraz standardowej
+        talii składającej się z 52 unikalnych kart.
+        \\
+        \hline
+
+        \texttt{hands}
+        &
+        Ocena pięciokartowych układów, wybór najlepszego układu z pięciu,
+        sześciu lub siedmiu kart oraz porównywanie wartości rąk.
+        \\
+        \hline
+
+        \texttt{uth.models}
+        &
+        Definicja pełnego stanu rozdania, obserwacji agenta oraz wyniku
+        pojedynczego kroku środowiska.
+        \\
+        \hline
+
+        \texttt{uth.rules}
+        &
+        Określanie zbioru legalnych akcji dla każdej fazy rozdania.
+        \\
+        \hline
+
+        \texttt{uth.dealing}
+        &
+        Realizacja kolejności rozdawania kart, odkrywania flopa, turna
+        i rivera oraz obsługa kart spalonych.
+        \\
+        \hline
+
+        \texttt{uth.card\_source}
+        &
+        Abstrakcja źródła kart oraz deterministyczna talia wykorzystywana
+        w testach.
+        \\
+        \hline
+
+        \texttt{uth.settlement}
+        &
+        Określanie wyniku rozdania, kwalifikacji krupiera oraz rozliczanie
+        zakładów Ante, Blind i Play.
+        \\
+        \hline
+
+        \texttt{uth.game}
+        &
+        Koordynacja przebiegu rozdania, walidacja akcji, przechodzenie
+        pomiędzy fazami oraz tworzenie wyników kolejnych kroków.
+        \\
+        \hline
+
+        \texttt{uth.trace}
+        &
+        Opcjonalne rejestrowanie obserwacji, decyzji agenta i końcowego
+        stanu rozdania na potrzeby diagnostyki.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Silnik domenowy nie zależy od konkretnej biblioteki uczenia przez
+wzmacnianie. Integrację z takimi bibliotekami wydzielono do osobnej warstwy
+korzystającej z publicznego interfejsu \texttt{UTHGame} i przekształcającej
+obiekty domenowe na reprezentacje numeryczne. Pozwala to zachować jedną
+implementację zasad gry dla wszystkich badanych reprezentacji obserwacji,
+funkcji nagrody i metod uczenia.
+
+Ogólny przepływ informacji pomiędzy agentem, klasą sterującą i pozostałymi
+elementami silnika przedstawiono na rysunku~\ref{fig:architektura-uth}.
+Agent komunikuje się wyłącznie z publicznym interfejsem klasy
+\texttt{UTHGame}. Pełny stan rozdania oraz moduły realizujące reguły gry
+pozostają ukryte za tą warstwą.
+
+\begin{figure}[htbp]
+    \centering
+
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+        node distance=20mm and 30mm,
+        every node/.style={
+            font=\small
+        },
+        external/.style={
+            draw,
+            rounded corners,
+            align=center,
+            minimum width=42mm,
+            minimum height=12mm
+        },
+        core/.style={
+            draw,
+            very thick,
+            rounded corners,
+            align=center,
+            minimum width=56mm,
+            minimum height=16mm
+        },
+        domainbox/.style={
+            draw,
+            rounded corners,
+            align=left,
+            minimum width=56mm,
+            minimum height=34mm,
+            inner sep=4mm
+        },
+        state/.style={
+            draw,
+            dashed,
+            rounded corners,
+            align=center,
+            minimum width=70mm,
+            minimum height=18mm,
+            text width=68mm
+        },
+        flow/.style={
+            -{Latex[length=2.5mm]},
+            thick
+        }
+    ]
+
+        \node[external] (agent) {
+            Agent
+        };
+
+        \node[core, right=of agent] (game) {
+            \texttt{UTHGame}\\
+            \texttt{reset()} i \texttt{step()}
+        };
+
+        \node[domainbox, right=of game] (modules) {
+            \textbf{Moduły domenowe}\\[1mm]
+            \texttt{rules}\\
+            \texttt{dealing}\\
+            \texttt{cards} i \texttt{hands}\\
+            \texttt{settlement}\\
+            \texttt{trace}
+        };
+
+        \node[state, below=of game, xshift=16mm] (state) {
+            Pełny stan wewnętrzny\\
+            \texttt{RoundState}\\
+            karty krupiera, karty spalone, wynik
+        };
+
+        \node[external, below=of agent] (result) {
+            \texttt{UTHObservation}\\
+            \texttt{StepResult}
+        };
+
+        \draw[flow]
+            (agent)
+            --
+            node[above] {\texttt{Action}}
+            (game);
+
+        \draw[flow]
+            (game)
+            to[bend left=12]
+            node[above] {operacje domenowe}
+            (modules);
+
+        \draw[flow]
+            (modules)
+            to[bend left=12]
+            node[below] {wyniki operacji}
+            (game);
+
+        \draw[flow]
+            (game.south)
+            to[bend left=16]
+            node[right] {odczyt i aktualizacja}
+            (state.north);
+
+        \draw[flow]
+            (state.north)
+            to[bend left=16]
+            (game.south);
+
+        \draw[flow]
+            (game.south west)
+            to[out=-120, in=0]
+            node[pos=0.55, below] {wynik kroku}
+            (result.east);
+
+        \draw[flow]
+            (result)
+            --
+            (agent);
+
+    \end{tikzpicture}%
+    }
+
+    \caption{Architektura i przepływ informacji w środowisku UTH}
+    \label{fig:architektura-uth}
+\end{figure}
+
+\subsection{Przepływ danych podczas wykonania akcji}
+\label{subsec:przeplyw-akcji}
+
+Metoda \texttt{reset()} zwraca pierwszą obserwację, na podstawie której agent
+wybiera akcję ze zbioru legalnego dla bieżącej fazy i przekazuje ją do metody
+\texttt{step()}. Silnik najpierw sprawdza, czy rozdanie nie zostało
+zakończone oraz czy akcja jest poprawna i legalna. Odrzucenie następuje przed
+jakąkolwiek zmianą stanu i pobraniem kart, co zapobiega częściowemu wykonaniu
+niedozwolonego przejścia. Po pozytywnej walidacji wykonywana jest operacja
+właściwa dla fazy, prowadząca do odkrycia kolejnych kart albo do showdownu
+i rozliczenia.
+
+Wynikiem przejścia jest nowy, niemodyfikowalny obiekt \texttt{RoundState},
+na podstawie którego budowane są obserwacja agenta oraz obiekt
+\texttt{StepResult} z informacją o zakończeniu rozdania i, w stanie
+terminalnym, o jego wyniku i rozliczeniu. Jeżeli rejestrowanie historii jest
+włączone, obserwacja sprzed decyzji i wybrana akcja są zapisywane dopiero po
+udanym przejściu, dzięki czemu historia pozostaje spójna z rzeczywiście
+wykonanymi krokami.
+

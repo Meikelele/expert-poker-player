@@ -1,0 +1,278 @@
+\section{Interfejs silnika}
+\label{sec:interfejs-silnika}
+
+Silnik domenowy udostępnia niewielki interfejs publiczny, za pomocą którego
+można rozpocząć rozdanie, pobrać obserwację, wykonać decyzję oraz odczytać
+wynik zakończonego epizodu. Interfejs nie zależy od konkretnego algorytmu
+uczenia.
+
+Centralnym elementem jest klasa \texttt{UTHGame}. Pojedyncza instancja
+przechowuje stan aktualnego rozdania, źródło kart oraz opcjonalną historię
+decyzji. Po zakończeniu rozdania ta sama instancja może zostać wykorzystana
+ponownie przez wywołanie metody \texttt{reset()}.
+
+\subsection{Tworzenie silnika}
+\label{subsec:tworzenie-silnika}
+
+Konstruktor klasy \texttt{UTHGame} przyjmuje dwa opcjonalne parametry:
+
+\begin{itemize}
+    \item \texttt{seed} -- ziarno nadrzędnego generatora liczb
+          pseudolosowych,
+    \item \texttt{record\_history} -- informację, czy należy rejestrować
+          przebieg kolejnych decyzji.
+\end{itemize}
+
+Ziarno określa powtarzalny strumień talii generowanych dla kolejnych
+rozdawań. Parametr nie ustala pojedynczej, niezmiennej talii dla całej
+instancji. Każde wywołanie \texttt{reset()} tworzy nową talię, której ziarno
+jest pobierane z generatora środowiska.
+
+Rejestrowanie historii jest domyślnie wyłączone. Dzięki temu podstawowe
+wykonywanie dużej liczby rozdań nie wymaga przechowywania dodatkowych
+obiektów diagnostycznych.
+
+\subsection{Rozpoczęcie epizodu}
+\label{subsec:interfejs-reset}
+
+Metoda \texttt{reset()} rozpoczyna nowe rozdanie i zwraca pierwszą obserwację
+w fazie \texttt{PREFLOP}. W standardowym użyciu środowisko samodzielnie
+tworzy przetasowaną talię. Metoda umożliwia również przekazanie własnego
+obiektu implementującego interfejs \texttt{CardSource}, na przykład
+deterministycznej talii \texttt{FixedDeck}.
+
+Rozpoczęcie rozdania obejmuje wybór lub utworzenie źródła kart, rozdanie po
+dwie karty graczowi i krupierowi, utworzenie stanu \texttt{PREFLOP},
+wyzerowanie historii bieżącego rozdania oraz utworzenie pierwszej obserwacji.
+Reset jest wykonywany transakcyjnie. Silnik najpierw próbuje pobrać wszystkie
+karty potrzebne do utworzenia stanu początkowego, a dopiero po powodzeniu
+zapisuje nowy stan i źródło kart. Jeżeli przekazane źródło nie może dostarczyć
+wymaganych kart, poprzedni stan silnika nie zostaje zastąpiony stanem
+częściowo utworzonego rozdania.
+
+\subsection{Wykonanie decyzji}
+\label{subsec:interfejs-step}
+
+Metoda \texttt{step()} przyjmuje jedną wartość typu \texttt{Action},
+wykonuje odpowiadające jej przejście i zwraca obiekt \texttt{StepResult},
+zawierający:
+
+\begin{itemize}
+    \item obserwację po wykonaniu akcji,
+    \item wynik rozdania, jeżeli osiągnięto stan terminalny,
+    \item rozliczenie zakładów w stanie terminalnym,
+    \item szczegóły showdownu, jeżeli rozdanie nie zakończyło się foldem.
+\end{itemize}
+
+Wynik kroku pośredniego zawiera jedynie kolejną obserwację. Pola dotyczące
+wyniku i rozliczenia pozostają wtedy nieokreślone. W kroku terminalnym
+obiekt zawiera komplet informacji niezbędnych do obliczenia nagrody
+i zarejestrowania wyniku eksperymentu.
+
+Właściwość \texttt{terminated} obiektu \texttt{StepResult} informuje,
+czy wykonana akcja zakończyła rozdanie. Jej wartość jest wyznaczana na
+podstawie fazy zawartej w obserwacji.
+
+\subsection{Właściwości publiczne}
+\label{subsec:wlasciwosci-publiczne}
+
+Poza metodami \texttt{reset()} i \texttt{step()} silnik udostępnia
+właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Publiczny interfejs klasy \texttt{UTHGame}}
+    \label{tab:interfejs-uth-game}
+    \begin{tabular}{
+        |p{0.25\textwidth}
+        |p{0.20\textwidth}
+        |p{0.45\textwidth}|
+    }
+        \hline
+        \textbf{Element}
+        &
+        \textbf{Typ wyniku}
+        &
+        \textbf{Znaczenie}
+        \\
+        \hline
+
+        \texttt{reset()}
+        &
+        \texttt{UTHObservation}
+        &
+        Rozpoczyna nowe rozdanie i zwraca obserwację preflop.
+        \\
+        \hline
+
+        \texttt{step(action)}
+        &
+        \texttt{StepResult}
+        &
+        Wykonuje legalną akcję i zwraca wynik przejścia.
+        \\
+        \hline
+
+        \texttt{observation}
+        &
+        \texttt{UTHObservation}
+        &
+        Zwraca aktualne informacje widoczne dla agenta.
+        \\
+        \hline
+
+        \texttt{state}
+        &
+        \texttt{RoundState}
+        &
+        Zwraca pełny stan wewnętrzny, przeznaczony głównie do testów
+        i diagnostyki.
+        \\
+        \hline
+
+        \texttt{is\_started}
+        &
+        \texttt{bool}
+        &
+        Informuje, czy rozpoczęto co najmniej jedno rozdanie.
+        \\
+        \hline
+
+        \texttt{history\_enabled}
+        &
+        \texttt{bool}
+        &
+        Informuje, czy rejestrowanie historii jest aktywne.
+        \\
+        \hline
+
+        \texttt{trace}
+        &
+        \texttt{RoundTrace} lub \texttt{None}
+        &
+        Zwraca zapis bieżącego rozdania, jeżeli historia jest włączona.
+        \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Właściwość \texttt{state} nie jest częścią interfejsu przeznaczonego
+do podejmowania decyzji przez agenta. Udostępniono ją na potrzeby testów,
+diagnostyki i analizy środowiska. Agent otrzymuje
+wartość właściwości \texttt{observation} albo obserwację zwróconą przez
+\texttt{reset()} lub \texttt{step()}.
+% \subsection{Integracja z Gymnasium}
+% \label{subsec:integracja-gymnasium}
+
+% W projekcie integrację z algorytmami uczenia przez wzmacnianie przypisano
+% osobnemu adapterowi, stanowiącemu warstwę translacyjną pomiędzy obiektami
+% domenowymi a interfejsem biblioteki. Zakres obecnej implementacji nie
+% obejmuje jeszcze tego adaptera. Reguły gry, przejścia, walidacja akcji,
+% showdown i rozliczenia są realizowane wyłącznie przez silnik domenowy.
+
+% TODO: uzupełnić szczegóły adaptera Gymnasium po jego implementacji.
+
+\section{Rejestrowanie przebiegu i walidacja środowiska}
+\label{sec:rejestrowanie-i-walidacja}
+
+Poprawność środowiska ma bezpośredni wpływ na wyniki eksperymentów.
+Błąd w kolejności rozdawania kart, rozliczaniu zakładów albo udostępnianiu
+obserwacji mógłby zostać błędnie zinterpretowany jako zachowanie wyuczone
+przez agenta. Z tego względu implementację uzupełniono o opcjonalny mechanizm
+rejestrowania przebiegu rozdania oraz zestaw testów weryfikujących zarówno
+pojedyncze komponenty, jak i pełne ścieżki rozgrywki.
+
+\subsection{Opcjonalne rejestrowanie historii}
+\label{subsec:opcjonalna-historia}
+
+Rejestrowanie historii jest aktywowane parametrem
+\texttt{record\_history} przekazywanym podczas tworzenia obiektu
+\texttt{UTHGame}. Domyślnie mechanizm pozostaje wyłączony, aby standardowe
+wykonywanie dużej liczby epizodów nie wymagało tworzenia dodatkowych
+obiektów diagnostycznych.
+
+Po włączeniu historii każde poprawnie rozpoczęte rozdanie otrzymuje dodatni,
+rosnący identyfikator \texttt{round\_id}. Lista decyzji jest zerowana przy
+każdym poprawnym wywołaniu metody \texttt{reset()}.
+
+Właściwość \texttt{trace} zwraca obiekt \texttt{RoundTrace}. Jeżeli historia
+jest wyłączona albo nie rozpoczęto jeszcze rozdania, jej wartością jest
+\texttt{None}.
+
+Mechanizm historii nie stanowi pamięci agenta i nie jest częścią obserwacji.
+Jest przeznaczony do m.in: diagnozowania nieoczekiwanych decyzji, odtwarzania przebiegu wybranych rozdań 
+czy weryfikowania zgodności decyzji z legalną przestrzenią akcji.
+
+
+% \begin{itemize}
+%     \item diagnozowania nieoczekiwanych decyzji,
+%     \item odtwarzania przebiegu wybranych rozdań,
+%     \item analizy działania agentów bazowych i uczących się,
+%     \item zapisywania przykładów błędów podczas eksperymentów,
+%     \item weryfikowania zgodności decyzji z legalną przestrzenią akcji.
+% \end{itemize}
+
+\subsection{Rekordy historii i ich transakcyjny zapis}
+\label{subsec:rekordy-historii}
+
+Pojedynczą decyzję reprezentuje niemodyfikowalny obiekt
+\texttt{DecisionRecord}, zawierający obserwację dostępną agentowi przed
+wykonaniem decyzji oraz wybraną akcję. Zapisanie obserwacji sprzed przejścia
+pozwala odtworzyć informacje, na podstawie których agent rzeczywiście podjął
+decyzję, a zapis obserwacji po akcji byłby niejednoznaczny, ponieważ mógłby
+zawierać karty odkryte dopiero jako jej skutek. Podczas tworzenia rekordu
+sprawdzane jest, że obserwacja nie jest terminalna, a akcja należy do zbioru
+legalnego dla tej obserwacji.
+
+Cały przebieg rozdania opisuje niemodyfikowalny obiekt \texttt{RoundTrace},
+zawierający identyfikator rozdania, uporządkowaną krotkę rekordów decyzji oraz
+aktualny pełny stan \texttt{RoundState}. Obserwacje w rekordach zawierają
+wyłącznie informacje dostępne agentowi, natomiast końcowy stan jest pełnym
+obiektem diagnostycznym, z tego powodu \texttt{RoundTrace} nie jest
+przekazywany agentowi, lecz służy testom i narzędziom analitycznym.
+Udostępnia też właściwości pomocnicze \texttt{completed}, \texttt{outcome},
+\texttt{settlement} i \texttt{showdown}, które przed zakończeniem rozdania
+mogą zwracać \texttt{None}.
+
+Zapis historii jest transakcyjny. Metoda \texttt{step()} zapamiętuje bieżącą
+obserwację, wykonuje walidację i przejście, a rekord dodaje dopiero po
+utworzeniu poprawnego kolejnego stanu. Jeżeli walidacja lub odkrywanie kart
+zakończy się wyjątkiem, rekord nie powstaje, więc historia nie zawiera akcji
+nielegalnych, decyzji po zakończeniu rozdania ani niedokończonych przejść.
+Tę samą zasadę stosuje metoda \texttt{reset()}, która zapisuje nowy stan
+dopiero po rozdaniu wszystkich czterech kart początkowych.
+
+\subsection{Poziomy testowania}
+\label{subsec:poziomy-testowania}
+
+Testy podzielono według odpowiedzialności komponentów. Testy jednostkowe
+sprawdzają w izolacji model kart i talię, evaluator, modele stanu,
+rozdawanie, legalność akcji, showdown oraz rozliczenia. Testy integracyjne
+wykonują kompletne rozdania obejmujące wszystkie ścieżki maszyny stanów, od
+\texttt{reset()} do stanu terminalnego, wraz z rejestrowaniem historii. Samo
+poprawne przetestowanie evaluatora i modułu rozliczeń nie gwarantuje bowiem,
+że silnik przekaże im właściwe karty i mnożnik zakładu Play.
+
+Poza przykładowymi wynikami testy weryfikują niezmienniki obowiązujące dla
+wszystkich poprawnych rozdań, między innymi brak powtarzających się kart,
+zgodność liczby kart wspólnych i spalonych z fazą, brak danych terminalnych
+w stanie pośrednim, brak showdownu po spasowaniu, wykonanie co najwyżej
+jednego zakładu Play, brak kart krupiera i kart spalonych w obserwacji oraz
+brak zmiany stanu po odrzuconej akcji. Walidacja obejmuje zatem także
+przypadki brzegowe i próby utworzenia stanów naruszających reguły domenowe.
+
+\subsection{Pokrycie kodu}
+\label{subsec:pokrycie-kodu}
+
+Zestaw testów uruchamiany jest za pomocą biblioteki \texttt{pytest}.
+Podczas prac nad silnikiem analizowano zarówno pokrycie instrukcji, jak
+i pokrycie rozgałęzień. Pozwoliło to wykryć nieprzetestowane ścieżki
+walidacji, przypadki brzegowe evaluatora oraz alternatywne sposoby
+rozliczania zakładów.
+
+Na etapie zakończenia implementacji podstawowego silnika uzyskano pełne
+pokrycie instrukcji i rozgałęzień dla objętych pomiarem modułów. Wynik
+pokrycia nie stanowi samodzielnego dowodu poprawności implementacji.
+Informuje jedynie, że testy wykonały wszystkie mierzone linie i gałęzie
+programu. Z tego względu został uzupełniony testami opartymi na konkretnych
+scenariuszach domenowych oraz walidacją niezmienników.
