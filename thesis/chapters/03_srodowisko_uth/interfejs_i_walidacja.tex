@@ -4,7 +4,7 @@
 Silnik domenowy udostępnia niewielki interfejs publiczny, za pomocą którego
 można rozpocząć rozdanie, pobrać obserwację, wykonać decyzję oraz odczytać
 wynik zakończonego epizodu. Interfejs nie zależy od konkretnego algorytmu
-uczenia ani od biblioteki Gymnasium.
+uczenia.
 
 Centralnym elementem jest klasa \texttt{UTHGame}. Pojedyncza instancja
 przechowuje stan aktualnego rozdania, źródło kart oraz opcjonalną historię
@@ -158,18 +158,17 @@ właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
 
 Właściwość \texttt{state} nie jest częścią interfejsu przeznaczonego
 do podejmowania decyzji przez agenta. Udostępniono ją na potrzeby testów,
-diagnostyki i analizy środowiska. Agent powinien otrzymywać wyłącznie
+diagnostyki i analizy środowiska. Agent otrzymuje
 wartość właściwości \texttt{observation} albo obserwację zwróconą przez
 \texttt{reset()} lub \texttt{step()}.
-\subsection{Integracja z Gymnasium}
-\label{subsec:integracja-gymnasium}
+% \subsection{Integracja z Gymnasium}
+% \label{subsec:integracja-gymnasium}
 
-Silnik \texttt{UTHGame} jest niezależny od biblioteki Gymnasium.
-W projekcie integrację z algorytmami uczenia przez wzmacnianie przypisano
-osobnemu adapterowi, stanowiącemu warstwę translacyjną pomiędzy obiektami
-domenowymi a interfejsem biblioteki. Zakres obecnej implementacji nie
-obejmuje jeszcze tego adaptera. Reguły gry, przejścia, walidacja akcji,
-showdown i rozliczenia są realizowane wyłącznie przez silnik domenowy.
+% W projekcie integrację z algorytmami uczenia przez wzmacnianie przypisano
+% osobnemu adapterowi, stanowiącemu warstwę translacyjną pomiędzy obiektami
+% domenowymi a interfejsem biblioteki. Zakres obecnej implementacji nie
+% obejmuje jeszcze tego adaptera. Reguły gry, przejścia, walidacja akcji,
+% showdown i rozliczenia są realizowane wyłącznie przez silnik domenowy.
 
 % TODO: uzupełnić szczegóły adaptera Gymnasium po jego implementacji.
 
@@ -201,15 +200,17 @@ jest wyłączona albo nie rozpoczęto jeszcze rozdania, jej wartością jest
 \texttt{None}.
 
 Mechanizm historii nie stanowi pamięci agenta i nie jest częścią obserwacji.
-Jest przeznaczony do:
+Jest przeznaczony do m.in: diagnozowania nieoczekiwanych decyzji, odtwarzania przebiegu wybranych rozdań 
+czy weryfikowania zgodności decyzji z legalną przestrzenią akcji.
 
-\begin{itemize}
-    \item diagnozowania nieoczekiwanych decyzji,
-    \item odtwarzania przebiegu wybranych rozdań,
-    \item analizy działania agentów bazowych i uczących się,
-    \item zapisywania przykładów błędów podczas eksperymentów,
-    \item weryfikowania zgodności decyzji z legalną przestrzenią akcji.
-\end{itemize}
+
+% \begin{itemize}
+%     \item diagnozowania nieoczekiwanych decyzji,
+%     \item odtwarzania przebiegu wybranych rozdań,
+%     \item analizy działania agentów bazowych i uczących się,
+%     \item zapisywania przykładów błędów podczas eksperymentów,
+%     \item weryfikowania zgodności decyzji z legalną przestrzenią akcji.
+% \end{itemize}
 
 \subsection{Rekordy historii i ich transakcyjny zapis}
 \label{subsec:rekordy-historii}
@@ -218,7 +219,7 @@ Pojedynczą decyzję reprezentuje niemodyfikowalny obiekt
 \texttt{DecisionRecord}, zawierający obserwację dostępną agentowi przed
 wykonaniem decyzji oraz wybraną akcję. Zapisanie obserwacji sprzed przejścia
 pozwala odtworzyć informacje, na podstawie których agent rzeczywiście podjął
-decyzję; zapis obserwacji po akcji byłby niejednoznaczny, ponieważ mógłby
+decyzję, a zapis obserwacji po akcji byłby niejednoznaczny, ponieważ mógłby
 zawierać karty odkryte dopiero jako jej skutek. Podczas tworzenia rekordu
 sprawdzane jest, że obserwacja nie jest terminalna, a akcja należy do zbioru
 legalnego dla tej obserwacji.
@@ -227,7 +228,7 @@ Cały przebieg rozdania opisuje niemodyfikowalny obiekt \texttt{RoundTrace},
 zawierający identyfikator rozdania, uporządkowaną krotkę rekordów decyzji oraz
 aktualny pełny stan \texttt{RoundState}. Obserwacje w rekordach zawierają
 wyłącznie informacje dostępne agentowi, natomiast końcowy stan jest pełnym
-obiektem diagnostycznym; z tego powodu \texttt{RoundTrace} nie jest
+obiektem diagnostycznym, z tego powodu \texttt{RoundTrace} nie jest
 przekazywany agentowi, lecz służy testom i narzędziom analitycznym.
 Udostępnia też właściwości pomocnicze \texttt{completed}, \texttt{outcome},
 \texttt{settlement} i \texttt{showdown}, które przed zakończeniem rozdania

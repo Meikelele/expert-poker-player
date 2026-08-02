@@ -315,7 +315,7 @@ zostaje ujawnione agentowi, dopóki nie doda się go jawnie do modelu
 Informacje ukryte są częścią stanu potrzebnego do prowadzenia rozgrywki, lecz
 nie uczestniczą w tworzeniu obserwacji. Silnik musi przechowywać karty
 krupiera, aby przeprowadzić showdown, a karty spalone i kolejność talii są
-potrzebne do deterministycznego odtworzenia rozdania; ich ujawnienie
+potrzebne do deterministycznego odtworzenia rozdania. Ich ujawnienie
 zmieniałoby jednak problem decyzyjny, dając agentowi wiedzę o przyszłych
 zdarzeniach losowych. Z tego powodu pełny stan jest wykorzystywany przez wewnętrzne komponenty
 silnika, natomiast poza nimi udostępnia się go wyłącznie na potrzeby testów,
@@ -351,7 +351,7 @@ Rozdanie rozpoczyna metoda \texttt{reset()}, która rozdaje po dwie karty
 graczowi i krupierowi w kolejności \(P_1, D_1, P_2, D_2\), tworzy stan
 \texttt{PREFLOP} i zwraca pierwszą obserwację. Karty wspólne i spalone nie są
 jeszcze dobierane. Każde poprawne wykonanie metody \texttt{step()} przesuwa
-rozdanie do kolejnej fazy albo do stanu terminalnego; agent nie może pozostać
+rozdanie do kolejnej fazy albo do stanu terminalnego, agent nie może pozostać
 w tej samej fazie po wykonaniu akcji.
 
 Pełna przestrzeń akcji zawiera sześć decyzji domenowych, a zbiór akcji
@@ -531,6 +531,6 @@ powoduje zgłoszenie odpowiednio \texttt{RoundNotStartedError},
 Walidacja następuje przed dobieraniem kart i zapisaniem nowego stanu, więc
 nielegalna decyzja nie zużywa kart z talii, nie zmienia fazy rozdania i nie
 jest dodawana do historii. Środowisko nie zastępuje nielegalnej akcji inną
-decyzją ani nie nakłada automatycznej kary; obsługa błędu należy do
+decyzją ani nie nakłada automatycznej kary, a obsługa błędu należy do
 komponentu sterującego eksperymentem.
 
