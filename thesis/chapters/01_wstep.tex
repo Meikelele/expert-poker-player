@@ -19,8 +19,9 @@ uczenia przez wzmacnianie.
 Uczenie przez wzmacnianie (ang. \emph{reinforcement learning}, RL) pozwala
 analizować sytuacje, w których agent uczy się strategii poprzez interakcję ze
 środowiskiem. W przypadku Ultimate Texas Hold’em środowiskiem może być symulator
-gry, stanem aktualna sytuacja w rozdaniu, akcją decyzja gracza, natomiast
-nagrodą końcowy wynik finansowy rozdania. Takie podejście umożliwia badanie,
+gry, obserwacją informacje dostępne graczowi w bieżącym etapie rozdania, akcją
+decyzja gracza, natomiast nagrodą końcowy wynik finansowy rozdania. Takie
+podejście umożliwia badanie,
 w jaki sposób różne reprezentacje stanu oraz różne definicje funkcji nagrody
 wpływają na jakość wyuczonej strategii.
 
@@ -48,9 +49,10 @@ i Blind oraz decyzyjny zakład Play. W podstawowej wersji środowiska pominięte
 zostaną zakłady poboczne, takie jak Trips oraz Progressive, ponieważ nie są one
 bezpośrednio związane z głównym procesem decyzyjnym agenta.
 
-W ramach pracy zostaną przygotowane różne warianty reprezentacji stanu gry.
-Reprezentacja stanu może obejmować między innymi informacje o kartach gracza,
-kartach wspólnych, aktualnym etapie rozdania oraz dostępnych akcjach.
+W ramach pracy zostaną przygotowane różne warianty numerycznej reprezentacji
+obserwacji agenta, utworzonej na podstawie dostępnej części stanu gry.
+Reprezentacja obserwacji może obejmować między innymi informacje o kartach
+gracza, kartach wspólnych, aktualnym etapie rozdania oraz dostępnych akcjach.
 Analizie podlegać będzie również wpływ sposobu przekształcania finansowego
 wyniku rozdania w sygnał nagrody.
 

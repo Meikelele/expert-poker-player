@@ -13,7 +13,7 @@ ponieważ ich wynik nie zależy od sekwencji akcji Play. Wpływają jednak na
 rozkład końcowych wypłat i utrudniałyby interpretację jakości strategii,
 a Progressive wymagałby dodatkowo modelu puli utrzymywanej pomiędzy
 rozdaniami, co naruszałoby niezależność epizodów. Z tego powodu ocena dotyczy
-wyłącznie zakładów Ante, Blind i Play, oba zakłady boczne można w razie
+wyłącznie zakładów Ante, Blind i Play. Oba zakłady boczne można w razie
 potrzeby dołączyć jako rozszerzenie warstwy rozliczeń, bez zmiany kolejności
 faz.
 
@@ -28,9 +28,9 @@ odpowiada losowaniu bez zwracania ze standardowej talii.
 Obserwacja pozostaje obiektem domenowym zawierającym karty, fazę i zbiór
 legalnych akcji. Taka postać jest czytelna i wygodna w testach, lecz nie może
 być bezpośrednio podana modelom uczenia maszynowego. Kodowanie
-\texttt{UTHObservation} do reprezentacji numerycznej wydzielono poza klasę
-\texttt{UTHGame}, ponieważ porównanie reprezentacji stanu jest jednym
-z elementów badawczych pracy, wspólny silnik pozwala przy tym zestawiać różne
+\texttt{UTHObservation} do reprezentacji numerycznej pozostaje poza zakresem
+klasy \texttt{UTHGame}, ponieważ porównanie reprezentacji stanu jest jednym
+z elementów badawczych pracy. Wspólny silnik pozwala zestawiać różne
 reprezentacje na identycznych rozdaniach i regułach.
 
 \section{Podsumowanie}

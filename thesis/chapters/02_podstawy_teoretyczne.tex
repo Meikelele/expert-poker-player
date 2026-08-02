@@ -282,14 +282,14 @@ Blackjack & 0{,}28\% \\
 Ultimate Texas Hold’em & 2{,}19\% \\
 Ruletka europejska & 2{,}70\% \\
 Ruletka amerykańska & 5{,}26\% \\
-Slot machines & 2--15\% \\
+Automaty do gier & 2--15\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Tabela~\ref{tab:house_edge_examples} pokazuje, że przewaga kasyna jest cechą
 konstrukcyjną gier hazardowych, ale jej poziom istotnie różni się pomiędzy
-gramim, a podane wartości zależą przy tym od wariantu zasad gry oraz przyjętego
+grami, a podane wartości zależą przy tym od wariantu zasad gry oraz przyjętego
 sposobu normalizacji. Celem niniejszej pracy nie jest wykazanie, że agent
 może trwale uzyskać dodatnią wartość oczekiwaną w grze zaprojektowanej na
 korzyść kasyna, lecz sprawdzenie, które metody uczenia przez wzmacnianie są
@@ -299,8 +299,9 @@ w stanie nauczyć się strategii minimalizującej tę przewagę.
 
 Strategie bazowe stanowią punkty odniesienia służące do oceny agentów
 uczących się. Agent losowy wybiera jedną z legalnych akcji bez uwzględniania
-siły kart i pozwala zweryfikować poprawność infrastruktury eksperymentalnej.
-Agent regułowy wykorzystuje z góry określone heurystyki i reprezentuje
+siły kart, stanowi prosty punkt odniesienia i umożliwia wstępną kontrolę
+działania infrastruktury eksperymentalnej. Agent regułowy wykorzystuje z góry
+określone heurystyki i reprezentuje
 bardziej wymagający punkt odniesienia.
 
 Wyniki agentów uczących się powinny być porównywane zarówno pomiędzy sobą,
@@ -383,4 +384,4 @@ prawdopodobieństwa wyboru akcji, natomiast celem uczenia jest maksymalizacja
 oczekiwanego zwrotu uzyskiwanego w wielu epizodach. Rozróżnienie pełnego
 stanu środowiska od obserwacji agenta jest kluczowe dla zachowania niepełnej
 informacji charakterystycznej dla pokera i zostało bezpośrednio odwzorowane
-w projekcie środowiska opisanym w kolejnym rozdziale.
+w projekcie środowiska opisanym w kolejnym rozdziale \cite{sutton_barto_rl}.
