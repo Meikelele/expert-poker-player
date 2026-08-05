@@ -1,0 +1,135 @@
+\chapter{Agenci bazowi i infrastruktura eksperymentalna}
+\label{chap:agenci-bazowi}
+
+W niniejszym rozdziale przedstawiono projekt agentów bazowych oraz
+infrastruktury służącej do uruchamiania i oceny strategii w środowisku
+Ultimate Texas Hold'em. Strategie bazowe pełnią rolę punktów odniesienia
+dla metod uczenia przez wzmacnianie. Pozwalają sprawdzić poprawność procesu
+prowadzenia eksperymentów oraz określić, czy wyuczona polityka przewyższa
+proste sposoby wyboru akcji.
+
+Zaimplementowano wspólny kontrakt agenta, mechanizm
+rozegrania pojedynczego epizodu oraz agenta losowego. Wszystkie te elementy
+korzystają z publicznego interfejsu środowiska opisanego w
+rozdziale~\ref{chap:srodowisko-uth}.
+
+\section{Wspólny interfejs agenta}
+\label{sec:interfejs-agenta}
+
+Wspólny kontrakt agentów zdefiniowano za pomocą protokołu
+\texttt{Agent}. Każda zgodna implementacja udostępnia metodę
+\texttt{select\_action()}, która przyjmuje obiekt
+\texttt{UTHObservation} i zwraca jedną wartość typu \texttt{Action}.
+
+% \begin{equation}
+%     \operatorname{select\_action}
+%     \colon
+%     O_t
+%     \rightarrow
+%     a_t,
+%     \qquad
+%     a_t \in A_t^{legal}.
+% \end{equation}
+
+Zastosowanie protokołu pozwala korzystać z typowania strukturalnego.
+Klasa agenta nie musi dziedziczyć po wspólnej klasie bazowej, lecz musi
+udostępniać metodę o wymaganej sygnaturze. Dzięki temu ten sam mechanizm
+prowadzenia rozgrywki może obsługiwać agentów losowych, regułowych
+i uczących się bez znajomości ich wewnętrznej implementacji.
+
+Agent otrzymuje wyłącznie obserwację zawierającą informacje dostępne
+graczowi. Pełny obiekt \texttt{RoundState} nie jest częścią interfejsu,
+dlatego implementacja strategii nie uzyskuje dostępu do kart krupiera,
+kart spalonych ani kolejności pozostałych kart w talii.
+
+\section{Prowadzenie pojedynczego epizodu}
+\label{sec:runner-pojedynczego-epizodu}
+
+Funkcja \texttt{play\_round()} łączy agenta z silnikiem
+\texttt{UTHGame}. Rozpoczyna rozdanie, przekazuje bieżącą obserwację
+agentowi, wykonuje wybraną akcję i powtarza ten proces do osiągnięcia
+stanu terminalnego.
+
+% Przepływ pojedynczego epizodu ma postać
+
+% \begin{equation}
+%     \operatorname{reset}
+%     \rightarrow
+%     O_0
+%     \rightarrow
+%     a_0
+%     \rightarrow
+%     \operatorname{step}
+%     \rightarrow
+%     \ldots
+%     \rightarrow
+%     S_T.
+% \end{equation}
+
+Każda decyzja zaakceptowana przez środowisko zostaje zapisana w kolejności
+wykonania. Po zakończeniu rozdania funkcja zwraca obiekt
+\texttt{EpisodeResult}, który zawiera sekwencję akcji, wynik rozdania
+oraz pełne rozliczenie zakładów Ante, Blind i Play.
+
+Model \texttt{EpisodeResult} udostępnia również wynik netto, łączną
+wartość postawionych zakładów, liczbę decyzji i mnożnik zakładu Play.
+Stanowi w ten sposób lekką reprezentację zakończonego epizodu, odpowiednią
+do późniejszej agregacji wyników wielu rozdań.
+
+\section{Agent losowy}
+\label{sec:agent-losowy}
+
+Agent losowy stanowi najprostszy punkt odniesienia. Nie analizuje wartości
+kart ani prawdopodobieństwa wygranej. Dla każdej obserwacji wybiera jedną
+z legalnych akcji.
+
+% \begin{equation}
+%     \pi_{\mathrm{random}}(a \mid O_t)
+%     =
+%     \frac{1}{\lvert A_t^{legal} \rvert},
+%     \qquad
+%     a \in A_t^{legal}.
+% \end{equation}
+
+Implementacja korzysta wyłącznie ze zbioru legalnych akcji zawartego
+w \texttt{UTHObservation}. Akcje są porządkowane zgodnie z kolejnością
+wartości enuma \texttt{Action}, dzięki czemu wynik generatora
+pseudolosowego nie zależy od kolejności iterowania po zbiorze.
+
+\subsection{Rozdzielenie źródeł losowości}
+\label{subsec:rozdzielenie-losowosci}
+
+Środowisko i agent posiadają niezależne generatory pseudolosowe. Generator
+środowiska odpowiada za kolejność kart, natomiast generator agenta odpowiada
+wyłącznie za wybór akcji:
+
+\begin{equation}
+    seed_{\mathrm{environment}}
+    \rightarrow
+    \text{kolejność kart},
+    \qquad
+    seed_{\mathrm{agent}}
+    \rightarrow
+    \text{wybór akcji}.
+\end{equation}
+
+Rozdzielenie obu źródeł losowości umożliwia zmianę strategii agenta bez
+zmiany przebiegu rozdań. Pozwala również odtwarzać sekwencje decyzji
+agenta niezależnie od konfiguracji środowiska.
+
+\subsection{Walidacja implementacji}
+\label{subsec:walidacja-agenta-losowego}
+
+Testy agenta losowego obejmują zgodność ze wspólnym protokołem, wybieranie
+wyłącznie legalnych akcji, powtarzalność decyzji dla tego samego seedu oraz
+obsługę niepoprawnych danych wejściowych. Osobny test potwierdza, że agent
+nie podejmuje decyzji dla obserwacji terminalnej.
+
+Testy runnera obejmują wszystkie legalne ścieżki zakończenia rozdania.
+Sprawdzają również, czy agent otrzymuje obserwacje odpowiadające kolejnym
+fazom oraz czy jawnie przekazane źródło kart pozwala odtworzyć wynik
+niezależnie od wewnętrznego seedu obiektu \texttt{UTHGame}.
+
+% TODO: uzupełnić opis modelu symulacji wielu epizodów po jego implementacji.
+% TODO: uzupełnić opis agenta regułowego po ustaleniu i implementacji reguł.
+% TODO: dodać podsumowanie rozdziału po zakończeniu etapu agentów bazowych.
