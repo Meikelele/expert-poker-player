@@ -127,3 +127,78 @@ class EpisodeResult:
         """Zwraca całkowitą stawkę w jednostkach Ante."""
 
         return self.settlement.total_staked
+
+@dataclass(frozen=True, slots=True)
+class SimulationConfig:
+    """Konfiguracja powtarzalnej symulacji wielu rozdań."""
+
+    deck_seeds: tuple[int, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.deck_seeds, tuple): # type: ignore
+            raise TypeError(
+                "deck_seeds must be a tuple"
+            )
+
+        if not self.deck_seeds:
+            raise ValueError(
+                "deck_seeds cannot be empty"
+            )
+
+        if not all(
+            type(seed) is int
+            for seed in self.deck_seeds
+        ):
+            raise TypeError(
+                "deck_seeds must contain only integers"
+            )
+
+    @property
+    def round_count(self) -> int:
+        """Zwraca liczbę rozdań w symulacji."""
+
+        return len(self.deck_seeds)
+
+
+@dataclass(frozen=True, slots=True)
+class SimulationResult:
+    """Wynik powtarzalnej symulacji wielu rozdań."""
+
+    config: SimulationConfig
+    episodes: tuple[EpisodeResult, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.config,
+            SimulationConfig,
+        ): # type: ignore
+            raise TypeError(
+                "config must be an instance "
+                "of SimulationConfig"
+            )
+
+        if not isinstance(self.episodes, tuple): # type: ignore
+            raise TypeError(
+                "episodes must be a tuple"
+            )
+
+        if not all(
+            isinstance(episode, EpisodeResult) # type: ignore
+            for episode in self.episodes
+        ):
+            raise TypeError(
+                "episodes must contain only "
+                "EpisodeResult values"
+            )
+
+        if len(self.episodes) != self.config.round_count:
+            raise ValueError(
+                "episode count must match "
+                "the configured round count"
+            )
+
+    @property
+    def round_count(self) -> int:
+        """Zwraca liczbę zakończonych rozdań."""
+
+        return len(self.episodes)
