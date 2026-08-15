@@ -130,6 +130,66 @@ Sprawdzają również, czy agent otrzymuje obserwacje odpowiadające kolejnym
 fazom oraz czy jawnie przekazane źródło kart pozwala odtworzyć wynik
 niezależnie od wewnętrznego seedu obiektu \texttt{UTHGame}.
 
+\section{Agent regułowy}
+\label{sec:agent-regulowy}
+
+Drugą strategię bazową stanowi agent regułowy. W przeciwieństwie do
+agenta losowego podejmuje on decyzje na podstawie kart widocznych
+w obserwacji oraz aktualnej fazy rozdania. Przyjęte reguły oparto na
+uproszczonej strategii Ultimate Texas Hold'em publikowanej przez
+Wizard of Odds \cite{wizard_uth}.
+
+Strategia została podzielona na trzy zbiory reguł odpowiadające
+kolejnym punktom decyzyjnym środowiska.
+
+\subsection{Decyzja przed flopem}
+
+Przed odkryciem kart wspólnych agent wykonuje zakład Play równy
+czterokrotności Ante dla następujących układów początkowych:
+
+\begin{itemize}
+    \item każdej pary od trójek wzwyż,
+    \item każdego układu zawierającego asa,
+    \item króla z dowolną kartą w tym samym kolorze,
+    \item króla z kartą pięć lub wyższą w różnych kolorach,
+    \item damy z kartą sześć lub wyższą w tym samym kolorze,
+    \item damy z kartą osiem lub wyższą w różnych kolorach,
+    \item waleta z kartą osiem lub wyższą w tym samym kolorze,
+    \item waleta z dziesiątką w różnych kolorach.
+\end{itemize}
+
+Para dwójek oraz wszystkie pozostałe układy prowadzą do wykonania
+akcji \texttt{CHECK}. Przyjęta strategia nie wykorzystuje zakładu
+\texttt{BET\_3X}, mimo że akcja ta pozostaje legalną akcją środowiska.
+
+\subsection{Decyzja po flopie}
+
+Jeżeli gracz nie wykonał zakładu przed flopem, po odkryciu trzech
+kart wspólnych agent wybiera \texttt{BET\_2X}, gdy posiada dwie pary
+lub silniejszy układ, ukrytą parę z wyjątkiem pary dwójek albo cztery
+karty do koloru z własną kartą tego koloru o randze co najmniej
+dziesięć.
+
+Przez ukrytą parę rozumiana jest para wykorzystująca co najmniej
+jedną z dwóch prywatnych kart gracza. Jeżeli żaden z wymienionych
+warunków nie jest spełniony, agent wykonuje akcję \texttt{CHECK}.
+
+\subsection{Decyzja po odkryciu wszystkich kart wspólnych}
+
+W ostatnim punkcie decyzyjnym agent wykonuje zakład
+\texttt{BET\_1X}, jeżeli posiada ukrytą parę lub silniejszy układ.
+Dla słabszych układów wykorzystywana jest reguła oparta na liczbie
+kart mogących poprawić układ krupiera do układu pokonującego gracza.
+Jeżeli liczba takich kart jest mniejsza niż 21, agent wykonuje
+\texttt{BET\_1X}. W przeciwnym przypadku wybiera \texttt{FOLD}
+\cite{wizard_uth}.
+
+Tak zdefiniowana strategia jest deterministyczna. Dla tej samej
+obserwacji agent zawsze zwraca tę samą akcję. Dzięki temu może
+stanowić silniejszy punkt odniesienia niż agent losowy, jednocześnie
+nie wykorzystując procesu uczenia ani informacji ukrytych przed
+graczem.
+
 % TODO: uzupełnić opis modelu symulacji wielu epizodów po jego implementacji.
-% TODO: uzupełnić opis agenta regułowego po ustaleniu i implementacji reguł.
 % TODO: dodać podsumowanie rozdziału po zakończeniu etapu agentów bazowych.
+% TODO: uzupełnić opis implementacji agenta regułowego.
