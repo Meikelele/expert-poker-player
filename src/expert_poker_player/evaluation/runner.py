@@ -1,7 +1,12 @@
 from typing import cast
 
 from expert_poker_player.agents import Agent
-from expert_poker_player.evaluation.models import EpisodeResult
+from expert_poker_player.cards import Deck
+from expert_poker_player.evaluation.models import (
+    EpisodeResult,
+    SimulationConfig,
+    SimulationResult,
+)
 from expert_poker_player.uth import (
     Action,
     CardSource,
@@ -58,3 +63,37 @@ def play_round(
             )
 
         observation = step_result.observation
+
+def run_simulation(
+    agent: Agent,
+    config: SimulationConfig,
+) -> SimulationResult:
+    """
+    Uruchamia agenta na deterministycznym zestawie rozdań.
+
+    Każdy seed z konfiguracji tworzy osobną talię i osobny epizod.
+    """
+
+    if not isinstance(agent, Agent): # type: ignore
+        raise TypeError(
+            "agent must implement the Agent protocol"
+        )
+
+    if not isinstance(config, SimulationConfig): # type: ignore
+        raise TypeError(
+            "config must be an instance of SimulationConfig"
+        )
+
+    episodes = tuple(
+        play_round(
+            game=UTHGame(),
+            agent=agent,
+            card_source=Deck(seed=deck_seed),
+        )
+        for deck_seed in config.deck_seeds
+    )
+
+    return SimulationResult(
+        config=config,
+        episodes=episodes,
+    )

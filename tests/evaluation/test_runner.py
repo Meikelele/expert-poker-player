@@ -1,9 +1,13 @@
 import pytest
 
 from expert_poker_player.cards import Deck
+from expert_poker_player.agents import RandomAgent
 from expert_poker_player.evaluation import (
     EpisodeResult,
+    SimulationConfig,
+    SimulationResult,
     play_round,
+    run_simulation,
 )
 from expert_poker_player.uth import (
     Action,
@@ -12,6 +16,23 @@ from expert_poker_player.uth import (
     UTHGame,
     UTHObservation,
 )
+
+class CheckUntilRiverAgent:
+    """Agent czekający do rivera, a następnie wykonujący zakład 1x."""
+
+    def __init__(self) -> None:
+        self.observations: list[UTHObservation] = []
+
+    def select_action(
+        self,
+        observation: UTHObservation,
+    ) -> Action:
+        self.observations.append(observation)
+
+        if observation.phase is GamePhase.RIVER:
+            return Action.BET_1X
+
+        return Action.CHECK
 
 
 class ScriptedAgent:
@@ -173,3 +194,118 @@ def test_explicit_card_source_controls_the_round() -> None:
 
     assert first_result.outcome is second_result.outcome
     assert first_result.settlement == second_result.settlement
+
+def test_runs_one_episode_for_each_deck_seed() -> None:
+    config = SimulationConfig(
+        deck_seeds=(101, 202, 303),
+    )
+    agent = ScriptedAgent(
+        (
+            Action.BET_4X,
+            Action.BET_4X,
+            Action.BET_4X,
+        )
+    )
+
+    result = run_simulation(
+        agent=agent,
+        config=config,
+    )
+
+    assert isinstance(result, SimulationResult)
+    assert result.config is config
+    assert result.round_count == 3
+    assert len(result.episodes) == 3
+
+    assert all(
+        episode.actions == (Action.BET_4X,)
+        for episode in result.episodes
+    )
+
+
+def test_same_configuration_and_agent_seed_are_reproducible() -> None:
+    config = SimulationConfig(
+        deck_seeds=(101, 202, 303, 404, 505),
+    )
+
+    first_result = run_simulation(
+        agent=RandomAgent(seed=999),
+        config=config,
+    )
+    second_result = run_simulation(
+        agent=RandomAgent(seed=999),
+        config=config,
+    )
+
+    assert first_result == second_result
+
+
+def test_same_configuration_exposes_same_cards() -> None:
+    config = SimulationConfig(
+        deck_seeds=(101, 202, 303),
+    )
+    first_agent = CheckUntilRiverAgent()
+    second_agent = CheckUntilRiverAgent()
+
+    first_result = run_simulation(
+        agent=first_agent,
+        config=config,
+    )
+    second_result = run_simulation(
+        agent=second_agent,
+        config=config,
+    )
+
+    assert first_result == second_result
+    assert first_agent.observations == second_agent.observations
+
+
+def test_result_matches_individually_played_rounds() -> None:
+    config = SimulationConfig(
+        deck_seeds=(101, 202),
+    )
+
+    simulation = run_simulation(
+        agent=CheckUntilRiverAgent(),
+        config=config,
+    )
+
+    expected_episodes = tuple(
+        play_round(
+            game=UTHGame(),
+            agent=CheckUntilRiverAgent(),
+            card_source=Deck(seed=deck_seed),
+        )
+        for deck_seed in config.deck_seeds
+    )
+
+    assert simulation.episodes == expected_episodes
+
+
+def test_simulation_rejects_object_without_agent_protocol() -> None:
+    config = SimulationConfig(
+        deck_seeds=(101,),
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="agent must implement the Agent protocol",
+    ):
+        run_simulation(
+            agent=object(),  # type: ignore[arg-type]
+            config=config,
+        )
+
+
+def test_simulation_rejects_invalid_config() -> None:
+    with pytest.raises(
+        TypeError,
+        match=(
+            "config must be an instance "
+            "of SimulationConfig"
+        ),
+    ):
+        run_simulation(
+            agent=CheckUntilRiverAgent(),
+            config=object(),  # type: ignore[arg-type]
+        )
