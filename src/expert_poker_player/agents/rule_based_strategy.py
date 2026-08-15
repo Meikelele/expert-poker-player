@@ -7,11 +7,21 @@ from expert_poker_player.cards import (
 )
 from expert_poker_player.hands import (
     HandRank,
+    evaluate_best_hand,
     evaluate_five_card_hand,
 )
 from expert_poker_player.uth import (
     GamePhase,
     UTHObservation,
+)
+
+_FULL_DECK: tuple[Card, ...] = tuple(
+    Card(
+        rank=rank,
+        suit=suit,
+    )
+    for suit in Suit
+    for rank in Rank
 )
 
 
@@ -93,6 +103,7 @@ def should_raise_flop(
     if _has_hidden_pair(
         player_cards=observation.player_cards,
         visible_cards=visible_cards,
+        exclude_pocket_deuces=True,
     ):
         return True
 
@@ -101,14 +112,89 @@ def should_raise_flop(
         visible_cards=visible_cards,
     )
 
+def should_raise_river(
+    observation: UTHObservation,
+) -> bool:
+    """Sprawdza, czy strategia bazowa zaleca zakład 1x."""
+
+    _validate_observation_phase(
+        observation,
+        expected_phase=GamePhase.RIVER,
+    )
+
+    visible_cards = (
+        *observation.player_cards,
+        *observation.community_cards,
+    )
+
+    player_hand = evaluate_best_hand(
+        visible_cards
+    )
+
+    if player_hand.value.rank >= HandRank.TWO_PAIR:
+        return True
+
+    if _has_hidden_pair(
+        player_cards=observation.player_cards,
+        visible_cards=visible_cards,
+        exclude_pocket_deuces=False,
+    ):
+        return True
+
+    return count_dealer_outs(
+        observation
+    ) < 21
+
+def count_dealer_outs(
+    observation: UTHObservation,
+) -> int:
+    """
+    Liczy niewidoczne pojedyncze karty krupiera,
+    które samodzielnie dają układ lepszy od układu gracza.
+    """
+
+    player_cards = observation.player_cards
+    community_cards = observation.community_cards
+
+    visible_cards = {
+        *player_cards,
+        *community_cards,
+    }
+
+    player_value = evaluate_best_hand(
+        (
+            *player_cards,
+            *community_cards,
+        )
+    ).value
+
+    dealer_outs = 0
+
+    for candidate in _FULL_DECK:
+        if candidate in visible_cards:
+            continue
+
+        dealer_value = evaluate_best_hand(
+            (
+                *community_cards,
+                candidate,
+            )
+        ).value
+
+        if dealer_value > player_value:
+            dealer_outs += 1
+
+    return dealer_outs
 
 def _has_hidden_pair(
     *,
     player_cards: tuple[Card, Card],
     visible_cards: tuple[Card, ...],
+    exclude_pocket_deuces: bool,
 ) -> bool:
     if (
-        player_cards[0].rank is Rank.TWO
+        exclude_pocket_deuces
+        and player_cards[0].rank is Rank.TWO
         and player_cards[1].rank is Rank.TWO
     ):
         return False
