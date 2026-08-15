@@ -24,7 +24,6 @@ _FULL_DECK: tuple[Card, ...] = tuple(
     for rank in Rank
 )
 
-
 def should_raise_preflop(
     observation: UTHObservation,
 ) -> bool:
@@ -76,7 +75,6 @@ def should_raise_preflop(
         return low_card.rank >= threshold
 
     return False
-
 
 def should_raise_flop(
     observation: UTHObservation,
@@ -209,7 +207,6 @@ def _has_hidden_pair(
         for card in player_cards
     )
 
-
 def _has_four_to_flush_with_hidden_ten(
     *,
     player_cards: tuple[Card, Card],
@@ -233,7 +230,6 @@ def _has_four_to_flush_with_hidden_ten(
             return True
 
     return False
-
 
 def _validate_observation_phase(
     observation: UTHObservation,
