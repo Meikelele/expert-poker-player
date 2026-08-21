@@ -1,4 +1,8 @@
+import csv
+import json
+
 from argparse import ArgumentParser
+from pathlib import Path
 from random import Random
 
 from expert_poker_player.agents import (
@@ -8,12 +12,17 @@ from expert_poker_player.agents import (
 from expert_poker_player.evaluation import (
     AgentMetrics,
     SimulationConfig,
+    SimulationResult,
     calculate_metrics,
     run_simulation,
 )
 from expert_poker_player.uth import (
     Action,
     RoundOutcome,
+)
+
+DEFAULT_OUTPUT_DIR = Path(
+    "experiments/results"
 )
 
 
@@ -40,6 +49,220 @@ def build_config(
         deck_seeds=deck_seeds,
     )
 
+def metrics_to_dict(
+    metrics: AgentMetrics,
+) -> dict[str, object]:
+    """Konwertuje metryki agenta do formatu zapisywalnego jako JSON."""
+
+    return {
+        "round_count": metrics.round_count,
+        "total_net_profit": float(
+            metrics.total_net_profit
+        ),
+        "estimated_ev": float(
+            metrics.estimated_ev
+        ),
+        "total_staked": float(
+            metrics.total_staked
+        ),
+        "mean_staked": float(
+            metrics.mean_staked
+        ),
+        "standard_deviation": (
+            metrics.standard_deviation
+        ),
+        "standard_error": (
+            metrics.standard_error
+        ),
+        "outcome_counts": {
+            outcome.name: metrics.outcome_counts[
+                outcome
+            ]
+            for outcome in RoundOutcome
+        },
+        "action_counts": {
+            action.name: metrics.action_counts[
+                action
+            ]
+            for action in Action
+        },
+    }
+
+def save_summary(
+    *,
+    output_path: Path,
+    config: SimulationConfig,
+    deck_schedule_seed: int,
+    random_agent_seed: int,
+    random_metrics: AgentMetrics,
+    rule_based_metrics: AgentMetrics,
+) -> None:
+    """Zapisuje konfigurację i zagregowane wyniki eksperymentu."""
+
+    summary: dict[str, object] = {
+        "schema_version": 1,
+        "experiment": "baseline_comparison",
+        "round_count": config.round_count,
+        "deck_schedule_seed": deck_schedule_seed,
+        "random_agent_seed": random_agent_seed,
+        "deck_seeds": list(
+            config.deck_seeds
+        ),
+        "agents": {
+            "RandomAgent": metrics_to_dict(
+                random_metrics
+            ),
+            "RuleBasedAgent": metrics_to_dict(
+                rule_based_metrics
+            ),
+        },
+    }
+
+    with output_path.open(
+        "w",
+        encoding="utf-8",
+    ) as output_file:
+        json.dump(
+            summary,
+            output_file,
+            indent=2,
+            sort_keys=True,
+        )
+
+        output_file.write("\n")
+
+def write_agent_episodes(
+    *,
+    writer: "csv.DictWriter[str]",
+    agent_name: str,
+    result: SimulationResult,
+) -> None:
+    """Zapisuje wyniki poszczególnych rozdań jednego agenta."""
+
+    for round_index, (
+        deck_seed,
+        episode,
+    ) in enumerate(
+        zip(
+            result.config.deck_seeds,
+            result.episodes,
+            strict=True,
+        )
+    ):
+        writer.writerow(
+            {
+                "round_index": round_index,
+                "deck_seed": deck_seed,
+                "agent": agent_name,
+                "net_profit": float(
+                    episode.net_profit
+                ),
+                "total_staked": float(
+                    episode.total_staked
+                ),
+                "outcome": episode.outcome.name,
+                "actions": "|".join(
+                    action.name
+                    for action in episode.actions
+                ),
+            }
+        )
+
+def save_episodes(
+    *,
+    output_path: Path,
+    random_result: SimulationResult,
+    rule_based_result: SimulationResult,
+) -> None:
+    """Zapisuje wyniki wszystkich rozdań obu agentów."""
+
+    fieldnames = [
+        "round_index",
+        "deck_seed",
+        "agent",
+        "net_profit",
+        "total_staked",
+        "outcome",
+        "actions",
+    ]
+
+    with output_path.open(
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as output_file:
+        writer = csv.DictWriter(
+            output_file,
+            fieldnames=fieldnames,
+        )
+
+        writer.writeheader()
+
+        write_agent_episodes(
+            writer=writer,
+            agent_name="RandomAgent",
+            result=random_result,
+        )
+
+        write_agent_episodes(
+            writer=writer,
+            agent_name="RuleBasedAgent",
+            result=rule_based_result,
+        )
+
+def save_results(
+    *,
+    output_dir: Path,
+    config: SimulationConfig,
+    deck_schedule_seed: int,
+    random_agent_seed: int,
+    random_result: SimulationResult,
+    rule_based_result: SimulationResult,
+    random_metrics: AgentMetrics,
+    rule_based_metrics: AgentMetrics,
+) -> tuple[Path, Path]:
+    """Zapisuje kompletny wynik porównania baseline'ów."""
+
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    prefix = (
+        f"baseline_{config.round_count}_"
+        f"{deck_schedule_seed}_"
+        f"{random_agent_seed}"
+    )
+
+    summary_path = (
+        output_dir
+        / f"{prefix}_summary.json"
+    )
+
+    episodes_path = (
+        output_dir
+        / f"{prefix}_episodes.csv"
+    )
+
+    save_summary(
+        output_path=summary_path,
+        config=config,
+        deck_schedule_seed=deck_schedule_seed,
+        random_agent_seed=random_agent_seed,
+        random_metrics=random_metrics,
+        rule_based_metrics=rule_based_metrics,
+    )
+
+    save_episodes(
+        output_path=episodes_path,
+        random_result=random_result,
+        rule_based_result=rule_based_result,
+    )
+
+    return (
+        summary_path,
+        episodes_path,
+    )
 
 def print_metrics(
     name: str,
@@ -142,6 +365,15 @@ def parse_args():
         help="seed used by RandomAgent",
     )
 
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help=(
+            "directory used to store "
+            "experiment results"
+        ),
+    )
     args = parser.parse_args()
 
     if args.rounds <= 0:
@@ -204,12 +436,33 @@ def main() -> None:
         - random_metrics.estimated_ev
     )
 
+    summary_path, episodes_path = save_results(
+    output_dir=args.output_dir,
+    config=config,
+    deck_schedule_seed=args.deck_seed,
+    random_agent_seed=args.random_agent_seed,
+    random_result=random_result,
+    rule_based_result=rule_based_result,
+    random_metrics=random_metrics,
+    rule_based_metrics=rule_based_metrics,
+)
+
     print()
     print("Comparison")
     print("----------")
     print(
         "RuleBasedAgent - RandomAgent EV: "
         f"{float(ev_difference):.6f} Ante"
+    )
+
+    print()
+    print("Saved results")
+    print("-------------")
+    print(
+        f"Summary:  {summary_path}"
+    )
+    print(
+        f"Episodes: {episodes_path}"
     )
 
 
