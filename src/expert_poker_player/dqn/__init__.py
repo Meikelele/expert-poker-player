@@ -8,6 +8,11 @@ from expert_poker_player.dqn.actions import (
 )
 from expert_poker_player.dqn.network import QNetwork
 from expert_poker_player.dqn.agent import DQNAgent
+from expert_poker_player.dqn.replay import (
+    ActionMask,
+    ReplayBuffer,
+    Transition,
+)
 
 __all__ = [
     "ACTION_COUNT",
@@ -18,4 +23,7 @@ __all__ = [
     "legal_action_mask",
     "mask_q_values",
     "DQNAgent",
+    "ActionMask",
+    "ReplayBuffer",
+    "Transition",
 ]
