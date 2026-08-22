@@ -52,6 +52,8 @@ class QNetwork(nn.Module):
                 "hidden_sizes must contain positive values"
             )
 
+        self._input_size = input_size
+
         layers: list[nn.Module] = []
 
         previous_size = input_size
@@ -79,6 +81,10 @@ class QNetwork(nn.Module):
         self.network = nn.Sequential(
             *layers
         )
+
+    @property
+    def input_size(self) -> int:
+        return self._input_size
 
     def forward(
         self,

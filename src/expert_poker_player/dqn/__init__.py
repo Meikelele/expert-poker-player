@@ -7,6 +7,7 @@ from expert_poker_player.dqn.actions import (
     mask_q_values,
 )
 from expert_poker_player.dqn.network import QNetwork
+from expert_poker_player.dqn.agent import DQNAgent
 
 __all__ = [
     "ACTION_COUNT",
@@ -16,4 +17,5 @@ __all__ = [
     "action_to_index",
     "legal_action_mask",
     "mask_q_values",
+    "DQNAgent",
 ]

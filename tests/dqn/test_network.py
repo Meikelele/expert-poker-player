@@ -138,6 +138,13 @@ def test_rejects_non_positive_hidden_size() -> None:
             hidden_sizes=(256, 0),
         )
 
+def test_exposes_input_size() -> None:
+    network = QNetwork(
+        input_size=RAW_STATE_SIZE
+    )
+
+    assert network.input_size == RAW_STATE_SIZE
+
 def test_forward_preserves_batch_dimension() -> None:
     network = QNetwork(
         input_size=FEATURE_STATE_SIZE
