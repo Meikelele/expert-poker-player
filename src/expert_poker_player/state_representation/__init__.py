@@ -20,6 +20,10 @@ from expert_poker_player.state_representation.feature_encoder import (
     FEATURE_STATE_SIZE,
     FeatureStateEncoder,
 )
+from expert_poker_player.state_representation.config import (
+    StateRepresentation,
+    build_state_encoder,
+)
 
 __all__ = [
     "CARD_COUNT",
@@ -34,4 +38,6 @@ __all__ = [
     "extract_poker_features",
     "FEATURE_STATE_SIZE",
     "FeatureStateEncoder",
+    "StateRepresentation",
+    "build_state_encoder",
 ]
