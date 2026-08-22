@@ -3,7 +3,9 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from expert_poker_player.uth import Action
+from expert_poker_player.dqn.actions import (
+    ACTION_COUNT,
+)
 
 
 class QNetwork(nn.Module):
@@ -70,7 +72,7 @@ class QNetwork(nn.Module):
         layers.append(
             nn.Linear(
                 previous_size,
-                len(Action),
+                ACTION_COUNT,
             )
         )
 
