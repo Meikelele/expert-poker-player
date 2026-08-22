@@ -1,0 +1,195 @@
+\chapter{Metody uczenia przez wzmacnianie}
+\label{chap:metody-rl}
+
+W niniejszym rozdziale przedstawiono elementy warstwy uczenia przez
+wzmacnianie budowanej nad środowiskiem Ultimate Texas Hold'em.
+Pierwszym etapem jest przekształcenie obserwacji udostępnianej przez
+silnik gry do stałowymiarowej reprezentacji numerycznej, która może
+zostać wykorzystana jako wejście modeli uczących się.
+
+Środowisko udostępnia agentowi obiekt \texttt{UTHObservation}.
+Zawiera on wyłącznie informacje dostępne graczowi, w szczególności
+jego dwie karty prywatne, odkryte karty wspólne, aktualną fazę
+rozdania oraz zbiór legalnych akcji. Reprezentacja numeryczna jest
+budowana wyłącznie na podstawie tego obiektu, dzięki czemu proces
+uczenia nie uzyskuje dostępu do kart krupiera ani innych informacji
+ukrytych w pełnym stanie środowiska.
+
+\section{Reprezentacja stanu}
+\label{sec:reprezentacja-stanu}
+
+W eksperymentach przewidziano dwa warianty reprezentacji obserwacji.
+Pierwszy wariant stanowi reprezentacja surowa, która koduje informacje
+dostępne w \texttt{UTHObservation} bez dodawania ręcznie
+zaprojektowanych cech pokerowych. Drugi wariant będzie rozszerzał
+reprezentację surową o cechy domenowe wyznaczane na podstawie kart
+widocznych dla gracza.
+
+Rozdzielenie reprezentacji od implementacji konkretnych algorytmów
+pozwala wykorzystać ten sam sposób kodowania zarówno w agencie
+wykorzystującym Deep Q-Network, jak i w agencie opartym na metodzie
+Policy Gradient. Dzięki temu wpływ reprezentacji stanu może być
+analizowany niezależnie od wybranego algorytmu uczenia.
+
+\subsection{Wspólny interfejs kodowania}
+\label{subsec:state-encoder}
+
+Warstwa reprezentacji definiuje protokół \texttt{StateEncoder}.
+Każdy encoder udostępnia metodę \texttt{encode()}, która przyjmuje
+obiekt \texttt{UTHObservation} i zwraca wektor wartości
+zmiennoprzecinkowych. Dodatkowa właściwość \texttt{output\_size}
+określa stały wymiar generowanego wektora.
+
+Wspólny kontrakt ma postać
+
+\begin{equation}
+    f_{\mathrm{enc}}
+    \colon
+    O_t
+    \rightarrow
+    \mathbb{R}^{d},
+\end{equation}
+
+gdzie \(O_t\) oznacza obserwację w chwili \(t\), natomiast \(d\)
+jest wymiarem wybranej reprezentacji.
+
+Encoder nie zależy od biblioteki wykorzystywanej później do budowy
+sieci neuronowych. Wynikiem kodowania jest zwykły wektor numeryczny,
+który może zostać następnie przekształcony do formatu wymaganego
+przez konkretny algorytm uczenia.
+
+\section{Surowa reprezentacja obserwacji}
+\label{sec:raw-state-representation}
+
+Pierwszy wariant reprezentacji został zaimplementowany w klasie
+\texttt{RawStateEncoder}. Jego zadaniem jest zachowanie informacji
+zawartych bezpośrednio w obserwacji bez wprowadzania jawnych informacji
+o sile układu pokerowego, drawach lub strukturze stołu.
+
+Reprezentacja składa się z czterech części:
+
+\begin{enumerate}
+    \item zakodowanych dwóch kart prywatnych gracza,
+    \item pięciu slotów przeznaczonych na karty wspólne,
+    \item kodowania aktualnej fazy rozdania,
+    \item maski legalnych akcji.
+\end{enumerate}
+
+\subsection{Kodowanie kart}
+\label{subsec:kodowanie-kart-raw}
+
+Standardowa talia zawiera 52 unikalne karty. Każda karta jest
+reprezentowana przez wektor one-hot o długości 52. Dokładnie jedna
+pozycja wektora przyjmuje wartość \(1\), natomiast pozostałe pozycje
+mają wartość \(0\).
+
+Karty uporządkowano najpierw według koloru, a następnie według rangi.
+Taki porządek jest deterministyczny i pozostaje zgodny ze sposobem
+tworzenia standardowej talii wykorzystywanej przez środowisko.
+
+Dla karty \(c\) jej reprezentację można zapisać jako
+
+\begin{equation}
+    x_c =
+    \left[
+        x_0,
+        x_1,
+        \ldots,
+        x_{51}
+    \right],
+\end{equation}
+
+gdzie
+
+\begin{equation}
+    x_i =
+    \begin{cases}
+        1, & i = \operatorname{index}(c), \\
+        0, & i \neq \operatorname{index}(c).
+    \end{cases}
+\end{equation}
+
+W obserwacji zawsze występują dwie karty prywatne gracza. Dla kart
+wspólnych zarezerwowano natomiast pięć pozycji niezależnie od
+aktualnej fazy rozdania. Nieodkryte jeszcze karty wspólne są
+reprezentowane przez zerowy wektor długości 52.
+
+Takie rozwiązanie zapewnia stały wymiar reprezentacji przed flopem,
+po flopie oraz po odkryciu wszystkich kart wspólnych.
+
+\subsection{Kodowanie fazy rozdania}
+\label{subsec:kodowanie-fazy-raw}
+
+Uwzględniane są trzy fazy, w których agent może podjąć decyzję:
+\texttt{PREFLOP}, \texttt{FLOP} oraz \texttt{RIVER}. Faza jest
+reprezentowana przez trzyelementowy wektor one-hot.
+
+Odpowiednie kodowania mają postać
+
+\begin{equation}
+    \begin{aligned}
+        \mathrm{PREFLOP} &\rightarrow [1,0,0], \\
+        \mathrm{FLOP}    &\rightarrow [0,1,0], \\
+        \mathrm{RIVER}   &\rightarrow [0,0,1].
+    \end{aligned}
+\end{equation}
+
+Stan terminalny nie jest kodowany przez \texttt{RawStateEncoder},
+ponieważ nie wymaga już podjęcia kolejnej decyzji przez agenta.
+
+\subsection{Maska legalnych akcji}
+\label{subsec:maska-akcji-raw}
+
+Ostatnim elementem reprezentacji jest maska legalnych akcji.
+Środowisko definiuje sześć możliwych wartości typu \texttt{Action}.
+Dla każdej z nich zapisywana jest wartość \(1\), jeżeli akcja jest
+legalna w aktualnej fazie, oraz \(0\) w przeciwnym przypadku.
+
+Maska ma więc postać
+
+\begin{equation}
+    m_t \in \{0,1\}^{6}.
+\end{equation}
+
+Jej obecność pozwala przyszłym agentom jednoznacznie rozpoznać zbiór
+akcji dostępnych w danym punkcie decyzyjnym. Mechanizm ten będzie
+również wykorzystywany podczas wyboru akcji przez modele uczące się.
+
+\subsection{Wymiar reprezentacji}
+\label{subsec:wymiar-raw}
+
+Na kodowanie kart przeznaczono siedem slotów, z czego dwa odpowiadają
+kartom gracza, a pięć kartom wspólnym. Każdy slot ma długość 52.
+Dodatkowo reprezentacja zawiera trzy wartości opisujące fazę oraz
+sześć wartości maski akcji.
+
+Całkowity wymiar reprezentacji wynosi zatem
+
+\begin{equation}
+    d_{\mathrm{raw}}
+    =
+    7 \cdot 52
+    + 3
+    + 6
+    =
+    373.
+\end{equation}
+
+Wymiar pozostaje stały dla wszystkich stanów decyzyjnych. Jest to
+istotne z punktu widzenia późniejszych modeli neuronowych, ponieważ
+warstwa wejściowa sieci może posiadać z góry określoną liczbę
+elementów.
+
+\subsection{Charakter reprezentacji surowej}
+\label{subsec:charakter-raw}
+
+Reprezentacja surowa celowo nie zawiera informacji takich jak
+kategoria aktualnego układu, liczba kart do koloru, możliwość
+utworzenia strita ani innych cech wynikających z wiedzy pokerowej.
+Model otrzymuje jedynie zakodowane dane dostępne bezpośrednio
+w obserwacji.
+
+Wariant ten będzie stanowił punkt odniesienia dla reprezentacji
+wzbogaconej o cechy domenowe. Porównanie obu wariantów pozwoli ocenić,
+czy jawne dostarczenie modelowi informacji pokerowych wpływa na
+skuteczność i przebieg procesu uczenia.
