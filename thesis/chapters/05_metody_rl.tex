@@ -21,9 +21,8 @@ ukrytych w pełnym stanie środowiska.
 W eksperymentach przewidziano dwa warianty reprezentacji obserwacji.
 Pierwszy wariant stanowi reprezentacja surowa, która koduje informacje
 dostępne w \texttt{UTHObservation} bez dodawania ręcznie
-zaprojektowanych cech pokerowych. Drugi wariant będzie rozszerzał
-reprezentację surową o cechy domenowe wyznaczane na podstawie kart
-widocznych dla gracza.
+zaprojektowanych cech pokerowych. Drugi wariant rozszerza reprezentację surową o cechy domenowe
+wyznaczane na podstawie kart widocznych dla gracza.
 
 Rozdzielenie reprezentacji od implementacji konkretnych algorytmów
 pozwala wykorzystać ten sam sposób kodowania zarówno w agencie
@@ -189,7 +188,288 @@ utworzenia strita ani innych cech wynikających z wiedzy pokerowej.
 Model otrzymuje jedynie zakodowane dane dostępne bezpośrednio
 w obserwacji.
 
-Wariant ten będzie stanowił punkt odniesienia dla reprezentacji
-wzbogaconej o cechy domenowe. Porównanie obu wariantów pozwoli ocenić,
-czy jawne dostarczenie modelowi informacji pokerowych wpływa na
-skuteczność i przebieg procesu uczenia.
+Wariant ten stanowi punkt odniesienia dla reprezentacji wzbogaconej
+o cechy domenowe. Porównanie obu wariantów pozwoli ocenić, czy jawne
+dostarczenie modelowi informacji pokerowych wpływa na skuteczność
+i przebieg procesu uczenia.
+
+\section{Reprezentacja wzbogacona o cechy domenowe}
+\label{sec:feature-state-representation}
+
+Drugim wariantem reprezentacji jest reprezentacja wzbogacona o cechy
+domenowe. Została ona zaimplementowana w klasie
+\texttt{FeatureStateEncoder}. Jej podstawę stanowi pełny wektor
+generowany przez \texttt{RawStateEncoder}, do którego dołączany jest
+zestaw cech opisujących własności pokerowe kart widocznych dla gracza.
+
+Reprezentację można zapisać jako
+
+\begin{equation}
+    x_{\mathrm{features}}
+    =
+    \left[
+        x_{\mathrm{raw}},
+        x_{\mathrm{poker}}
+    \right],
+\end{equation}
+
+gdzie \(x_{\mathrm{raw}}\) oznacza surową reprezentację o wymiarze
+373, natomiast \(x_{\mathrm{poker}}\) jest wektorem 20 cech
+domenowych.
+
+Cechy domenowe są wyznaczane wyłącznie na podstawie kart prywatnych
+gracza oraz odkrytych kart wspólnych. Proces ekstrakcji nie korzysta
+z kart krupiera, kart spalonych ani kolejności kart pozostających
+w talii.
+
+\subsection{Cechy kart prywatnych}
+\label{subsec:cechy-kart-prywatnych}
+
+Pierwszych pięć wartości opisuje dwie prywatne karty gracza.
+Uwzględniono rangę wyższej karty, rangę niższej karty, informację
+o parze, zgodność kolorów oraz różnicę rang.
+
+Rangi są normalizowane do przedziału od \(0\) do \(1\) zgodnie
+z zależnością
+
+\begin{equation}
+    r_{\mathrm{norm}}
+    =
+    \frac{r - 2}{12},
+\end{equation}
+
+gdzie \(r\) jest wartością rangi karty od 2 do 14.
+
+Różnica rang kart prywatnych jest kodowana jako
+
+\begin{equation}
+    g
+    =
+    \frac{
+        \left|r_1-r_2\right|
+    }{12}.
+\end{equation}
+
+Informacje o parze i zgodności kolorów są wartościami binarnymi.
+
+\subsection{Kategoria układu pokerowego}
+\label{subsec:kategoria-ukladu-features}
+
+Kolejnych dziewięć wartości stanowi kodowanie one-hot kategorii
+najlepszego aktualnie dostępnego układu pokerowego. Uwzględniono
+kategorie od wysokiej karty do pokera:
+
+\begin{itemize}
+    \item wysoka karta,
+    \item jedna para,
+    \item dwie pary,
+    \item trójka,
+    \item strit,
+    \item kolor,
+    \item full house,
+    \item kareta,
+    \item poker.
+\end{itemize}
+
+Po flopie dostępnych jest dokładnie pięć widocznych kart, dlatego
+możliwa jest bezpośrednia ocena pięciokartowego układu. Po odkryciu
+turna i rivera wybierany jest najlepszy układ pięciokartowy spośród
+siedmiu widocznych kart.
+
+Przed flopem dostępne są jedynie dwie karty prywatne, dlatego kategoria
+pełnego układu pięciokartowego nie jest jeszcze zdefiniowana.
+Dziewięcioelementowy fragment reprezentacji przyjmuje wtedy same
+wartości zerowe.
+
+\subsection{Cechy strukturalne}
+\label{subsec:cechy-strukturalne}
+
+Ostatnich sześć wartości opisuje strukturę kart widocznych dla gracza.
+Uwzględniono liczbę par, liczbę trójek, liczbę karet, postęp w kierunku
+koloru, postęp w kierunku strita oraz informację o sparowaniu kart
+wspólnych.
+
+Liczba par jest normalizowana względem maksymalnej liczby trzech par
+możliwych wśród siedmiu kart:
+
+\begin{equation}
+    p_{\mathrm{pair}}
+    =
+    \frac{n_{\mathrm{pair}}}{3}.
+\end{equation}
+
+Analogicznie liczba trójek jest dzielona przez dwa, natomiast
+informacja o karecie przyjmuje bezpośrednio wartość \(0\) albo \(1\).
+
+Postęp w kierunku koloru określono jako największą liczbę widocznych
+kart jednego koloru ograniczoną do pięciu i podzieloną przez pięć:
+
+\begin{equation}
+    p_{\mathrm{flush}}
+    =
+    \frac{
+        \min(n_{\mathrm{suit}},5)
+    }{5}.
+\end{equation}
+
+Wartość \(0{,}8\) oznacza przykładowo cztery widoczne karty tego
+samego koloru, natomiast \(1\) oznacza co najmniej pięć kart jednego
+koloru.
+
+Postęp w kierunku strita obliczany jest przez porównanie widocznych
+rang ze wszystkimi możliwymi pięciokartowymi zbiorami rang tworzącymi
+strita. Wybierany jest zbiór mający największą liczbę wspólnych rang
+z kartami widocznymi, a uzyskana liczba dzielona jest przez pięć.
+
+Dzięki temu dla widocznych rang
+
+\begin{equation}
+    A, K, Q, J
+\end{equation}
+
+wartość cechy wynosi
+
+\begin{equation}
+    p_{\mathrm{straight}}
+    =
+    \frac{4}{5}
+    =
+    0{,}8.
+\end{equation}
+
+Osobna cecha binarna określa, czy wśród odkrytych kart wspólnych
+występują co najmniej dwie karty tej samej rangi.
+
+\subsection{Wymiar reprezentacji wzbogaconej}
+\label{subsec:wymiar-features}
+
+Wektor cech domenowych składa się z pięciu cech kart prywatnych,
+dziewięciu wartości kodujących kategorię układu oraz sześciu cech
+strukturalnych:
+
+\begin{equation}
+    d_{\mathrm{poker}}
+    =
+    5 + 9 + 6
+    =
+    20.
+\end{equation}
+
+Po dołączeniu ich do reprezentacji surowej całkowity wymiar drugiego
+wariantu wynosi
+
+\begin{equation}
+    d_{\mathrm{features}}
+    =
+    373 + 20
+    =
+    393.
+\end{equation}
+
+\section{Porównanie wariantów reprezentacji}
+\label{sec:porownanie-reprezentacji}
+
+Podstawowe różnice między oboma wariantami przedstawiono w
+tabeli~\ref{tab:state-representations}.
+
+\begin{table}[ht]
+    \centering
+    \caption{Porównanie reprezentacji stanu}
+    \label{tab:state-representations}
+    \footnotesize
+    \begin{tabular}{lcc}
+        \hline
+        Właściwość
+        & State A
+        & State B \\
+        \hline
+        Typ
+        & surowa
+        & wzbogacona \\
+        Wymiar
+        & 373
+        & 393 \\
+        Kodowanie kart
+        & one-hot
+        & one-hot \\
+        Faza rozdania
+        & tak
+        & tak \\
+        Maska legalnych akcji
+        & tak
+        & tak \\
+        Cechy pokerowe
+        & nie
+        & 20 \\
+        Informacje ukryte
+        & nie
+        & nie \\
+        \hline
+    \end{tabular}
+\end{table}
+
+State A wymaga od modelu samodzielnego nauczenia się zależności między
+zakodowanymi kartami a strukturą układów pokerowych. State B dostarcza
+część tych zależności w postaci jawnych cech, wprowadzając do modelu
+wiedzę domenową.
+
+Takie rozwiązanie pozwala zbadać wpływ indukcyjnego obciążenia
+wynikającego z wiedzy pokerowej. Reprezentacja wzbogacona może
+ułatwiać proces uczenia i zmniejszać liczbę interakcji potrzebnych do
+rozpoznawania istotnych struktur kart. Jednocześnie reprezentacja
+surowa w mniejszym stopniu narzuca modelowi sposób interpretacji
+obserwacji.
+
+\section{Konfiguracja reprezentacji}
+\label{sec:konfiguracja-reprezentacji}
+
+Wariant reprezentacji jest wybierany za pomocą typu
+\texttt{StateRepresentation}. Dostępne wartości to
+\texttt{RAW} oraz \texttt{FEATURES}.
+
+Funkcja \texttt{build\_state\_encoder()} tworzy encoder odpowiadający
+wybranej konfiguracji. Dzięki temu przyszła implementacja algorytmu
+uczenia nie musi bezpośrednio zależeć od klas
+\texttt{RawStateEncoder} i \texttt{FeatureStateEncoder}.
+
+Rozdzielenie wyboru reprezentacji od algorytmu umożliwi uruchamianie
+tych samych metod uczenia z różnymi sposobami kodowania obserwacji.
+Wybrany wariant może być również zapisany jako część konfiguracji
+eksperymentu za pomocą stabilnych wartości tekstowych
+\texttt{raw} i \texttt{features}.
+
+\section{Walidacja reprezentacji}
+\label{sec:walidacja-reprezentacji}
+
+Testy jednostkowe sprawdzają deterministyczność kodowania kart,
+stałość wymiarów obu reprezentacji, kodowanie poszczególnych faz
+rozdania, maskę legalnych akcji oraz poprawność cech domenowych.
+
+Dodatkowo przeprowadzono test integracyjny z wykorzystaniem
+rzeczywistego przebiegu środowiska \texttt{UTHGame}. Obserwacje
+kolejnych faz \texttt{PREFLOP}, \texttt{FLOP} i \texttt{RIVER}
+są kodowane przez oba warianty reprezentacji.
+
+Osobny test wykorzystuje dwa rozdania różniące się kartami krupiera
+i kartami spalonymi, lecz posiadające identyczne informacje widoczne
+dla gracza. W obu przypadkach uzyskane reprezentacje są identyczne.
+Potwierdza to, że warstwa kodowania nie wykorzystuje informacji
+ukrytych w pełnym stanie środowiska.
+
+\section{Hipoteza dotycząca reprezentacji stanu}
+\label{sec:hipoteza-reprezentacji}
+
+W dalszych eksperymentach oba warianty zostaną wykorzystane z tymi
+samymi algorytmami uczenia i funkcjami nagrody. Pozwoli to ocenić
+wpływ reprezentacji stanu przy zachowaniu pozostałych elementów
+konfiguracji eksperymentu.
+
+Przyjęto hipotezę, że wzbogacenie reprezentacji o jawne cechy pokerowe
+może przyspieszyć proces uczenia oraz zwiększyć stabilność uzyskiwanych
+strategii, ponieważ model nie musi samodzielnie rekonstruować części
+zależności domenowych z kodowania pojedynczych kart.
+
+Jednocześnie nie zakłada się z góry, że reprezentacja wzbogacona
+prowadzi do wyższej końcowej wartości oczekiwanej strategii.
+Wpływ obu wariantów zostanie określony na podstawie wyników
+eksperymentalnych.
