@@ -4,7 +4,6 @@ from typing import Final
 from expert_poker_player.cards import (
     Card,
     Rank,
-    # Suit,
 )
 from expert_poker_player.hands import (
     HandRank,
