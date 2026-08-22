@@ -13,6 +13,9 @@ from expert_poker_player.dqn.replay import (
     ReplayBuffer,
     Transition,
 )
+from expert_poker_player.dqn.config import (
+    DQNConfig,
+)
 
 __all__ = [
     "ACTION_COUNT",
@@ -26,4 +29,5 @@ __all__ = [
     "ActionMask",
     "ReplayBuffer",
     "Transition",
+    "DQNConfig",
 ]
