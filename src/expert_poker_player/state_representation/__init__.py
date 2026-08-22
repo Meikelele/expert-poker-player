@@ -7,6 +7,10 @@ from expert_poker_player.state_representation.protocol import (
     StateEncoder,
     StateVector,
 )
+from expert_poker_player.state_representation.raw_encoder import (
+    RAW_STATE_SIZE,
+    RawStateEncoder,
+)
 
 __all__ = [
     "CARD_COUNT",
@@ -14,4 +18,6 @@ __all__ = [
     "StateVector",
     "card_to_index",
     "encode_card",
+    "RAW_STATE_SIZE",
+    "RawStateEncoder",
 ]
