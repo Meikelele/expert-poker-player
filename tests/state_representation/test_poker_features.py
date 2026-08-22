@@ -235,4 +235,43 @@ def test_rejects_invalid_observation() -> None:
             "invalid"  # type: ignore[arg-type]
         )
 
+def test_extracts_exact_draw_progress() -> None:
+    observation = make_observation(
+        phase=GamePhase.FLOP,
+        player_cards=(
+            Card(Rank.ACE, Suit.HEARTS),
+            Card(Rank.KING, Suit.HEARTS),
+        ),
+        community_cards=(
+            Card(Rank.QUEEN, Suit.HEARTS),
+            Card(Rank.JACK, Suit.HEARTS),
+            Card(Rank.TWO, Suit.CLUBS),
+        ),
+    )
+
+    features = extract_poker_features(
+        observation
+    )
+
+    structure_start = (
+        5
+        + HAND_RANK_FEATURE_COUNT
+    )
+
+    structure = features[
+        structure_start:
+    ]
+
+    flush_progress = structure[3]
+    straight_progress = structure[4]
+
+    assert flush_progress == pytest.approx(
+        4 / 5
+    )
+
+    assert straight_progress == pytest.approx(
+        4 / 5
+    )
+
+
     
