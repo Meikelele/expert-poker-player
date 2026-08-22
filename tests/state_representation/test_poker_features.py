@@ -273,5 +273,43 @@ def test_extracts_exact_draw_progress() -> None:
         4 / 5
     )
 
+def test_detects_wheel_straight_features() -> None:
+    observation = make_observation(
+        phase=GamePhase.RIVER,
+        player_cards=(
+            Card(Rank.ACE, Suit.SPADES),
+            Card(Rank.TWO, Suit.HEARTS),
+        ),
+        community_cards=(
+            Card(Rank.THREE, Suit.DIAMONDS),
+            Card(Rank.FOUR, Suit.CLUBS),
+            Card(Rank.FIVE, Suit.SPADES),
+            Card(Rank.NINE, Suit.HEARTS),
+            Card(Rank.KING, Suit.CLUBS),
+        ),
+    )
 
+    features = extract_poker_features(
+        observation
+    )
+
+    hand_rank = features[
+        5:
+        5 + HAND_RANK_FEATURE_COUNT
+    ]
+
+    structure_start = (
+        5
+        + HAND_RANK_FEATURE_COUNT
+    )
+
+    straight_progress = features[
+        structure_start + 4
+    ]
+
+    assert hand_rank[
+        HandRank.STRAIGHT.value
+    ] == 1.0
+
+    assert straight_progress == 1.0
     
