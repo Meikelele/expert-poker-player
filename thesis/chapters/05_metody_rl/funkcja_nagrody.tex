@@ -1,0 +1,315 @@
+\section{Funkcja nagrody}
+\label{sec:reward-functions}
+
+Drugim elementem wspólnym dla badanych metod uczenia przez wzmacnianie
+jest funkcja nagrody. Jej zadaniem jest przekształcenie wyniku
+pojedynczego kroku środowiska w wartość numeryczną wykorzystywaną
+podczas uczenia agenta.
+
+Warstwa funkcji nagrody została oddzielona zarówno od reprezentacji
+stanu, jak i od implementacji konkretnego algorytmu uczenia.
+Zdefiniowany protokół \texttt{RewardFunction} przyjmuje obiekt
+\texttt{StepResult} zwracany przez środowisko i zwraca wartość
+zmiennoprzecinkową.
+
+Kontrakt funkcji nagrody można zapisać jako
+
+\begin{equation}
+    f_{\mathrm{reward}}
+    \colon
+    S_t
+    \rightarrow
+    \mathbb{R},
+\end{equation}
+
+gdzie \(S_t\) oznacza wynik wykonania pojedynczej akcji reprezentowany
+przez obiekt \texttt{StepResult}.
+
+Funkcja nagrody nie otrzymuje bezpośredniego dostępu do pełnego
+\texttt{RoundState}. Korzysta wyłącznie z wyniku kroku udostępnionego
+przez publiczny interfejs środowiska.
+
+\subsection{Terminalny charakter nagrody}
+\label{subsec:terminal-reward}
+
+W obu analizowanych wariantach zastosowano nagrodę terminalną.
+Dla kroków, które nie kończą rozdania, wartość nagrody jest równa zero:
+
+\begin{equation}
+    r_t = 0
+    \qquad
+    \text{dla kroku nieterminalnego}.
+\end{equation}
+
+Agent nie otrzymuje zatem dodatkowych nagród za wykonanie określonej
+akcji, uzyskanie silnego układu, kontynuowanie rozdania ani
+zrezygnowanie z dalszej gry.
+
+Dopiero akcja kończąca rozdanie powoduje wygenerowanie nagrody
+wynikającej z finansowego rozliczenia zakładów.
+
+Takie rozwiązanie zachowuje bezpośredni związek pomiędzy celem
+uczenia a rzeczywistym wynikiem ekonomicznym strategii w Ultimate
+Texas Hold'em.
+
+\section{Nagroda oparta na zysku netto}
+\label{sec:net-profit-reward}
+
+Pierwszym wariantem funkcji nagrody jest
+\texttt{NetProfitReward}. Dla zakończonego rozdania zwracany jest
+całkowity zysk lub strata netto gracza dostępna jako
+\texttt{Settlement.total\_net\_profit}.
+
+Nagrodę można zapisać jako
+
+\begin{equation}
+    R_{\mathrm{net}}
+    =
+    \begin{cases}
+        0,
+        & \text{gdy rozdanie trwa}, \\
+        P_{\mathrm{net}},
+        & \text{gdy rozdanie zostało zakończone},
+    \end{cases}
+\end{equation}
+
+gdzie \(P_{\mathrm{net}}\) oznacza końcowy zysk netto wyrażony
+w jednostkach stawki Ante.
+
+Przykładowo wartość \(-2\) oznacza stratę dwóch jednostek Ante,
+natomiast wartość \(5{,}5\) oznacza zysk pięciu i pół jednostki Ante.
+
+Funkcja nagrody nie implementuje ponownie zasad wypłat zakładów
+Ante, Blind ani Play. Za ich rozliczenie odpowiada warstwa środowiska,
+a jedynym źródłem wartości ekonomicznej dla funkcji nagrody jest
+obiekt \texttt{Settlement}.
+
+Pozwala to uniknąć sytuacji, w której środowisko oraz warstwa uczenia
+stosowałyby niezależne implementacje zasad wypłat.
+
+\subsection{Dokładność obliczeń finansowych}
+\label{subsec:reward-fraction}
+
+Środowisko reprezentuje wartości finansowe za pomocą typu
+\texttt{Fraction}. Dotyczy to między innymi wypłat zakładu Blind,
+które mogą przyjmować wartości ułamkowe.
+
+Dokładna arytmetyka jest zachowywana przez cały proces rozliczenia
+rozdania. Konwersja do liczby zmiennoprzecinkowej następuje dopiero
+na granicy warstwy uczenia przez wzmacnianie, podczas wyznaczania
+wartości funkcji nagrody.
+
+Takie rozdzielenie umożliwia zachowanie dokładności logiki finansowej
+środowiska przy jednoczesnym dostarczeniu wartości w formacie
+odpowiednim dla przyszłych modeli neuronowych.
+
+\section{Nagroda skalowana względem maksymalnej stawki}
+\label{sec:stake-scaled-reward}
+
+Drugim wariantem jest
+\texttt{StakeScaledNetProfitReward}. Stanowi on dodatnie liniowe
+przeskalowanie nagrody opartej na zysku netto.
+
+W standardowym rozdaniu gracz zawsze stawia jedną jednostkę Ante
+oraz jedną jednostkę Blind. Największy możliwy zakład Play wynosi
+cztery jednostki Ante. Maksymalna standardowa wartość wszystkich
+postawionych środków wynosi więc
+
+\begin{equation}
+    S_{\max}
+    =
+    1 + 1 + 4
+    =
+    6.
+\end{equation}
+
+Drugi wariant nagrody zdefiniowano jako
+
+\begin{equation}
+    R_{\mathrm{scaled}}
+    =
+    \frac{
+        R_{\mathrm{net}}
+    }{6}.
+\end{equation}
+
+Dla maksymalnej standardowej straty wynoszącej sześć jednostek Ante
+otrzymuje się zatem
+
+\begin{equation}
+    R_{\mathrm{scaled}}
+    =
+    \frac{-6}{6}
+    =
+    -1.
+\end{equation}
+
+Dla spasowania przed postawieniem zakładu Play strata wynosi dwie
+jednostki Ante, dlatego
+
+\begin{equation}
+    R_{\mathrm{scaled}}
+    =
+    \frac{-2}{6}
+    =
+    -\frac{1}{3}.
+\end{equation}
+
+Skalowanie wykorzystuje stałą wartość \(6\), a nie rzeczywistą kwotę
+postawioną w konkretnym rozdaniu. Dzięki temu funkcja pozostaje
+dodatnim liniowym przekształceniem pierwszego wariantu nagrody.
+
+\subsection{Znaczenie skalowania}
+\label{subsec:reward-scaling-meaning}
+
+Zastosowane skalowanie nie jest clippingiem ani normalizacją nagrody
+do przedziału od \(-1\) do \(1\).
+
+Zakład Blind posiada własną tabelę wypłat. Silne układy pokerowe mogą
+prowadzić do zysków znacznie przekraczających wysokość początkowych
+stawek. W konsekwencji dodatnia wartość
+\(R_{\mathrm{scaled}}\) może być większa od \(1\).
+
+Celem drugiego wariantu nie jest ograniczenie zakresu nagród, lecz
+zmniejszenie typowej skali sygnału przekazywanego do algorytmu
+uczenia.
+
+Ponieważ
+
+\begin{equation}
+    R_{\mathrm{scaled}}
+    =
+    \frac{1}{6}
+    R_{\mathrm{net}},
+\end{equation}
+
+transformacja zachowuje znak nagrody oraz uporządkowanie wyników.
+Jeżeli dla dwóch wyników \(a\) i \(b\)
+
+\begin{equation}
+    R_{\mathrm{net}}(a)
+    <
+    R_{\mathrm{net}}(b),
+\end{equation}
+
+to również
+
+\begin{equation}
+    R_{\mathrm{scaled}}(a)
+    <
+    R_{\mathrm{scaled}}(b).
+\end{equation}
+
+Oba warianty reprezentują więc ten sam ekonomiczny cel strategii.
+Różnią się skalą sygnału przekazywanego do procesu uczenia.
+
+\section{Porównanie wariantów funkcji nagrody}
+\label{sec:reward-comparison}
+
+Podstawowe właściwości obu wariantów przedstawiono w
+tabeli~\ref{tab:reward-variants}.
+
+\begin{table}[ht]
+    \centering
+    \caption{Porównanie wariantów funkcji nagrody}
+    \label{tab:reward-variants}
+    \footnotesize
+    \begin{tabular}{lcc}
+        \hline
+        Właściwość
+        & Reward A
+        & Reward B \\
+        \hline
+        Typ
+        & zysk netto
+        & zysk skalowany \\
+        Kroki nieterminalne
+        & 0
+        & 0 \\
+        Wynik terminalny
+        & \(P_{\mathrm{net}}\)
+        & \(P_{\mathrm{net}}/6\) \\
+        Jednostka bazowa
+        & Ante
+        & Ante / 6 \\
+        Zachowanie znaku
+        & tak
+        & tak \\
+        Ten sam cel ekonomiczny
+        & tak
+        & tak \\
+        Ograniczenie do \([-1,1]\)
+        & nie
+        & nie \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Reward A zachowuje naturalną skalę ekonomicznego wyniku rozdania.
+Reward B zmniejsza wartości przekazywane do algorytmu uczenia,
+pozostawiając relacje pomiędzy wszystkimi wynikami bez zmian.
+
+Porównanie tych wariantów pozwoli zbadać, czy sama skala terminalnego
+sygnału nagrody wpływa na przebieg uczenia, jego stabilność oraz
+szybkość zbieżności.
+
+\section{Konfiguracja funkcji nagrody}
+\label{sec:reward-configuration}
+
+Wariant funkcji nagrody jest wybierany za pomocą typu
+\texttt{RewardType}. Dostępne są wartości
+\texttt{NET\_PROFIT} oraz
+\texttt{STAKE\_SCALED\_NET\_PROFIT}.
+
+Funkcja \texttt{build\_reward\_function()} tworzy implementację
+odpowiadającą wybranemu wariantowi.
+
+Dzięki wspólnemu protokołowi \texttt{RewardFunction} przyszłe
+implementacje algorytmów DQN oraz Policy Gradient mogą korzystać
+z wybranej funkcji nagrody bez zależności od jej konkretnej klasy.
+
+Rozwiązanie pozwala również zapisać wariant jako element konfiguracji
+eksperymentu za pomocą stabilnych wartości tekstowych
+\texttt{net\_profit} oraz
+\texttt{stake\_scaled\_net\_profit}.
+
+\section{Walidacja funkcji nagrody}
+\label{sec:reward-validation}
+
+Testy jednostkowe obejmują wyniki zakończone wygraną gracza,
+wygraną krupiera, remisem oraz spasowaniem gracza.
+
+Testy integracyjne wykorzystują rzeczywisty przebieg środowiska
+\texttt{UTHGame} i potwierdzają, że kroki nieterminalne generują
+nagrodę równą zero, natomiast krok terminalny wykorzystuje rozliczenie
+zawarte w obiekcie \texttt{StepResult}.
+
+Dodatkowo zweryfikowano inwariant
+
+\begin{equation}
+    R_{\mathrm{scaled}}
+    =
+    \frac{
+        R_{\mathrm{net}}
+    }{6}
+\end{equation}
+
+dla różnych wyników rozdania.
+
+Testy potwierdzają również zachowanie znaku, wartości zerowej oraz
+uporządkowania wyników po zastosowaniu skalowania.
+
+\section{Hipoteza dotycząca funkcji nagrody}
+\label{sec:reward-hypothesis}
+
+W eksperymentach oba warianty funkcji nagrody zostaną wykorzystane
+z tymi samymi algorytmami oraz reprezentacjami stanu.
+
+Przyjęto hipotezę, że zmniejszenie skali terminalnego sygnału nagrody
+może wpływać na stabilność oraz przebieg procesu optymalizacji,
+szczególnie w metodach wykorzystujących aproksymację funkcji wartości
+lub gradient polityki.
+
+Nie zakłada się jednak z góry przewagi któregokolwiek wariantu.
+Wpływ skali nagrody na jakość oraz szybkość uczenia zostanie określony
+na podstawie wyników eksperymentalnych.
