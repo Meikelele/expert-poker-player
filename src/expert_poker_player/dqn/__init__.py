@@ -22,6 +22,11 @@ from expert_poker_player.dqn.targets import (
 from expert_poker_player.dqn.optimization import (
     DQNOptimizer,
 )
+from expert_poker_player.dqn.training import (
+    DQNEpisodeStats,
+    DQNTrainingResult,
+    train_dqn,
+)
 
 __all__ = [
     "ACTION_COUNT",
@@ -38,4 +43,7 @@ __all__ = [
     "DQNConfig",
     "compute_bellman_targets",
     "DQNOptimizer",
+    "DQNEpisodeStats",
+    "DQNTrainingResult",
+    "train_dqn",
 ]
