@@ -16,6 +16,9 @@ from expert_poker_player.dqn.replay import (
 from expert_poker_player.dqn.config import (
     DQNConfig,
 )
+from expert_poker_player.dqn.targets import (
+    compute_bellman_targets,
+)
 
 __all__ = [
     "ACTION_COUNT",
@@ -30,4 +33,5 @@ __all__ = [
     "ReplayBuffer",
     "Transition",
     "DQNConfig",
+    "compute_bellman_targets",
 ]
