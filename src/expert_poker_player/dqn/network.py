@@ -53,12 +53,15 @@ class QNetwork(nn.Module):
             )
 
         self._input_size = input_size
+        self._hidden_sizes = tuple(
+            hidden_sizes
+        )
 
         layers: list[nn.Module] = []
 
         previous_size = input_size
 
-        for hidden_size in hidden_sizes:
+        for hidden_size in self._hidden_sizes:
             layers.extend(
                 [
                     nn.Linear(
@@ -85,6 +88,12 @@ class QNetwork(nn.Module):
     @property
     def input_size(self) -> int:
         return self._input_size
+
+    @property
+    def hidden_sizes(
+        self,
+    ) -> tuple[int, ...]:
+        return self._hidden_sizes
 
     def forward(
         self,

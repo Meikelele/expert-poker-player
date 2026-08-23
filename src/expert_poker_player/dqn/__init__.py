@@ -27,6 +27,13 @@ from expert_poker_player.dqn.training import (
     DQNTrainingResult,
     train_dqn,
 )
+from expert_poker_player.dqn.checkpoint import (
+    CHECKPOINT_VERSION,
+    LoadedDQNCheckpoint,
+    load_dqn_checkpoint,
+    save_dqn_checkpoint,
+)
+
 
 __all__ = [
     "ACTION_COUNT",
@@ -46,4 +53,8 @@ __all__ = [
     "DQNEpisodeStats",
     "DQNTrainingResult",
     "train_dqn",
+    "CHECKPOINT_VERSION",
+    "LoadedDQNCheckpoint",
+    "load_dqn_checkpoint",
+    "save_dqn_checkpoint",
 ]

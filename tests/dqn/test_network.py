@@ -145,6 +145,20 @@ def test_exposes_input_size() -> None:
 
     assert network.input_size == RAW_STATE_SIZE
 
+def test_exposes_hidden_sizes() -> None:
+    network = QNetwork(
+        input_size=RAW_STATE_SIZE,
+        hidden_sizes=(
+            128,
+            64,
+        ),
+    )
+
+    assert network.hidden_sizes == (
+        128,
+        64,
+    )
+
 def test_forward_preserves_batch_dimension() -> None:
     network = QNetwork(
         input_size=FEATURE_STATE_SIZE
