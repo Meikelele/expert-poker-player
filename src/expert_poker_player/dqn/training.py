@@ -122,7 +122,7 @@ def train_dqn(
         2**63,
     )
 
-    torch.manual_seed( # type: ignore
+    torch.manual_seed(  # pyright: ignore[reportUnknownMemberType]
         torch_seed
     )
 

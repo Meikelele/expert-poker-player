@@ -190,7 +190,7 @@ class DQNOptimizer:
 
         loss.backward()
 
-        self._optimizer.step() # type: ignore
+        self._optimizer.step()  # pyright: ignore[reportUnknownMemberType]
 
         return float(
             loss.item()

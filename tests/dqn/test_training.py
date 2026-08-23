@@ -195,3 +195,88 @@ def test_training_records_finite_losses() -> None:
         for loss in losses
     )
 
+def test_warmup_steps_blocks_optimizer_updates() -> None:
+    config = DQNConfig(
+        batch_size=2,
+        replay_capacity=32,
+        warmup_steps=10_000,
+        target_sync_interval=2,
+        hidden_sizes=(16,),
+        training_episodes=8,
+        seed=1,
+    )
+
+    result = train_dqn(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+    )
+
+    assert result.total_steps > 0
+    assert result.optimizer_updates == 0
+
+    assert all(
+        stats.mean_loss is None
+        for stats in result.episode_stats
+    )
+
+def test_target_network_syncs_on_every_update_when_interval_is_one() -> None:
+    config = DQNConfig(
+        batch_size=2,
+        replay_capacity=32,
+        warmup_steps=2,
+        target_sync_interval=1,
+        hidden_sizes=(16,),
+        training_episodes=8,
+        seed=1,
+    )
+
+    result = train_dqn(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+    )
+
+    assert result.optimizer_updates > 0
+
+    assert all(
+        torch.equal(
+            policy_parameter,
+            target_parameter,
+        )
+        for policy_parameter, target_parameter in zip(
+            result.policy_network.parameters(),
+            result.target_network.parameters(),
+        )
+    )
+
+def test_target_network_does_not_sync_before_interval_elapses() -> None:
+    config = DQNConfig(
+        batch_size=2,
+        replay_capacity=32,
+        warmup_steps=2,
+        target_sync_interval=1_000_000,
+        hidden_sizes=(16,),
+        training_episodes=8,
+        seed=1,
+    )
+
+    result = train_dqn(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+    )
+
+    assert result.optimizer_updates > 0
+
+    assert any(
+        not torch.equal(
+            policy_parameter,
+            target_parameter,
+        )
+        for policy_parameter, target_parameter in zip(
+            result.policy_network.parameters(),
+            result.target_network.parameters(),
+        )
+    )
+

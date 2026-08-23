@@ -157,6 +157,56 @@ def test_checkpoint_supports_feature_state(
         == FEATURE_STATE_SIZE
     )
 
+def test_restored_model_produces_same_q_values_for_features(
+    tmp_path: Path,
+) -> None:
+    torch.manual_seed(  # pyright: ignore[reportUnknownMemberType]
+        1
+    )
+
+    config = DQNConfig(
+        hidden_sizes=(16,),
+    )
+
+    network = QNetwork(
+        input_size=FEATURE_STATE_SIZE,
+        hidden_sizes=config.hidden_sizes,
+    )
+
+    state = torch.randn(
+        1,
+        FEATURE_STATE_SIZE,
+    )
+
+    with torch.no_grad():
+        expected = network(
+            state
+        ).clone()
+
+    path = tmp_path / "features_model.pt"
+
+    save_dqn_checkpoint(
+        path,
+        policy_network=network,
+        state_representation=StateRepresentation.FEATURES,
+        reward_type=RewardType.STAKE_SCALED_NET_PROFIT,
+        config=config,
+    )
+
+    loaded = load_dqn_checkpoint(
+        path
+    )
+
+    with torch.no_grad():
+        actual = loaded.policy_network(
+            state
+        )
+
+    assert torch.equal(
+        expected,
+        actual,
+    )
+
 import pytest
 
 

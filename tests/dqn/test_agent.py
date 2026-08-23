@@ -173,6 +173,56 @@ def test_epsilon_one_selects_only_legal_actions() -> None:
     assert selected <= observation.legal_actions
     assert len(selected) > 1
 
+def test_epsilon_intermediate_value_mixes_greedy_and_random_actions() -> None:
+    network = QNetwork(
+        input_size=RAW_STATE_SIZE
+    )
+
+    set_output_biases(
+        network,
+        (
+            1000.0,
+            900.0,
+            800.0,
+            700.0,
+            2.0,
+            1.0,
+        ),
+    )
+
+    agent = DQNAgent(
+        q_network=network,
+        state_encoder=RawStateEncoder(),
+        epsilon=0.5,
+        seed=7,
+    )
+
+    game = UTHGame(
+        seed=1
+    )
+
+    game.reset()
+    game.step(Action.CHECK)
+
+    observation = game.step(
+        Action.CHECK
+    ).observation
+
+    selected = {
+        agent.select_action(
+            observation
+        )
+        for _ in range(200)
+    }
+
+    assert selected <= observation.legal_actions
+
+    # z biasami BET_1X jest jedyną legalną akcją zachłanną;
+    # przy epsilon=0.5 losowy wybór powinien z dużym
+    # prawdopodobieństwem trafić też na inną legalną akcję.
+    assert Action.BET_1X in selected
+    assert len(selected) > 1
+
 def test_same_seed_produces_same_exploration_sequence() -> None:
     observation = UTHGame(
         seed=1

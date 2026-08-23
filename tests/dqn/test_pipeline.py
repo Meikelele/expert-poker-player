@@ -5,6 +5,11 @@ from expert_poker_player.dqn import (
     DQNConfig,
     train_dqn,
 )
+from expert_poker_player.evaluation import (
+    SimulationConfig,
+    SimulationResult,
+    run_simulation,
+)
 from expert_poker_player.rewards import (
     RewardType,
     build_reward_function,
@@ -151,3 +156,42 @@ def test_different_training_seeds_produce_different_models() -> None:
             second.policy_network.parameters(),
         )
     )
+
+def test_trained_agent_works_with_run_simulation() -> None:
+    config = DQNConfig(
+        batch_size=2,
+        replay_capacity=32,
+        warmup_steps=2,
+        target_sync_interval=2,
+        hidden_sizes=(16,),
+        training_episodes=4,
+        seed=7,
+    )
+
+    training_result = train_dqn(
+        state_encoder=build_state_encoder(
+            StateRepresentation.RAW
+        ),
+        reward_function=build_reward_function(
+            RewardType.NET_PROFIT
+        ),
+        config=config,
+    )
+
+    agent = training_result.agent
+    agent.epsilon = 0.0
+    training_result.policy_network.eval()
+
+    simulation = run_simulation(
+        agent=agent,
+        config=SimulationConfig(
+            deck_seeds=(101, 202, 303),
+        ),
+    )
+
+    assert isinstance(
+        simulation,
+        SimulationResult,
+    )
+
+    assert simulation.round_count == 3

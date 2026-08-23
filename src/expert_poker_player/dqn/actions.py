@@ -137,6 +137,14 @@ def mask_q_values(
             "the action count"
         )
 
+    if not bool(
+        action_mask.any(dim=-1).all()
+    ):
+        raise ValueError(
+            "action_mask must contain at least "
+            "one legal action per row"
+        )
+
     return q_values.masked_fill(
         ~action_mask,
         float("-inf"),

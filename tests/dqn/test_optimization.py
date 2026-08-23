@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from expert_poker_player.dqn import (
@@ -274,5 +275,68 @@ def test_loss_uses_q_value_for_taken_action() -> None:
     )
 
     assert loss == 0.0
+
+def test_loss_matches_smooth_l1_for_known_nonzero_residual() -> None:
+    """Odróżnia SmoothL1Loss od MSE/L1 na znanym, niezerowym residuum."""
+
+    policy = QNetwork(
+        input_size=INPUT_SIZE
+    )
+
+    target = QNetwork(
+        input_size=INPUT_SIZE
+    )
+
+    with torch.no_grad():
+        for parameter in policy.parameters():
+            parameter.zero_()
+
+        output_layer = policy.network[-1]
+
+        assert isinstance(
+            output_layer,
+            torch.nn.Linear,
+        )
+
+        output_layer.bias.copy_(
+            torch.tensor(
+                [
+                    1.0,
+                    20.0,
+                    30.0,
+                    40.0,
+                    50.0,
+                    60.0,
+                ]
+            )
+        )
+
+    optimizer = DQNOptimizer(
+        policy_network=policy,
+        target_network=target,
+        learning_rate=1e-3,
+        gamma=0.99,
+    )
+
+    transition = Transition(
+        state=(1.0, 2.0, 3.0),
+        action_index=1,
+        reward=18.0,
+        next_state=None,
+        terminated=True,
+        next_action_mask=None,
+    )
+
+    loss = optimizer.optimize(
+        (
+            transition,
+        )
+    )
+
+    # policy Q for action 1 == 20.0, terminal target == reward == 18.0
+    # residual = |20.0 - 18.0| = 2.0 >= beta(1.0),
+    # so SmoothL1Loss == |residual| - 0.5 * beta == 1.5.
+    # MSELoss would give 4.0, L1Loss would give 2.0 -- both distinguishable.
+    assert loss == pytest.approx(1.5)
 
 
