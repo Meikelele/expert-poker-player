@@ -19,6 +19,9 @@ from expert_poker_player.dqn.config import (
 from expert_poker_player.dqn.targets import (
     compute_bellman_targets,
 )
+from expert_poker_player.dqn.optimization import (
+    DQNOptimizer,
+)
 
 __all__ = [
     "ACTION_COUNT",
@@ -34,4 +37,5 @@ __all__ = [
     "Transition",
     "DQNConfig",
     "compute_bellman_targets",
+    "DQNOptimizer",
 ]
