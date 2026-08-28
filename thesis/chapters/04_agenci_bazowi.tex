@@ -1,72 +1,41 @@
 \chapter{Agenci bazowi i infrastruktura eksperymentalna}
 \label{chap:agenci-bazowi}
 
-W niniejszym rozdziale przedstawiono projekt agentów bazowych oraz
+W tym rozdziale przedstawiam projekt agentów bazowych oraz
 infrastruktury służącej do uruchamiania i oceny strategii w środowisku
-Ultimate Texas Hold'em. Strategie bazowe pełnią rolę punktów odniesienia
-dla metod uczenia przez wzmacnianie. Pozwalają sprawdzić poprawność procesu
-prowadzenia eksperymentów oraz określić, czy wyuczona polityka przewyższa
-proste sposoby wyboru akcji.
+Ultimate Texas Hold'em. Rolę agentów bazowych jako punktów odniesienia
+dla metod uczenia przez wzmacnianie opisałem w rozdziale~\ref{chap:podstawy-teoretyczne}.
 
-Zaimplementowano wspólny kontrakt agenta, mechanizmy prowadzenia
-pojedynczego epizodu i symulacji wielu rozdań, agenta losowego oraz
-deterministycznego agenta regułowego. Infrastrukturę uzupełniono o
-mechanizm agregacji metryk i zapis wyników eksperymentów. Wszystkie te
-elementy korzystają z publicznego interfejsu środowiska opisanego w
+Zaprojektowałem i zaimplementowałem wspólny kontrakt agenta, mechanizm
+pojedynczego epizodu i symulację wielu rozdań, agenta losowego oraz agenta regułowego. 
+Infrastrukturę uzupełniłem o
+mechanizm zbierania metryk i zapis wyników eksperymentów. Wszystkie te
+elementy korzystają z publicznego interfejsu środowiska, o którym pisałem w
 rozdziale~\ref{chap:srodowisko-uth}.
 
 \section{Wspólny interfejs agenta}
 \label{sec:interfejs-agenta}
 
-Wspólny kontrakt agentów zdefiniowano za pomocą protokołu
-\texttt{Agent}. Każda zgodna implementacja udostępnia metodę
-\texttt{select\_action()}, która przyjmuje obiekt
-\texttt{UTHObservation} i zwraca jedną wartość typu \texttt{Action}.
+Zdefiniowałem wspólny kontrakt \texttt{Agent}, 
+który określa, w jaki sposób agent komunikuje się ze środowiskiem. 
+Kontrakt ten udostępnia metodę \texttt{select\_action()},
+która przyjmuje obiekt \texttt{UTHObservation} i zwraca podjętą przez agenta decyzję typu \texttt{Action}.
 
-% \begin{equation}
-%     \operatorname{select\_action}
-%     \colon
-%     O_t
-%     \rightarrow
-%     a_t,
-%     \qquad
-%     a_t \in A_t^{legal}.
-% \end{equation}
-
-Zastosowanie protokołu pozwala korzystać z typowania strukturalnego.
-Klasa agenta nie musi dziedziczyć po wspólnej klasie bazowej, lecz musi
-udostępniać metodę o wymaganej sygnaturze. Dzięki temu ten sam mechanizm
-prowadzenia rozgrywki może obsługiwać agentów losowych, regułowych
-i uczących się bez znajomości ich wewnętrznej implementacji.
-
-Agent otrzymuje wyłącznie obserwację zawierającą informacje dostępne
-graczowi. Pełny obiekt \texttt{RoundState} nie jest częścią interfejsu,
-dlatego implementacja strategii nie uzyskuje dostępu do kart krupiera,
-kart spalonych ani kolejności pozostałych kart w talii.
+Wykorzystanie protokołu do konstrukcji kontraktu pozwala mi zdefiniować
+agenta w sposób elastyczny, klasa agenta nie musi dziedziczyć po wspólnej
+klasie bazowej, lecz musi udostępniać metodę o wymaganej sygnaturze.
+Dzięki temu ten sam mechanizm prowadzenia rozgrywki mogę wykorzystać dla
+agenta losowego, regułowego i uczącego się przez wzmacnianie bez znajomości ich wewnętrznej
+implementacji.
 
 \section{Prowadzenie pojedynczego epizodu}
 \label{sec:runner-pojedynczego-epizodu}
 
-Funkcja \texttt{play\_round()} łączy agenta z silnikiem
-\texttt{UTHGame}. Rozpoczyna rozdanie, przekazuje bieżącą obserwację
+W celu sprawnego przeprowadzenia eksperymentu zaimplementowałem osobny moduł, który nazwałem runnerem.
+Zdefiniowałem w nim funkcję \texttt{play\_round()}, która łączy agenta z silnikiem
+\texttt{UTHGame}. Funkcja ta rozpoczyna rozdanie, przekazuje bieżącą obserwację
 agentowi, wykonuje wybraną akcję i powtarza ten proces do osiągnięcia
 stanu terminalnego.
-
-% Przepływ pojedynczego epizodu ma postać
-
-% \begin{equation}
-%     \operatorname{reset}
-%     \rightarrow
-%     O_0
-%     \rightarrow
-%     a_0
-%     \rightarrow
-%     \operatorname{step}
-%     \rightarrow
-%     \ldots
-%     \rightarrow
-%     S_T.
-% \end{equation}
 
 Każda decyzja zaakceptowana przez środowisko zostaje zapisana w kolejności
 wykonania. Po zakończeniu rozdania funkcja zwraca obiekt
@@ -75,202 +44,154 @@ oraz pełne rozliczenie zakładów Ante, Blind i Play.
 
 Model \texttt{EpisodeResult} udostępnia również wynik netto, łączną
 wartość postawionych zakładów, liczbę decyzji i mnożnik zakładu Play.
-Stanowi w ten sposób lekką reprezentację zakończonego epizodu, odpowiednią
-do późniejszej agregacji wyników wielu rozdań.
+Stanowi w ten sposób lekką reprezentację zakończonego epizodu.
 
 \section{Agent losowy}
 \label{sec:agent-losowy}
 
-Agent losowy stanowi najprostszy punkt odniesienia. Nie analizuje wartości
-kart ani prawdopodobieństwa wygranej. Dla każdej obserwacji wybiera jedną
-z legalnych akcji.
-
-% \begin{equation}
-%     \pi_{\mathrm{random}}(a \mid O_t)
-%     =
-%     \frac{1}{\lvert A_t^{legal} \rvert},
-%     \qquad
-%     a \in A_t^{legal}.
-% \end{equation}
-
-Implementacja korzysta wyłącznie ze zbioru legalnych akcji zawartego
-w \texttt{UTHObservation}. Akcje są porządkowane zgodnie z kolejnością
-wartości enuma \texttt{Action}, dzięki czemu wynik generatora
-pseudolosowego nie zależy od kolejności iterowania po zbiorze.
-
-\subsection{Rozdzielenie źródeł losowości}
-\label{subsec:rozdzielenie-losowosci}
+Najprostszą strategię bazową stanowi agent losowy. Nie analizuje on
+wartości kart ani prawdopodobieństwa wygranej, a dla każdej obserwacji
+wybiera jedną z legalnych akcji z jednakowym prawdopodobieństwem. W obserwacji \texttt{UTHObservation} agent
+dostaje zbiór legalnych akcji do wykonania. Akcje te są porządkowane
+zgodnie z kolejnością wartości enuma \texttt{Action}, przez co wynik
+generatora pseudolosowego nie zależy od kolejności iterowania po zbiorze.
 
 Środowisko i agent posiadają niezależne generatory pseudolosowe. Generator
 środowiska odpowiada za kolejność kart, natomiast generator agenta odpowiada
-wyłącznie za wybór akcji:
+wyłącznie za wybór akcji. Rozdzielając źródła losowości, uzyskałem
+możliwość zmiany strategii agenta, na przykład jego seedu albo całej
+implementacji, bez zmiany przebiegu rozdań. Dzięki temu, jak pokazuję
+w sekcji~\ref{sec:porownanie-agentow-bazowych}, mogę porównywać agenta
+losowego i agenta regułowego na dokładnie tym samym harmonogramie talii.
 
-\begin{equation}
-    seed_{\mathrm{environment}}
-    \rightarrow
-    \text{kolejność kart},
-    \qquad
-    seed_{\mathrm{agent}}
-    \rightarrow
-    \text{wybór akcji}.
-\end{equation}
-
-Rozdzielenie obu źródeł losowości umożliwia zmianę strategii agenta bez
-zmiany przebiegu rozdań. Pozwala również odtwarzać sekwencje decyzji
-agenta niezależnie od konfiguracji środowiska.
-
-\subsection{Walidacja implementacji}
-\label{subsec:walidacja-agenta-losowego}
-
-Testy agenta losowego obejmują zgodność ze wspólnym protokołem, wybieranie
+Napisałem testy obejmujące zgodność ze wspólnym protokołem, wybieranie
 wyłącznie legalnych akcji, powtarzalność decyzji dla tego samego seedu oraz
-obsługę niepoprawnych danych wejściowych. Osobny test potwierdza, że agent
-nie podejmuje decyzji dla obserwacji terminalnej.
-
-Testy runnera obejmują wszystkie legalne ścieżki zakończenia rozdania.
-Sprawdzają również, czy agent otrzymuje obserwacje odpowiadające kolejnym
-fazom oraz czy jawnie przekazane źródło kart pozwala odtworzyć wynik
-niezależnie od wewnętrznego seedu obiektu \texttt{UTHGame}.
+obsługę niepoprawnych danych wejściowych. Jest również test potwierdzający,
+że agent nie podejmuje decyzji dla obserwacji terminalnej. Testy samego
+runnera opisuję w sekcji~\ref{sec:walidacja-infrastruktury}.
 
 \section{Agent regułowy}
 \label{sec:agent-regulowy}
 
-Drugą strategię bazową stanowi agent regułowy. W przeciwieństwie do
-agenta losowego podejmuje on decyzje na podstawie kart widocznych
-w obserwacji oraz aktualnej fazy rozdania. Przyjęte reguły oparto na
-uproszczonej strategii Ultimate Texas Hold'em publikowanej przez
+Agent losowy jest podstawowym punktem odniesienia, lecz nie korzysta w ogóle z wiedzy o grze.
+Dlatego w celu uzyskania lepszego punktu odniesienia zdefiniowałem agenta regułowego, 
+który w przeciwieństwie do
+agenta losowego podejmuje decyzje na podstawie kart widocznych
+w obserwacji oraz aktualnej fazy rozdania. Przyjęte reguły oparłem na
+uproszczonej strategii Ultimate Texas Hold'em opublikowanej przez
 Wizard of Odds \cite{wizard_uth}.
 
-Strategia została podzielona na trzy zbiory reguł odpowiadające
-kolejnym punktom decyzyjnym środowiska.
+\subsection{Reguły decyzyjne}
+\label{subsec:reguly-decyzyjne-agenta-regulowego}
 
-\subsection{Decyzja przed flopem}
+Zanim zostaną odkryte karty wspólne, agent podejmuje decyzję o zakładzie Play
+w wysokości czterokrotności Ante dla układów początkowych przedstawionych
+w tabeli~\ref{tab:preflop-raise}.
 
-Przed odkryciem kart wspólnych agent wykonuje zakład Play równy
-czterokrotności Ante dla następujących układów początkowych:
+\begin{table}[h]
+    \centering
+    \caption{Układy początkowe uprawniające do zakładu Play $4\times$ przed flopem}
+    \label{tab:preflop-raise}
+    \begin{tabular}{ll}
+        \hline
+        Układ początkowy & Warunek \\
+        \hline
+        Para & od trójek wzwyż \\
+        As & z dowolną kartą towarzyszącą \\
+        Król & z dowolną kartą w tym samym kolorze \\
+        Król & z kartą pięć lub wyższą w różnych kolorach \\
+        Dama & z kartą sześć lub wyższą w tym samym kolorze \\
+        Dama & z kartą osiem lub wyższą w różnych kolorach \\
+        Walet & z kartą osiem lub wyższą w tym samym kolorze \\
+        Walet & z dziesiątką w różnych kolorach \\
+        \hline
+    \end{tabular}
+\end{table}
 
-\begin{itemize}
-    \item każdej pary od trójek wzwyż,
-    \item każdego układu zawierającego asa,
-    \item króla z dowolną kartą w tym samym kolorze,
-    \item króla z kartą pięć lub wyższą w różnych kolorach,
-    \item damy z kartą sześć lub wyższą w tym samym kolorze,
-    \item damy z kartą osiem lub wyższą w różnych kolorach,
-    \item waleta z kartą osiem lub wyższą w tym samym kolorze,
-    \item waleta z dziesiątką w różnych kolorach.
-\end{itemize}
+Dla pary dwójek oraz wszystkich pozostałych układów agent wykonuje akcję \texttt{CHECK}.
+Ta strategia nie wykorzystuje zakładu
+\texttt{BET\_3X}.
 
-Para dwójek oraz wszystkie pozostałe układy prowadzą do wykonania
-akcji \texttt{CHECK}. Przyjęta strategia nie wykorzystuje zakładu
-\texttt{BET\_3X}, mimo że akcja ta pozostaje legalną akcją środowiska.
-
-\subsection{Decyzja po flopie}
-
-Jeżeli gracz nie wykonał zakładu przed flopem, po odkryciu trzech
-kart wspólnych agent wybiera \texttt{BET\_2X}, gdy posiada dwie pary
+Jeżeli agent nie wykonał zakładu przed flopem, po odkryciu trzech
+kart wspólnych wybiera \texttt{BET\_2X}, gdy posiada dwie pary
 lub silniejszy układ, ukrytą parę z wyjątkiem pary dwójek albo cztery
 karty do koloru z własną kartą tego koloru o randze co najmniej
 dziesięć.
 
-Przez ukrytą parę rozumiana jest para wykorzystująca co najmniej
-jedną z dwóch prywatnych kart gracza. Jeżeli żaden z wymienionych
+Przez ukrytą parę rozumiem parę wykorzystującą co najmniej
+jedną z dwóch prywatnych kart agenta. Jeżeli żaden z tych
 warunków nie jest spełniony, agent wykonuje akcję \texttt{CHECK}.
-
-\subsection{Decyzja po odkryciu wszystkich kart wspólnych}
 
 W ostatnim punkcie decyzyjnym agent wykonuje zakład
 \texttt{BET\_1X}, jeżeli posiada ukrytą parę lub silniejszy układ.
 Dla słabszych układów wykorzystywana jest reguła oparta na liczbie
-kart mogących poprawić układ krupiera do układu pokonującego gracza.
+kart mogących poprawić układ krupiera (ang. \emph{outs}) do układu pokonującego gracza.
 Jeżeli liczba takich kart jest mniejsza niż 21, agent wykonuje
 \texttt{BET\_1X}. W przeciwnym przypadku wybiera \texttt{FOLD}
 \cite{wizard_uth}.
 
-Tak zdefiniowana strategia jest deterministyczna. Dla tej samej
-obserwacji agent zawsze zwraca tę samą akcję. Dzięki temu może
-stanowić silniejszy punkt odniesienia niż agent losowy, jednocześnie
-nie wykorzystując procesu uczenia ani informacji ukrytych przed
-graczem.
+Jest to strategia deterministyczna, mówiąc prościej dla tej samej obserwacji agent
+zawsze zwraca tę samą akcję. Nie jest to jednak strategia optymalna, 
+ponieważ opiera się na uproszczonych heurystykach
+szerzej opisanych przez Wizard of Odds, a nie na
+pełnym przeszukaniu przestrzeni decyzji.
 
 \subsection{Implementacja strategii regułowej}
 \label{subsec:implementacja-agenta-regulowego}
 
-Reguły decyzyjne zostały rozdzielone od klasy realizującej wspólny
-interfejs agenta. Funkcje \texttt{should\_raise\_preflop()},
+W celu implementacji agenta regułowego zdefiniowałem klasę \texttt{RuleBasedAgent}, 
+która implementuje interfejs agenta pokerowego. Oddzieliłem reguły decyzyjne od klasy agenta,
+co pozwala mi na ich łatwe modyfikowanie w razie potrzeby.
+
+Funkcje \texttt{should\_raise\_preflop()},
 \texttt{should\_raise\_flop()} oraz \texttt{should\_raise\_river()}
 odpowiadają za ocenę obserwacji w poszczególnych fazach rozdania.
-Klasa \texttt{RuleBasedAgent} wybiera na ich podstawie akcję zgodną
-z aktualną fazą gry.
 
-Dla decyzji na riverze zaimplementowano dodatkową funkcję
-\texttt{count\_dealer\_outs()}. Tworzony jest zbiór kart niewidocznych
-dla gracza, a następnie każda z nich jest analizowana jako pojedyncza
-potencjalna karta prywatna krupiera. Jeżeli dołączenie danej karty do
+Do podjęcia decyzji na riverze zaimplementowałem funkcję
+\texttt{count\_dealer\_outs()}. Tworzy ona zbiór kart niewidocznych
+dla gracza, a następnie każdą z nich analizuje jako pojedynczą
+potencjalną kartę prywatną krupiera. Jeżeli dołączenie danej karty do
 kart wspólnych prowadzi do układu silniejszego od najlepszego układu
-gracza, karta zostaje zaklasyfikowana jako out.
+agenta, karta zostaje zaklasyfikowana jako out.
 
-Podejście to odzwierciedla uproszczoną regułę 21 outów. Nie jest ono
-pełnym przeszukaniem wszystkich możliwych dwukartowych układów
-krupiera. Uwzględniane są pojedyncze niewidoczne karty, które same
-prowadzą do układu pokonującego gracza. Pozwala to zachować charakter
-strategii bazowej opisanej przez Wizard of Odds \cite{wizard_uth},
-zamiast zastępować ją dokładniejszą metodą obliczeniową.
-
-Klasa \texttt{RuleBasedAgent} nie przechowuje własnego stanu i nie
-korzysta z generatora liczb pseudolosowych. Otrzymuje wyłącznie obiekt
-\texttt{UTHObservation}, dzięki czemu nie posiada dostępu do kart
-krupiera ani pozostałych informacji ukrytych w pełnym stanie
-środowiska.
-
-\section{Symulacja wielu epizodów}
+\section{Symulacja wielu epizodów i jej powtarzalność}
 \label{sec:symulacja-wielu-epizodow}
 
-Do prowadzenia eksperymentów obejmujących wiele rozdań wykorzystano
-obiekty \texttt{SimulationConfig} i \texttt{SimulationResult}.
+Aby sprawnie przeprowadzać eksperymenty, składające się z wielu rozdań, 
+zdefiniowałem obiekty \texttt{SimulationConfig} i \texttt{SimulationResult}.
+
 Konfiguracja symulacji przechowuje uporządkowaną sekwencję seedów
 wykorzystywanych do tworzenia talii. Liczba seedów określa jednocześnie
 liczbę rozgrywanych epizodów.
 
 Funkcja \texttt{run\_simulation()} dla każdego seedu tworzy osobną
 talię oraz nową instancję środowiska \texttt{UTHGame}. Następnie
-wykorzystuje funkcję \texttt{play\_round()} do rozegrania pełnego
+wykorzystuje wspomnianą funkcję \texttt{play\_round()} do rozegrania pełnego
 epizodu. Wyniki wszystkich rozdań są przechowywane w obiekcie
 \texttt{SimulationResult}.
 
-Takie rozwiązanie oddziela konfigurację eksperymentu od implementacji
+W taki sposób oddzieliłem konfigurację eksperymentu od implementacji
 konkretnego agenta. Ten sam obiekt \texttt{SimulationConfig} może
 zostać wykorzystany do oceny wielu różnych strategii.
 
-\section{Powtarzalność eksperymentów}
-\label{sec:powtarzalnosc-eksperymentow}
-
-Kluczowym założeniem infrastruktury eksperymentalnej jest możliwość
-odtworzenia przeprowadzonych symulacji. Dla każdego epizodu zapisywany
-jest osobny seed talii. Ponowne utworzenie talii z tym samym seedem
-prowadzi do tej samej kolejności kart.
-
-Podczas porównywania agentów wykorzystywana jest identyczna sekwencja
-seedów talii. Oznacza to, że każdy agent jest oceniany na tym samym
-harmonogramie rozdań. Dzięki temu różnice wyników nie są skutkiem
-wylosowania niezależnych zestawów kart dla poszczególnych strategii.
-
-W przypadku agenta losowego dodatkowo wykorzystywany jest niezależny
-seed odpowiedzialny wyłącznie za wybór akcji. Seed środowiska i seed
-agenta nie wpływają więc na siebie. Agent regułowy jest deterministyczny
-i nie wymaga własnego źródła losowości.
-
-Konfiguracja wykorzystana w eksperymencie jest zapisywana razem
-z wynikami. Obejmuje ona liczbę rozdań, seed generatora harmonogramu
-talii, seed agenta losowego oraz pełną sekwencję seedów poszczególnych
-talii. Pozwala to ponownie przeprowadzić dokładnie skonfigurowany
-eksperyment.
+Przy projektowaniu infrastruktury eksperymentalnej przyświecał mi cel
+łatwego odtwarzania przeprowadzonych symulacji. Dla każdego epizodu
+zapisuję seed talii, dzięki temu ponowne utworzenie talii z tym samym
+seedem daje tę samą kolejność kart. Było to dla mnie istotne, ponieważ
+kiedy porównuję agentów między sobą, mam pewność, że różnice w wynikach
+wynikają z ich strategii, a nie z losowego układu kart.
 
 \section{Metryki oceny}
 \label{sec:metryki-agentow-bazowych}
 
-Podstawową miarą jakości strategii jest wynik netto wyrażony
-w jednostkach zakładu Ante. Dla symulacji składającej się z \(N\)
-epizodów empiryczną wartość oczekiwaną oszacowano jako średni wynik
+Aby móc porównywać skuteczność agentów między sobą, potrzebuję metryk
+umożliwiających ocenę jakości strategii. Miary, które zdefiniowałem poniżej nie są
+specyficzne dla agentów bazowych, ponieważ
+wykorzystuję je również do oceny agentów uczących się w kolejnych
+rozdziałach pracy.
+Za podstawową miarę jakości strategii uznałem wynik netto wyrażony
+w jednostkach zakładu Ante. I tak dla symulacji składającej się z \(N\)
+epizodów empiryczną wartość oczekiwaną oszacowałem jako średni wynik
 netto na jedno rozdanie:
 
 \begin{equation}
@@ -283,9 +204,9 @@ netto na jedno rozdanie:
 gdzie \(r_i\) oznacza wynik netto \(i\)-tego epizodu wyrażony
 w jednostkach Ante.
 
-Oprócz średniego wyniku obliczane są całkowity wynik netto oraz
-średnia i całkowita wartość postawionych zakładów. Zmienność wyników
-opisano za pomocą odchylenia standardowego próby:
+Oprócz średniego wyniku obliczam również całkowity wynik netto oraz
+średnią i całkowitą wartość postawionych zakładów. Zmienność wyników
+oszacowałem za pomocą odchylenia standardowego próby:
 
 \begin{equation}
     s
@@ -300,7 +221,7 @@ opisano za pomocą odchylenia standardowego próby:
     }.
 \end{equation}
 
-Na jego podstawie wyznaczany jest błąd standardowy średniej:
+Na podstawie odchylenia standardowego próby wyznaczyłem błąd standardowy średniej:
 
 \begin{equation}
     SE
@@ -308,24 +229,20 @@ Na jego podstawie wyznaczany jest błąd standardowy średniej:
     \frac{s}{\sqrt{N}}.
 \end{equation}
 
-Infrastruktura zlicza również końcowe wyniki rozdań oraz częstotliwość
-wykonywania poszczególnych akcji. Wyniki finansowe pojedynczych
-epizodów i ich agregaty przechowywane są z wykorzystaniem typu
-\texttt{Fraction}. Konwersja do liczb zmiennoprzecinkowych wykonywana
-jest dopiero dla statystyk wymagających takiej reprezentacji oraz
-podczas eksportu wyników.
+Poza tymi miarami, do oceny jakości strategii dołączam również
+końcowe wyniki rozdań oraz częstotliwość
+wykonywania poszczególnych akcji.
 
 \section{Porównanie agentów bazowych}
 \label{sec:porownanie-agentow-bazowych}
 
-W celu zweryfikowania kompletnego procesu eksperymentalnego
-przeprowadzono porównanie agenta losowego i agenta regułowego.
-Każdy agent rozegrał 10\,000 rozdań wykorzystujących ten sam
-harmonogram talii. Seed generatora harmonogramu wynosił
+W celu zweryfikowania procesu eksperymentalnego, porównałem agenta losowego i agenta regułowego.
+Każdy z tych agentów rozegrał 10\,000 rozdań.
+Seed generatora budującego harmonogram seedów talii wynosił
 \texttt{20260815}, natomiast generator decyzji agenta losowego
-zainicjalizowano seedem \texttt{20260816}.
-
-Uzyskane podstawowe metryki przedstawiono w
+zainicjalizowano seedem \texttt{20260816}. Sam obiekt \texttt{UTHGame} nie otrzymuje własnego seedu, powtarzalność zapewnia wyłącznie jawnie przekazana
+talia \texttt{Deck(seed)}.
+Uzyskane podstawowe metryki przedstawiam w
 tabeli~\ref{tab:baseline-metrics}.
 
 \begin{table}[ht]
@@ -333,12 +250,13 @@ tabeli~\ref{tab:baseline-metrics}.
     \caption{Wyniki agentów bazowych dla 10\,000 rozdań}
     \label{tab:baseline-metrics}
     \footnotesize
+    \setlength{\tabcolsep}{4pt}
     \begin{tabular}{lrrrrr}
         \hline
         Agent
-        & $\widehat{EV}$
-        & $s$
-        & $SE$
+        & \shortstack{$\widehat{EV}$}
+        & \shortstack{$s$}
+        & \shortstack{$SE$}
         & Śr. stawka
         & Wynik netto \\
         \hline
@@ -358,25 +276,24 @@ tabeli~\ref{tab:baseline-metrics}.
     \end{tabular}
 \end{table}
 
-Agent losowy uzyskał średni wynik
-\(-0{,}46435\) jednostki Ante na rozdanie. Agent regułowy osiągnął
+Wynika z tego, że
+agent losowy uzyskał średni wynik
+\(-0{,}46435\) jednostki Ante na rozdanie, a agent regułowy osiągnął
 w tej samej próbie średni wynik \(0{,}03865\), czyli wynik wyższy
 o około \(0{,}503\) jednostki Ante na rozdanie. Jednocześnie średnia
 wartość środków stawianych przez agenta regułowego była niższa.
 
-Dodatni wynik agenta regułowego w tej konkretnej próbie nie powinien
-być interpretowany jako dowód dodatniej rzeczywistej wartości
+Pomimo tego, że agent regułowy uzyskał dodatni wynik w tej konkretnej próbie, nie interpretuję tego jako dowodu dodatniej rzeczywistej wartości
 oczekiwanej strategii. Błąd standardowy jego średniego wyniku wyniósł
 około \(0{,}04081\), czyli wartość zbliżoną do samego oszacowania
-\(\widehat{EV}\). Wynik eksperymentu służy przede wszystkim jako
+\(\widehat{EV}\). Ten wynik eksperymentu służy jedynie jako
 punkt odniesienia dla późniejszej oceny agentów uczących się.
 
-Rozkład wyników końcowych przedstawiono w
-tabeli~\ref{tab:baseline-outcomes}.
+W celu zobrazowania wyników końcowych agentów bazowych przedstawiam w tabeli~\ref{tab:baseline-outcomes} rozkład wyników rozdań.
 
 \begin{table}[ht]
     \centering
-    \caption{Rozkład wyników rozdań agentów bazowych}
+    \caption{Rozkład wyników agentów bazowych dla 10\,000 rozdań}
     \label{tab:baseline-outcomes}
     \footnotesize
     \begin{tabular}{lrrrr}
@@ -403,58 +320,45 @@ tabeli~\ref{tab:baseline-outcomes}.
 
 Agent regułowy częściej kończył rozdania foldem, lecz znacznie rzadziej
 doprowadzał do rozstrzygnięcia zakończonego wygraną krupiera.
-Wyniki te pokazują, że zastosowane reguły prowadzą do jakościowo
-innego sposobu podejmowania decyzji niż równomierny losowy wybór
-spośród legalnych akcji.
 
 \section{Zapis wyników eksperymentu}
 \label{sec:zapis-wynikow-baseline}
 
-Eksperyment porównujący agentów bazowych zapisuje wyniki w dwóch
-formatach. Plik JSON zawiera konfigurację eksperymentu oraz
+Zdecydowałem się na zapis wyników eksperymentu w dwóch formatach: JSON i CSV.
+Plik JSON zawiera konfigurację eksperymentu oraz
 zagregowane metryki obu agentów. Plik CSV przechowuje dane
 poszczególnych epizodów, w tym indeks rozdania, seed talii, nazwę
 agenta, wynik netto, całkowitą stawkę, wynik końcowy i sekwencję
 wykonanych akcji.
 
-Zapis wyników na poziomie pojedynczego epizodu umożliwia późniejsze
-analizowanie przebiegu eksperymentu bez konieczności ponownego
-uruchamiania symulacji. Pozwala również zestawiać wyniki obu agentów
-dla tych samych seedów talii oraz tworzyć dodatkowe statystyki
-i wizualizacje.
+Taki podział na dwa osobne pliki pozwala mi zestawiać wyniki obu agentów
+dla tych samych seedów talii oraz dosyć łatwo tworzyć wizualizacje.
 
 \section{Walidacja infrastruktury eksperymentalnej}
 \label{sec:walidacja-infrastruktury}
 
-Testy infrastruktury obejmują zarówno pojedyncze epizody, jak
-i symulacje wielu rozdań. Sprawdzana jest zgodność liczby epizodów
-z konfiguracją, powtarzalność wyników dla tych samych seedów oraz
-wykorzystanie tego samego harmonogramu talii przez porównywanych
-agentów.
+Pokryłem testami zarówno scenariusze pojedynczych epizodów, jak
+i symulacje wielu rozdań. Na poziomie pojedynczego epizodu testami
+runnera objąłem wszystkie legalne ścieżki zakończenia rozdania. Na poziomie
+symulacji sprawdziłem zgodność liczby epizodów z konfiguracją,
+powtarzalność wyników dla tych samych seedów oraz wykorzystanie tych samych talii przez porównywanych agentów.
 
-Testy agregacji metryk weryfikują obliczanie wyniku całkowitego,
+Testami agregacji metryk weryfikuję obliczanie wyniku całkowitego,
 średniego wyniku, wartości postawionych zakładów, odchylenia
 standardowego, błędu standardowego oraz liczników wyników i akcji.
-Osobne testy obejmują zapis wyników eksperymentu i sprawdzają,
-czy zapisany harmonogram talii odpowiada konfiguracji symulacji oraz
-czy dla obu agentów zapisano właściwą liczbę epizodów.
-
-Takie rozdzielenie odpowiedzialności pozwala niezależnie testować
-silnik gry, strategie agentów, prowadzenie epizodów, agregację metryk
-oraz warstwę odpowiedzialną za zapis eksperymentów.
+Osobnymi testami pokryłem zapis wyników eksperymentu.
 
 \section{Podsumowanie}
 \label{sec:podsumowanie-agentow-bazowych}
 
-W rozdziale zdefiniowano dwa punkty odniesienia dla dalszych
+Podsumowując ten rozdział, zdefiniowałem dwa punkty odniesienia dla dalszych
 eksperymentów. \texttt{RandomAgent} reprezentuje strategię pozbawioną
 wiedzy o wartości kart, natomiast \texttt{RuleBasedAgent} wykorzystuje
-deterministyczny zestaw reguł oparty na uproszczonej strategii
-Ultimate Texas Hold'em.
+deterministyczny zestaw reguł.
 
-Przygotowana infrastruktura umożliwia prowadzenie powtarzalnych
-symulacji na wspólnych harmonogramach rozdań, agregowanie wyników
-i zapisywanie danych poszczególnych epizodów. Stanowi ona podstawę
+Przygotowałem infrastrukturę, która umożliwia prowadzenie powtarzalnych
+symulacji, agregowanie wyników
+i zapisywanie danych poszczególnych epizodów. Ta infrastruktura stanowi fundament
 do porównywania agentów wykorzystujących metody uczenia przez
 wzmacnianie z ustalonymi strategiami bazowymi w kolejnych etapach
 pracy.
