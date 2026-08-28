@@ -17,6 +17,11 @@ from expert_poker_player.policy_gradient.optimization import (
 from expert_poker_player.policy_gradient.config import (
     PolicyGradientConfig,
 )
+from expert_poker_player.policy_gradient.training import (
+    PolicyGradientEpisodeStats,
+    PolicyGradientTrainingResult,
+    train_policy_gradient,
+)
 
 
 __all__ = [
@@ -27,4 +32,7 @@ __all__ = [
     "compute_discounted_returns",
     "ReinforceOptimizer",
     "PolicyGradientConfig",
+    "PolicyGradientEpisodeStats",
+    "PolicyGradientTrainingResult",
+    "train_policy_gradient",
 ]
