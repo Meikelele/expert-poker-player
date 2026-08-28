@@ -51,6 +51,7 @@ def test_training_pipeline_is_deterministic(
     config = PolicyGradientConfig(
         learning_rate=1e-3,
         gamma=0.99,
+        batch_size=4,
         hidden_sizes=(16,),
         training_episodes=8,
         seed=123,

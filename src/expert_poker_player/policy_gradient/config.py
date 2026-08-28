@@ -10,7 +10,8 @@ class PolicyGradientConfig:
     """Konfiguracja treningu agenta Policy Gradient."""
 
     learning_rate: float = 1e-3
-    gamma: float = 0.99
+    gamma: float = 1.0
+    batch_size: int = 32
 
     hidden_sizes: tuple[int, ...] = (
         256,
@@ -26,6 +27,11 @@ class PolicyGradientConfig:
         self._validate_positive_float(
             self.learning_rate,
             "learning_rate",
+        )
+
+        self._validate_positive_int(
+            self.batch_size,
+            "batch_size",
         )
 
         if not isinstance(
@@ -95,9 +101,11 @@ class PolicyGradientConfig:
     ) -> dict[str, object]:
         """Zwraca konfigurację gotową do serializacji."""
 
+
         return {
             "learning_rate": self.learning_rate,
             "gamma": self.gamma,
+            "batch_size": self.batch_size,
             "hidden_sizes": list(
                 self.hidden_sizes
             ),

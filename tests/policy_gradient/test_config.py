@@ -11,7 +11,8 @@ def test_default_configuration() -> None:
     config = PolicyGradientConfig()
 
     assert config.learning_rate == 1e-3
-    assert config.gamma == 0.99
+    assert config.gamma == 1.0
+    assert config.batch_size == 32
 
     assert config.hidden_sizes == (
         256,
@@ -98,6 +99,25 @@ def test_rejects_empty_hidden_sizes() -> None:
     ):
         PolicyGradientConfig(
             hidden_sizes=()
+        )
+
+
+@pytest.mark.parametrize(
+    "batch_size",
+    [
+        0,
+        -1,
+    ],
+)
+def test_rejects_non_positive_batch_size(
+    batch_size: int,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="batch_size must be positive",
+    ):
+        PolicyGradientConfig(
+            batch_size=batch_size
         )
 
 

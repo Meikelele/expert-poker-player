@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from expert_poker_player.policy_gradient import (
@@ -25,7 +26,8 @@ def build_test_config(
 ) -> PolicyGradientConfig:
     return PolicyGradientConfig(
         learning_rate=1e-3,
-        gamma=0.99,
+        gamma=1.0,
+        batch_size=4,
         hidden_sizes=(16,),
         training_episodes=8,
         seed=seed,
@@ -52,10 +54,7 @@ def test_training_runs_multiple_episodes() -> None:
 
     assert result.total_steps > 0
 
-    assert (
-        result.optimizer_updates
-        == config.training_episodes
-    )
+    assert result.optimizer_updates == 2
 
 
 def test_episode_step_counts_match_uth_decision_horizon() -> None:
@@ -84,10 +83,8 @@ def test_training_records_finite_losses() -> None:
                 stats.loss
             )
         )
-        for stats in result.episode_stats
+        for stats in result.update_stats
     )
-
-import pytest
 
 
 @pytest.mark.parametrize(
@@ -130,7 +127,7 @@ def test_training_supports_reward_functions(
 
     assert result.total_steps > 0
 
-def test_training_performs_one_optimizer_update_per_episode() -> None:
+def test_training_batches_episodes_into_updates() -> None:
     config = build_test_config()
 
     result = train_policy_gradient(
@@ -139,8 +136,43 @@ def test_training_performs_one_optimizer_update_per_episode() -> None:
         config=config,
     )
 
-    assert (
-        result.optimizer_updates
-        == config.training_episodes
+    assert result.optimizer_updates == 2
+
+
+def test_training_optimizes_partial_final_batch() -> None:
+    config = PolicyGradientConfig(
+        batch_size=4,
+        hidden_sizes=(16,),
+        training_episodes=10,
+        seed=42,
     )
+
+    result = train_policy_gradient(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+    )
+
+    assert result.optimizer_updates == 3
+
+    assert [
+        stats.batch_size
+        for stats in result.update_stats
+    ] == [
+        4,
+        4,
+        2,
+    ]
+
+    assert [
+        (
+            stats.first_episode,
+            stats.last_episode,
+        )
+        for stats in result.update_stats
+    ] == [
+        (0, 3),
+        (4, 7),
+        (8, 9),
+    ]
 

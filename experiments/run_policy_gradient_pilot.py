@@ -344,6 +344,11 @@ def main() -> None:
         / f"{prefix}_episodes.csv"
     )
 
+    updates_path = (
+        args.output_dir
+        / f"{prefix}_updates.csv"
+    )
+
     summary_variants: dict[
         str,
         object,
@@ -357,13 +362,21 @@ def main() -> None:
         "w",
         encoding="utf-8",
         newline="",
-    ) as episodes_file:
+    ) as episodes_file, updates_path.open(
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as updates_file:
         training_writer = csv.writer(
             training_file
         )
 
         evaluation_writer = csv.writer(
             episodes_file
+        )
+
+        updates_writer = csv.writer(
+            updates_file
         )
 
         training_writer.writerow(
@@ -374,6 +387,17 @@ def main() -> None:
                 "episode",
                 "total_reward",
                 "steps",
+            ]
+        )
+
+        updates_writer.writerow(
+            [
+                "state_representation",
+                "reward_type",
+                "update",
+                "first_episode",
+                "last_episode",
+                "batch_size",
                 "loss",
             ]
         )
@@ -418,7 +442,19 @@ def main() -> None:
                         stats.episode,
                         stats.total_reward,
                         stats.steps,
-                        stats.loss,
+                    ]
+                )
+
+            for update in training_result.update_stats:
+                updates_writer.writerow(
+                    [
+                        variant.state_representation.value,
+                        variant.reward_type.value,
+                        update.update,
+                        update.first_episode,
+                        update.last_episode,
+                        update.batch_size,
+                        update.loss,
                     ]
                 )
 

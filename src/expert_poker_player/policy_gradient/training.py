@@ -45,6 +45,18 @@ class PolicyGradientEpisodeStats:
     episode: int
     total_reward: float
     steps: int
+
+@dataclass(
+    frozen=True,
+    slots=True,
+)
+class PolicyGradientUpdateStats:
+    """Statystyki pojedynczego batch update'u REINFORCE."""
+
+    update: int
+    first_episode: int
+    last_episode: int
+    batch_size: int
     loss: float
 
 
@@ -59,6 +71,10 @@ class PolicyGradientTrainingResult:
     policy_network: PolicyNetwork
     episode_stats: tuple[
         PolicyGradientEpisodeStats,
+        ...
+    ]
+    update_stats: tuple[
+        PolicyGradientUpdateStats,
         ...
     ]
     total_steps: int
@@ -152,6 +168,14 @@ def train_policy_gradient(
         PolicyGradientEpisodeStats
     ] = []
 
+    update_stats: list[
+        PolicyGradientUpdateStats
+    ] = []
+
+    pending_trajectories: list[
+        Trajectory
+    ] = []
+
     for episode in range(
         config.training_episodes
     ):
@@ -210,26 +234,87 @@ def train_policy_gradient(
             )
         )
 
-        loss = optimizer.optimize(
+        pending_trajectories.append(
             trajectory
         )
-
-        optimizer_updates += 1
 
         episode_stats.append(
             PolicyGradientEpisodeStats(
                 episode=episode,
                 total_reward=episode_reward,
                 steps=episode_steps,
+            )
+        )
+
+        if (
+            len(pending_trajectories)
+            == config.batch_size
+        ):
+            loss = optimizer.optimize_batch(
+                tuple(
+                    pending_trajectories
+                )
+            )
+
+            update_stats.append(
+                PolicyGradientUpdateStats(
+                    update=optimizer_updates,
+                    first_episode=(
+                        episode
+                        - len(
+                            pending_trajectories
+                        )
+                        + 1
+                    ),
+                    last_episode=episode,
+                    batch_size=len(
+                        pending_trajectories
+                    ),
+                    loss=loss,
+                )
+            )
+
+            optimizer_updates += 1
+
+            pending_trajectories.clear()
+
+    if pending_trajectories:
+        loss = optimizer.optimize_batch(
+            tuple(
+                pending_trajectories
+            )
+        )
+
+        batch_size = len(
+            pending_trajectories
+        )
+
+        update_stats.append(
+            PolicyGradientUpdateStats(
+                update=optimizer_updates,
+                first_episode=(
+                    config.training_episodes
+                    - batch_size
+                ),
+                last_episode=(
+                    config.training_episodes
+                    - 1
+                ),
+                batch_size=batch_size,
                 loss=loss,
             )
         )
+
+        optimizer_updates += 1
 
     return PolicyGradientTrainingResult(
         agent=agent,
         policy_network=policy_network,
         episode_stats=tuple(
             episode_stats
+        ),
+        update_stats=tuple(
+            update_stats
         ),
         total_steps=total_steps,
         optimizer_updates=optimizer_updates,
