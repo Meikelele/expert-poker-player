@@ -109,9 +109,50 @@ class ReinforceOptimizer:
                 "of Trajectory"
             )
 
+        return self.optimize_batch(
+            (
+                trajectory,
+            )
+        )
+
+    def optimize_batch(
+        self,
+        trajectories: tuple[
+            Trajectory,
+            ...,
+        ],
+    ) -> float:
+        """Wykonuje jeden update REINFORCE dla wielu epizodów naraz."""
+
+        if not isinstance(
+            trajectories,
+            tuple,
+        ):  # type: ignore
+            raise TypeError(
+                "trajectories must be a tuple"
+            )
+
+        if not trajectories:
+            raise ValueError(
+                "trajectories cannot be empty"
+            )
+
+        if not all(
+            isinstance(  # type: ignore
+                trajectory,
+                Trajectory,
+            )
+            for trajectory in trajectories
+        ):
+            raise TypeError(
+                "trajectories must contain "
+                "only Trajectory values"
+            )
+
         if any(
             len(step.state)
             != self._policy_network.input_size
+            for trajectory in trajectories
             for step in trajectory.steps
         ):
             raise ValueError(
@@ -119,60 +160,78 @@ class ReinforceOptimizer:
                 "policy network input size"
             )
 
+        states: list[tuple[float, ...]] = []
+        action_indices: list[int] = []
+        action_masks: list[tuple[bool, ...]] = []
+        returns: list[float] = []
+
+        for trajectory in trajectories:
+            discounted_returns = (
+                compute_discounted_returns(
+                    tuple(
+                        step.reward
+                        for step in trajectory.steps
+                    ),
+                    gamma=self._gamma,
+                )
+            )
+
+            for step, discounted_return in zip(
+                trajectory.steps,
+                discounted_returns,
+                strict=True,
+            ):
+                states.append(
+                    step.state
+                )
+
+                action_indices.append(
+                    step.action_index
+                )
+
+                action_masks.append(
+                    step.action_mask
+                )
+
+                returns.append(
+                    discounted_return
+                )
+
         device = next(
             self._policy_network.parameters()
         ).device
 
-        states = torch.tensor(
-            [
-                step.state
-                for step in trajectory.steps
-            ],
+        states_tensor = torch.tensor(
+            states,
             dtype=torch.float32,
             device=device,
         )
 
-        action_indices = torch.tensor(
-            [
-                step.action_index
-                for step in trajectory.steps
-            ],
+        action_indices_tensor = torch.tensor(
+            action_indices,
             dtype=torch.long,
             device=device,
         )
 
-        action_masks = torch.tensor(
-            [
-                step.action_mask
-                for step in trajectory.steps
-            ],
+        action_masks_tensor = torch.tensor(
+            action_masks,
             dtype=torch.bool,
             device=device,
         )
 
-        discounted_returns = (
-            compute_discounted_returns(
-                tuple(
-                    step.reward
-                    for step in trajectory.steps
-                ),
-                gamma=self._gamma,
-            )
-        )
-
         returns_tensor = torch.tensor(
-            discounted_returns,
+            returns,
             dtype=torch.float32,
             device=device,
         )
 
         logits = self._policy_network(
-            states
+            states_tensor
         )
 
         masked_logits = mask_action_values(
             logits,
-            action_masks,
+            action_masks_tensor,
         )
 
         distribution = Categorical(
@@ -181,14 +240,16 @@ class ReinforceOptimizer:
 
         log_probabilities = ( # type: ignore
             distribution.log_prob(
-                action_indices
+                action_indices_tensor
             )
         )
 
         loss = -( # type: ignore
             log_probabilities
             * returns_tensor
-        ).sum()
+        ).sum() / len(
+            trajectories
+        )
 
         self._optimizer.zero_grad()
 

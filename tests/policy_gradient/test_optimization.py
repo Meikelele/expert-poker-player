@@ -280,3 +280,96 @@ def test_rejects_state_incompatible_with_policy_network() -> None:
             )
         )
 
+def test_batch_loss_is_averaged_over_episodes() -> None:
+    network = PolicyNetwork(
+        input_size=INPUT_SIZE,
+        hidden_sizes=(4,),
+    )
+
+    zero_network(
+        network
+    )
+
+    optimizer = ReinforceOptimizer(
+        policy_network=network,
+        learning_rate=1e-3,
+        gamma=1.0,
+    )
+
+    trajectories = (
+        Trajectory(
+            steps=(
+                build_step(
+                    reward=2.0
+                ),
+            )
+        ),
+        Trajectory(
+            steps=(
+                build_step(
+                    reward=2.0
+                ),
+            )
+        ),
+    )
+
+    loss = optimizer.optimize_batch(
+        trajectories
+    )
+
+    assert loss == pytest.approx(
+        2.0 * math.log(3.0),
+        rel=1e-5,
+    )
+
+def test_discounted_returns_do_not_cross_episode_boundaries() -> None:
+    network = PolicyNetwork(
+        input_size=INPUT_SIZE,
+        hidden_sizes=(4,),
+    )
+
+    zero_network(
+        network
+    )
+
+    optimizer = ReinforceOptimizer(
+        policy_network=network,
+        learning_rate=1e-3,
+        gamma=0.5,
+    )
+
+    trajectories = (
+        Trajectory(
+            steps=(
+                build_step(
+                    reward=0.0
+                ),
+                build_step(
+                    reward=2.0
+                ),
+            )
+        ),
+        Trajectory(
+            steps=(
+                build_step(
+                    reward=4.0
+                ),
+            )
+        ),
+    )
+
+    loss = optimizer.optimize_batch(
+        trajectories
+    )
+
+    assert loss == pytest.approx(
+        (
+            1.0
+            + 2.0
+            + 4.0
+        )
+        * math.log(3.0)
+        / 2.0,
+        rel=1e-5,
+    )
+
