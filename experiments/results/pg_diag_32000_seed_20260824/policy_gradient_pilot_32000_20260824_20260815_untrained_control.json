@@ -1,0 +1,50 @@
+{
+  "deck_schedule_seed": 20260815,
+  "evaluation_round_count": 2000,
+  "probe_count": 100,
+  "training_seed": 20260824,
+  "variants": {
+    "features": {
+      "action_counts": {
+        "BET_1X": 0,
+        "BET_2X": 0,
+        "BET_3X": 2000,
+        "BET_4X": 0,
+        "CHECK": 0,
+        "FOLD": 0
+      },
+      "input_size": 393,
+      "mean_max_probability": 0.45161043445269267,
+      "mean_normalized_entropy": 0.9998199758591226,
+      "mean_preflop_action_probabilities": {
+        "bet_1x": 0.0,
+        "bet_2x": 0.0,
+        "bet_3x": 0.34740916788578036,
+        "bet_4x": 0.3253175041079521,
+        "check": 0.3272733256220818,
+        "fold": 0.0
+      }
+    },
+    "raw": {
+      "action_counts": {
+        "BET_1X": 6,
+        "BET_2X": 0,
+        "BET_3X": 16,
+        "BET_4X": 1894,
+        "CHECK": 180,
+        "FOLD": 84
+      },
+      "input_size": 373,
+      "mean_max_probability": 0.45296285251776375,
+      "mean_normalized_entropy": 0.9996916241525364,
+      "mean_preflop_action_probabilities": {
+        "bet_1x": 0.0,
+        "bet_2x": 0.0,
+        "bet_3x": 0.33064196616411207,
+        "bet_4x": 0.33719026505947114,
+        "check": 0.3321677643060684,
+        "fold": 0.0
+      }
+    }
+  }
+}
