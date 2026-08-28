@@ -148,7 +148,7 @@ właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
 \end{table}
 
 Właściwość \texttt{state} nie jest częścią interfejsu przeznaczonego
-do podejmowania decyzji przez agenta, udostępniłem ją jedynie do celów testowych
+do podejmowania decyzji przez agenta. Udostępniłem ją jedynie do celów testowych
 i diagnostycznych. Agent otrzymuje
 wartość właściwości \texttt{observation} albo obserwację zwróconą przez
 \texttt{reset()} lub \texttt{step()}.
@@ -172,22 +172,22 @@ nie generować dodatkowych obiektów diagnostycznych, które nie są potrzebne a
 Po jego włączeniu każde poprawnie rozpoczęte rozdanie otrzymuje dodatni, rosnący
 identyfikator \texttt{round\_id}, a lista decyzji jest zerowana przy każdym poprawnym
 wywołaniu metody \texttt{reset()}. Właściwość \texttt{trace} zwraca obiekt
-\texttt{RoundTrace}, jeżeli historia jest wyłączona albo nie rozpoczęto jeszcze
+\texttt{RoundTrace}. Jeżeli historia jest wyłączona albo nie rozpoczęto jeszcze
 rozdania, jej wartością jest \texttt{None}. Mechanizm ten nie stanowi pamięci agenta
 i nie jest częścią obserwacji. Wykorzystuję go do odtwarzania przebiegu wybranych
 rozdań w celu weryfikacji zgodności decyzji agenta z legalną przestrzenią akcji.
 
-Niemodyfikowalny obiekt \texttt{DecisionRecord} przechowuje pojedynczą decyzję agenta,
-zawiera obserwację dostępną agentowi przed
-wykonaniem decyzji oraz wybraną akcję. Argumentem za zapisywaniem obserwacji sprzed przejścia 
-jest to, że chciałem zachować informacje dla jakiej obserwacji agent podjął konkretną decyzję, 
+Niemutowalny obiekt \texttt{DecisionRecord} przechowuje pojedynczą decyzję agenta:
+obserwację dostępną agentowi przed
+wykonaniem decyzji oraz wybraną akcję. Argumentem za zapisywaniem obserwacji sprzed przejścia
+jest to, że chciałem zachować informację, dla jakiej obserwacji agent podjął konkretną decyzję,
 zapisywanie obserwacji po wykonaniu akcji byłoby w mojej ocenie niejednoznaczne, 
 ponieważ taki stan zawierałby informacje już odkrytych kart, które mogłyby być skutkiem wykonanej akcji.
 Podczas tworzenia rekordu
-sprawdzane jest czy akcja należy do zbioru
+sprawdzane jest, czy akcja należy do zbioru
 legalnego dla tej obserwacji.
 
-Literalnie cały przebieg rozdania opisuje niemodyfikowalny obiekt \texttt{RoundTrace},
+Cały przebieg rozdania opisuje niemodyfikowalny obiekt \texttt{RoundTrace}, który
 zawiera identyfikator rozdania, uporządkowaną krotkę rekordów decyzji oraz
 aktualny pełny stan \texttt{RoundState}. Obserwacje w rekordach zawierają
 wyłącznie informacje dostępne agentowi, natomiast końcowy stan jest pełnym

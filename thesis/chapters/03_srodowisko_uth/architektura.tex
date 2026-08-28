@@ -20,7 +20,7 @@ podejść do tego w taki sposób, aby uniezależnić środowisko od konkretnej w
 
 Silnik zwraca szczegółowe rozliczenie poszczególnych zakładów oraz łączny
 wynik netto rozdania, będący podstawą nagrody terminalnej. Rozdzieliłem mechanizm
-rozliczania gry od funkcji nagrody, uzasadnienie tej decyzji przedstawiam
+rozliczania gry od funkcji nagrody. Uzasadnienie tej decyzji przedstawiam
 w podrozdziale~\ref{sec:funkcja-nagrody}.
 
 Zadbałem również o powtarzalność eksperymentów, przez co
@@ -55,7 +55,7 @@ odpowiada za ocenę i porównywanie układów pokerowych.
 Moduł \texttt{uth} zawiera modele stanu,
 reguły legalności akcji, mechanizm rozdawania kart, sposób rozliczania
 zakładów oraz logikę sterującą kolejnymi fazami rozdania. Klasa
-\texttt{UTHGame} pełni rolę menadzera tej warstwy. Na podstawie aktualnego
+\texttt{UTHGame} pełni rolę menedżera tej warstwy. Na podstawie aktualnego
 stanu i wybranej akcji wywołuje ona odpowiednie operacje, aktualizuje stan
 rozdania oraz zwraca rezultat danego kroku.
 
@@ -140,7 +140,7 @@ rozwiązania i zakres ich odpowiedzialności.
     \end{tabular}
 \end{table}
 
-Co istotne silnik domenowy nie zależy od konkretnej biblioteki uczenia przez
+Co istotne, silnik domenowy nie zależy od konkretnej biblioteki uczenia przez
 wzmacnianie. Integrację z takimi bibliotekami wydzieliłem do osobnej warstwy
 korzystającej z publicznego interfejsu \texttt{UTHGame} i przekształcającej
 obiekty domenowe na reprezentacje numeryczne. Pozwala mi to zachować jedną

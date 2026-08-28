@@ -13,9 +13,9 @@ Pojedynczą kartę zaimplementowałem jako niemodyfikowalny obiekt
 \texttt{Card}, zawierający dwa pola: rangę oraz kolor. Rangi zakodowałem za
 pomocą typu wyliczeniowego \texttt{Rank}, natomiast kolory za pomocą typu
 \texttt{Suit}. Przez zastosowanie typów wyliczeniowych ograniczyłem możliwość
-utworzenia karty zawierającej niepoprawną wartość, a przez podejście do karty jako niemutowalnego 
-obiektu zapewniłem bezpieczne umieszczanie jej w krotkach, zbiorach a także, przy porównywaniu liczebności zbioru 
-czy wykrywaniu zduplikowanych kart.
+utworzenia karty zawierającej niepoprawną wartość, a przez podejście do karty jako niemutowalnego
+obiektu zapewniłem bezpieczne umieszczanie jej w krotkach i zbiorach, a także możliwość wykorzystania
+porównania liczebności zbioru do wykrywania zduplikowanych kart.
 
 Rangi kart przyjmują wartości liczbowe od 2 do 14. Karty od dwójki do
 dziesiątki zachowują swoje naturalne wartości, natomiast walet, dama, król
@@ -42,7 +42,7 @@ Ponieważ każda kombinacja rangi i koloru występuje dokładnie raz,
 wygenerowana talia zawiera 52 unikalne karty.
 
 Podstawową operacją jest metoda \texttt{draw()}, która pobiera jedną kartę
-z wierzchu talii i następująco ją usuwa z kolekcji. Jest również
+z wierzchu talii i następnie ją usuwa z kolekcji. Jest również
 operacja służąca do pobrania wielu kart \texttt{draw\_many()}. Próba pobrania karty z pustej talii lub większej
 liczby kart niż liczba dostępnych kart pozostałych w talii powoduje zgłoszenie wyjątku.
 Chciałem, aby takie zachowanie umożliwiało szybkie wykrycie niepoprawnego przebiegu rozdania.
@@ -142,7 +142,7 @@ Jeżeli druga ręka również zawiera parę asów, porównanie przechodzi kolejn
 do króla, dziesiątki i dziewiątki. Kolory kart nie uczestniczą w rozstrzyganiu
 remisów, zgodnie ze standardowymi zasadami pokera.
 
-Zadbałem aby obiekt \texttt{HandValue} sprawdzał zgodność długości krotki
+Zadbałem, aby obiekt \texttt{HandValue} sprawdzał zgodność długości krotki
 \texttt{tiebreak} z kategorią układu, walidował również, czy wszystkie
 jej elementy są liczbami całkowitymi odpowiadającymi poprawnym rangom kart.
 W ten sposób ograniczyłem możliwość utworzenia wartości ręki, która nie mogłaby powstać

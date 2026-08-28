@@ -17,7 +17,7 @@ z perspektywy gracza.
 \subsection{Pełny stan rozdania}
 \label{subsec:round-state}
 
-Obiekt \texttt{RoundState} zawiera wszystkie dane na temat rozdania. Zaweira on:
+Obiekt \texttt{RoundState} zawiera wszystkie dane na temat rozdania. Są to:
 
 \begin{itemize}
     \item aktualną fazę gry,
@@ -37,7 +37,7 @@ nieokreślone. Pola te otrzymują wartości dopiero po przejściu do stanu
 terminalnego.
 
 Dla przykładu liczba kart wspólnych i spalonych jest zależna od aktualnej fazy.
-Ta zaleznosc przedstawiam w tabeli~\ref{tab:karty-w-fazach}.
+Tę zależność przedstawiam w tabeli~\ref{tab:karty-w-fazach}.
 
 %TODO: dla komorek w kolumnach karty wspolne, karty spalone i faze - niech beda wysrodkwoane w pionie i poziomie
 \begin{table}[htbp]
@@ -103,7 +103,7 @@ Ta zaleznosc przedstawiam w tabeli~\ref{tab:karty-w-fazach}.
     \end{tabular}
 \end{table}
 
-Obiekt stanu zaimplementowałem jako niemodyfikowalny, wymusza to utworzenie nowej instancji \texttt{RoundState} 
+Obiekt stanu zaimplementowałem jako niemodyfikowalny, co wymusza utworzenie nowej instancji \texttt{RoundState}
 przy każdym przejściu środowiska (zamiast modyfikowania istniejącego obiektu). Zdecydowałem się na takie rozwiązanie, żeby 
 ograniczyć ryzyko, że obiekt stanu może potencjalnie zostać niewłaściwie zmodyfikowany, ale też takie rozwiązanie ułatwia tworzenie deterministycznych testów.
 
@@ -220,7 +220,7 @@ showdownem.
 Metoda \texttt{reset()}, wywoływana na początku każdego rozdania, rozdaje po dwie karty
 graczowi i krupierowi w kolejności \(P_1, D_1, P_2, D_2\), gdzie \(P\) to gracz a \(D\) to krupier, tworzy stan
 \texttt{PREFLOP} i zwraca pierwszą obserwację. Karty wspólne i spalone nie są
-jeszcze dobierane, to dzieje się w odpowiedniej fazie. Każde poprawne wykonanie metody \texttt{step()} przesuwa
+jeszcze dobierane. Dzieje się to w odpowiedniej fazie. Każde poprawne wykonanie metody \texttt{step()} przesuwa
 rozdanie do kolejnej fazy albo do stanu terminalnego. Agent nie może pozostać
 w tej samej fazie po wykonaniu akcji.
 
@@ -264,7 +264,7 @@ showdown i przechodzi do stanu terminalnego. Akcja \texttt{FOLD} kończy
 rozdanie na riverze bez showdownu.
 
 Struktura maszyny stanów gwarantuje, że zakład Play może zostać wykonany najwyżej
-raz w trakcie rozdania, każda akcja typu \texttt{BET} prowadzi bezpośrednio do stanu
+raz w trakcie rozdania: każda akcja typu \texttt{BET} prowadzi bezpośrednio do stanu
 terminalnego, a akcja \texttt{CHECK} jedynie przesuwa decyzję do późniejszej fazy.
 
 Dla zilustrowania przebiegu rozdania posłużę się schematem przedstawionym na

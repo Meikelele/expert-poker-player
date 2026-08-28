@@ -68,7 +68,7 @@ jeżeli posiada co najmniej jedną parę, taki warunek można zapisać w formie 
 
 gdzie \(rank(H_d)\) oznacza rangę układu krupiera.
 
-Samo zjawisko kwalifikacji krupiera nie zmienia wyniku porównania rąk, jednakze wpływa na sposób
+Samo zjawisko kwalifikacji krupiera nie zmienia wyniku porównania rąk, jednakże wpływa na sposób
 rozliczenia zakładu Ante, ponieważ:
 
 \begin{itemize}
@@ -173,7 +173,7 @@ Wszystkie wyżej opisane zależności w celu ułatwienia przedstawiam w tabeli~\
 \subsection{Model rozliczenia zakładów}
 \label{subsec:model-rozliczenia}
 
-Zaprojektowałem obiekt \texttt{WagerSettlement}, który reprezentuje rozliczenie pojedynczego zakladu.
+Zaprojektowałem obiekt \texttt{WagerSettlement}, który reprezentuje rozliczenie pojedynczego zakładu.
 Składa się on z \texttt{stake}, czyli początkowej wartości postawionego zakładu, oraz \texttt{net\_profit}, czyli zysku albo straty netto.
 
 Dla pojedynczego zakładu
@@ -194,16 +194,16 @@ zawierający osobne wyniki dla Ante, Blind oraz Play.
     n_{Play}.
 \end{equation}
 
-Do reprezentacji wartości finansowych uywam typu \texttt{Fraction}, poniewaz ten typo pozwala na 
-przechowywanie wypłaty takiej jak \(3/2\) (bez stosowania przyblizen zmiennoprzecinkowych), w taki 
+Do reprezentacji wartości finansowych używam typu \texttt{Fraction}, ponieważ ten typ pozwala na
+przechowywanie wypłaty takiej jak \(3/2\) (bez stosowania przybliżeń zmiennoprzecinkowych), w taki
 sposób unikam błędów zaokrągleń.
 
 
 \subsection{Rozliczenie zakładu Blind}
 \label{subsec:rozliczenie-blind}
 
-Zakład Blind ma stałą stawkę równą jednej jednostce Ante. W sytuacji kedy wygrywa gracz,
-zysk z racji tego zakładu jest uzalezniony od tego jak wysoki uklad uda sie graczowi osiagnac.
+Zakład Blind ma stałą stawkę równą jednej jednostce Ante. W sytuacji kiedy wygrywa gracz,
+zysk z racji tego zakładu jest uzależniony od tego, jak wysoki układ uda się graczowi osiągnąć.
 Dla układów słabszych od strita Blind jest zwracany. Dla strita lub
 silniejszego układu stosowana jest tabela wypłat przedstawiona w
 tabeli~\ref{tab:wyplaty-blind-implementacja}.
@@ -320,8 +320,8 @@ Jeżeli krupier kwalifikuje się, Ante wygrywa albo przegrywa zgodnie
 z wynikiem showdownu. W przypadku braku kwalifikacji zakład jest zwracany.
 
 Zakład Play jest wypłacany \(1{:}1\), niezależnie od jego mnożnika.
-Żeby lepiej to zobrazować, posłużę się przykładem, powiedzmy że gracz postawił
-wygrany zaklad Play \(4\times\), daje zysk netto równy czterem
+Żeby lepiej to zobrazować, posłużę się przykładem, powiedzmy, że gracz postawił
+wygrany zakład Play \(4\times\), co daje zysk netto równy czterem
 jednostkom. Przy porażce tracona jest pełna wartość zakładu, natomiast
 przy remisie cała stawka zostaje zwrócona.
 
@@ -348,9 +348,8 @@ ale zwróconego, w rozliczeniu Play zapisywana jest stawka równa zero.
 \section{Funkcja nagrody i wynik epizodu}
 \label{sec:funkcja-nagrody}
 
-Abym mógł sprawnie zmieniać warianty funkcji nagrody wykorzystywanej przez algorytmy uczenia przez wzmacnianie, 
-w tym celu oddzieliłem 
-mechanizm rozliczania zakładów od konstrukcji sygnału nagrody. 
+Aby móc sprawnie zmieniać warianty funkcji nagrody wykorzystywanej przez algorytmy uczenia przez wzmacnianie,
+oddzieliłem mechanizm rozliczania zakładów od konstrukcji sygnału nagrody.
 Silnik domenowy
 wyznacza dokładny wynik finansowy rozdania zgodny z zasadami
 Ultimate Texas Hold’em. Natomiast

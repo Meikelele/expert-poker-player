@@ -22,9 +22,9 @@ wielu rozdaniach.
 Odmiana pokera Texas Hold’em jest jedną z najpopularniejszych na świecie.
 W tej odmianie każdy z graczy otrzymuje po dwie zakryte karty własne (ang.
 \emph{hole cards}), znane tylko temu graczowi, natomiast na stole etapami
-pojawiają się karty wspólne (ang. \emph{community cards}) - ostatecznie
-pięć kart wspólnych. Gracz, wykorzystując karty wspólne oraz swoje karty
-własne, musi utworzyć możliwie najlepszy układ pięciokartowy.
+pojawia się ostatecznie pięć kart wspólnych (ang. \emph{community cards}).
+Gracz, wykorzystując karty wspólne oraz swoje karty własne, musi utworzyć
+możliwie najlepszy układ pięciokartowy.
 
 Sama rozgrywka składa się z kilku etapów: etapu przed flopem (ang.
 \emph{preflop}), flopa (ang. \emph{flop}), czyli odkrycia trzech
@@ -98,13 +98,13 @@ postawić zakład poboczny (ang. \emph{side bet}), na przykład Trips, który
 opisuję szerzej w dalszej części tego rozdziału \cite{tulalip_uth_rules}.
 
 Kiedy zakłady Blind oraz Ante zostaną postawione, krupier rozdaje graczowi
-i sobie po dwie karty własne - karty krupiera pozostają dla gracza zakryte.
+i sobie po dwie karty własne. Karty krupiera pozostają przy tym dla gracza zakryte.
 Teraz, w fazie preflop, po ujrzeniu swoich dwóch kart, gracz stoi przed
 pierwszą decyzją: może zaczekać (ang. \emph{check}) lub wykonać zakład
-Play. Czekanie powoduje przejście do kolejnego etapu gry, jakim jest flop
-- następuje palenie jednej karty z talii i odkrycie kolejnych trzech kart
+Play. Czekanie powoduje przejście do kolejnego etapu gry, jakim jest flop:
+następuje wtedy palenie jednej karty z talii i odkrycie kolejnych trzech kart
 wspólnych, a gracz znów podejmuje decyzję, czy chce zaczekać, czy wykonać
-zakład Play. Czekając również po flopie, następuje palenie karty i
+zakład Play. Jeżeli gracz czeka również po flopie, następuje palenie karty i
 odkrywane są dwie ostatnie karty wspólne (turn i river), a gracz musi
 wybrać pomiędzy spasowaniem a wykonaniem zakładu Play. Wysokości zakładu
 Play na każdym z tych etapów przedstawiono w
@@ -179,9 +179,9 @@ Pozostałe układy & Zwrot \\
 \subsection{Zakłady poboczne}
 
 W wielu wariantach Ultimate Texas Hold’em dostępne są również zakłady
-poboczne - są to Trips i Progressive. Zakład Trips jest opcjonalny i
+poboczne, takie jak Trips i Progressive. Zakład Trips jest opcjonalny i
 wypłacany na podstawie końcowego układu gracza, niezależnie od tego, czy
-gracz pokonał krupiera - najczęściej wygrywa wtedy, gdy końcowy układ
+gracz pokonał krupiera. Najczęściej wygrywa wtedy, gdy końcowy układ
 gracza ma wartość co najmniej trójki. Zakłady poboczne mogą różnić się w
 zależności od kasyna i stosowanej tabeli wypłat \cite{tulalip_uth_rules}.
 
@@ -295,7 +295,7 @@ odległych w czasie względem nagród natychmiastowych \cite{sutton_barto_rl}.
 
 Oczekiwany zwrot z danego stanu opisuje funkcja wartości stanu
 \(V^{\pi}(s)\), natomiast oczekiwany zwrot po wykonaniu akcji w danym
-stanie funkcja wartości akcji \(Q^{\pi}(s,a)\). Te funkcje
+stanie opisuje funkcja wartości akcji \(Q^{\pi}(s,a)\). Te funkcje
 pozwalają porównywać decyzje i stanowią podstawę w wielu metodach uczenia \cite{sutton_barto_rl}.
 
 W trakcie uczenia agent musi równoważyć eksplorację (ang. \emph{exploration}), czyli wypróbowywanie
@@ -304,7 +304,7 @@ akcji uznanych dotąd za najlepsze. Niewłaściwy balans między nimi
 prowadzi do niestabilnego
 przebiegu uczenia.
 
-Funkcje wartości i polityki mozna reprezentować w postaci tablicowej, gdy
+Funkcje wartości i polityki można reprezentować w postaci tablicowej, gdy
 przestrzeń stanów jest niewielka, albo za pomocą aproksymacji funkcji, na
 przykład sieci neuronowej, gdy przestrzeń stanów jest duża.
 Przestrzeń stanów Ultimate Texas Hold’em jest zbyt duża na podejście
@@ -314,9 +314,9 @@ zastosowanej metody uczenia \cite{sutton_barto_rl}.
 % TODO: ja to robie siecia neuronowa ??
 
 Dwa elementy konfiguracji
-procesu uczenia mają dla mnie nie bagatelne znaczenie, są to sposób reprezentacji obserwacji, decydujący o tym, jakie
+procesu uczenia mają dla mnie niebagatelne znaczenie są to: sposób reprezentacji obserwacji, decydujący o tym, jakie
 informacje trafiają na wejście agenta, oraz konstrukcja funkcji nagrody,
-przekształcająca finansowy wynik rozdania w sygnał uczący. To na analizie tych dwóch elementach
+przekształcająca finansowy wynik rozdania w sygnał uczący. To na analizie tych dwóch elementów
 skupiam się w niniejszej pracy.
 
 \section{Modelowanie UTH jako procesu decyzyjnego}
