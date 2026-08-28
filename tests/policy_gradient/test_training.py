@@ -156,6 +156,15 @@ def test_training_optimizes_partial_final_batch() -> None:
     assert result.optimizer_updates == 3
 
     assert [
+        stats.update
+        for stats in result.update_stats
+    ] == [
+        1,
+        2,
+        3,
+    ]
+
+    assert [
         stats.batch_size
         for stats in result.update_stats
     ] == [

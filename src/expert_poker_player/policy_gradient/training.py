@@ -383,8 +383,12 @@ def _finalize_batch(
         for trajectory in trajectories
     ]
 
+    completed_updates = (
+        optimizer_updates + 1
+    )
+
     stats = PolicyGradientUpdateStats(
-        update=optimizer_updates,
+        update=completed_updates,
         first_episode=first_episode,
         last_episode=last_episode,
         batch_size=len(
@@ -406,7 +410,7 @@ def _finalize_batch(
         ),
     )
 
-    return stats, optimizer_updates + 1
+    return stats, completed_updates
 
 
 def _maybe_capture_probe_snapshot(
