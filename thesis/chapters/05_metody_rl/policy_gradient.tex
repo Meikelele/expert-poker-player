@@ -1,0 +1,96 @@
+\section{Policy Gradient -- REINFORCE}
+\label{sec:policy-gradient}
+
+Drugim algorytmem uczenia przez wzmacnianie, który zaimplementowałem,
+jest Policy Gradient oparty na metodzie REINFORCE
+\cite{sutton_barto_rl}. W przeciwieństwie do DQN model nie estymuje
+wartości poszczególnych akcji. Sieć neuronowa bezpośrednio definiuje
+politykę, czyli rozkład prawdopodobieństwa akcji dla otrzymanego stanu.
+
+Podobnie jak w przypadku DQN agent otrzymuje wyłącznie
+\texttt{UTHObservation}. Dzięki temu podczas podejmowania decyzji
+nie ma dostępu do kart krupiera ani innych informacji ukrytych
+w pełnym stanie środowiska.
+
+\subsection{Sieć polityki i wybór akcji}
+
+Sieć polityki przyjmuje wektor utworzony przez wybrany
+\texttt{StateEncoder}. Liczba wejść wynosi więc 373 dla State A
+oraz 393 dla State B. Zastosowałem dwie warstwy ukryte po
+256 neuronów z funkcją aktywacji ReLU oraz warstwę wyjściową
+o sześciu neuronach odpowiadających wszystkim akcjom.
+
+Sieć zwraca surowe wartości, czyli logity. Przed utworzeniem
+rozkładu prawdopodobieństwa maskuję akcje niedozwolone w aktualnej
+fazie rozdania. Dla legalnych akcji prawdopodobieństwa wyznaczam
+za pomocą funkcji softmax.
+
+Podczas treningu agent losuje akcję zgodnie z otrzymanym rozkładem.
+Pozwala to na naturalną eksplorację bez stosowania osobnego
+mechanizmu epsilon-greedy. Podczas ewaluacji wykorzystuję natomiast
+politykę deterministyczną i wybieram legalną akcję o największym
+prawdopodobieństwie.
+
+\subsection{Uczenie metodą REINFORCE}
+
+Jedno rozdanie Ultimate Texas Hold'em traktuję jako jeden epizod.
+Dla każdej decyzji zapisuję zakodowany stan, wybraną akcję,
+maskę akcji legalnych oraz otrzymaną nagrodę. Po zakończeniu
+epizodu wyznaczam zwrot dla każdego kroku
+
+\begin{equation}
+    G_t =
+    \sum_{k=t}^{T}
+    \gamma^{k-t} r_k.
+\end{equation}
+
+W eksperymentach przyjąłem $\gamma = 1$, ponieważ optymalizowanym
+celem jest wynik finansowy całego rozdania, bez preferowania nagrody
+otrzymanej we wcześniejszym punkcie decyzji.
+
+Parametry polityki aktualizuję zgodnie z klasycznym estymatorem
+REINFORCE. Dla batcha zawierającego $B$ kompletnych epizodów
+minimalizowana funkcja straty ma postać
+
+\begin{equation}
+    L(\theta)
+    =
+    -\frac{1}{B}
+    \sum_{i=1}^{B}
+    \sum_t
+    G_{i,t}
+    \log
+    \pi_\theta(a_{i,t} \mid s_{i,t}).
+\end{equation}
+
+Zwroty obliczam niezależnie dla każdego epizodu, a parametry sieci
+pozostają niezmienione podczas zbierania całego batcha. Dopiero po
+zebraniu 32 rozdań wykonuję jeden krok optymalizatora Adam.
+Takie podejście ogranicza wariancję aktualizacji w porównaniu
+z wykonywaniem osobnego kroku optymalizacji po każdym rozdaniu.
+
+Domyślna konfiguracja wykorzystuje learning rate równy
+$0{,}001$, batch size równy 32 oraz warstwy ukryte
+$(256,256)$. Nie stosuję sieci wartości, baseline'u, regularyzacji
+entropii ani normalizacji zwrotów. Pozostawiam w ten sposób
+REINFORCE jako względnie prostą metodę Policy Gradient, którą
+mogę bezpośrednio porównać z DQN.
+
+\subsection{Reprodukowalność i diagnostyka}
+
+Z jednego głównego seeda deterministycznie wyprowadzam osobne
+seedy dla inicjalizacji sieci, środowiska oraz losowania akcji.
+Pozwala mi to powtarzać trening bez sprzęgania źródeł losowości.
+
+Podczas treningu zapisuję między innymi wynik epizodu, liczbę
+wykonanych kroków, wartość funkcji straty i normę gradientu.
+Dodatkowo dla stałego zestawu obserwacji kontrolnych rejestruję
+rozkład prawdopodobieństwa akcji oraz znormalizowaną entropię
+polityki. Wykorzystuję te dane do oceny przebiegu uczenia
+i wykrywania sytuacji, w których polityka zbyt szybko koncentruje
+się na pojedynczej akcji.
+
+Wyuczoną sieć mogę zapisać jako checkpoint wraz z konfiguracją
+treningu, wariantem reprezentacji stanu oraz rodzajem funkcji
+nagrody. Dzięki temu zapisany model można później jednoznacznie
+odtworzyć i wykorzystać podczas ewaluacji.

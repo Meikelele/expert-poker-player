@@ -1,410 +1,70 @@
 \section{Deep Q-Network}
 \label{sec:dqn}
 
-Pierwszym algorytmem uczenia przez wzmacnianie zastosowanym w pracy
-jest Deep Q-Network, dalej określany skrótem DQN. Metoda wykorzystuje
-sieć neuronową jako aproksymator funkcji wartości akcji
-\(Q(s,a)\). Dla otrzymanej obserwacji model wyznacza wartość
-oczekiwanego zdyskontowanego zwrotu dla każdej dostępnej akcji
-\cite{mnih_dqn_2015,sutton_barto_rl}.
+Pierwszym zastosowanym algorytmem jest Deep Q-Network
+\cite{mnih_dqn_2015,sutton_barto_rl}. Sieć neuronowa aproksymuje
+funkcję wartości akcji $Q(s,a)$ i dla otrzymanego stanu zwraca
+wartość dla każdej z sześciu możliwych decyzji.
 
-W przeciwieństwie do reprezentacji tablicowej nie jest konieczne
-przechowywanie osobnej wartości \(Q\) dla każdego możliwego stanu.
-Sieć neuronowa umożliwia generalizację pomiędzy obserwacjami
-posiadającymi podobne cechy. Jest to szczególnie istotne w badanym
-środowisku, gdzie liczba możliwych kombinacji kart oraz etapów
-rozdania uniemożliwia praktyczne zastosowanie pełnej reprezentacji
-tablicowej.
-
-Implementacja DQN korzysta wyłącznie z obiektu
-\texttt{UTHObservation}. Pełny stan środowiska, w szczególności
-karty krupiera, karty spalone oraz przyszła kolejność talii,
-nie są przekazywane do modelu.
-
-\subsection{Architektura sieci Q}
-\label{subsec:dqn-network}
-
-Sieć wartości została zaimplementowana w klasie
-\texttt{QNetwork}. Liczba neuronów wejściowych zależy od wybranego
-wariantu reprezentacji stanu. Dla State A wynosi ona 373,
-natomiast dla State B wynosi 393.
-
-Domyślna architektura zawiera dwie warstwy ukryte po 256 neuronów.
-Po każdej warstwie ukrytej zastosowano funkcję aktywacji ReLU.
-Warstwa wyjściowa posiada sześć neuronów odpowiadających wszystkim
-wartościom typu \texttt{Action}.
-
-Architekturę można zatem przedstawić jako
+Model przyjmuje reprezentację State A lub State B. Zastosowano dwie
+warstwy ukryte po 256 neuronów z funkcją aktywacji ReLU oraz warstwę
+wyjściową o sześciu neuronach:
 
 \begin{equation}
     d_{\mathrm{state}}
-    \rightarrow
-    256
-    \rightarrow
-    256
-    \rightarrow
-    6,
-\end{equation}
-
-gdzie
-
-\begin{equation}
-    d_{\mathrm{state}}
-    \in
-    \{373,393\}.
-\end{equation}
-
-Dla stanu \(s_t\) sieć zwraca wektor
-
-\begin{equation}
-    Q_{\theta}(s_t)
-    =
-    \left[
-        Q_{\theta}(s_t,a_1),
-        \ldots,
-        Q_{\theta}(s_t,a_6)
-    \right],
-\end{equation}
-
-gdzie \(\theta\) oznacza parametry sieci.
-
-\subsection{Stałe odwzorowanie akcji}
-\label{subsec:dqn-action-mapping}
-
-W implementacji przyjęto jedno stałe odwzorowanie wartości
-\texttt{Action} na indeksy wyjścia sieci neuronowej.
-
-Kolejność obejmuje akcje
-
-\begin{equation}
-    \left[
-        \mathrm{CHECK},
-        \mathrm{BET\_4X},
-        \mathrm{BET\_3X},
-        \mathrm{BET\_2X},
-        \mathrm{BET\_1X},
-        \mathrm{FOLD}
-    \right].
-\end{equation}
-
-Stałość odwzorowania jest wymagana zarówno podczas wyboru akcji,
-jak i podczas zapisu przejść do bufora doświadczeń oraz
-wyznaczania wartości używanej w funkcji straty.
-
-\subsection{Maskowanie nielegalnych akcji}
-\label{subsec:dqn-action-masking}
-
-Nie wszystkie sześć akcji jest dostępnych w każdym punkcie
-decyzyjnym Ultimate Texas Hold'em. Z tego względu samo wybranie
-największej wartości spośród wszystkich wyjść sieci mogłoby
-prowadzić do decyzji niedozwolonej przez zasady środowiska.
-
-Dla każdej obserwacji tworzona jest maska
-
-\begin{equation}
-    m_t
-    \in
-    \{0,1\}^{6},
-\end{equation}
-
-gdzie wartość \(1\) oznacza akcję legalną.
-
-Przed wyznaczeniem maksimum wartości odpowiadające akcjom
-niedozwolonym są zastępowane wartością
-\(-\infty\). W efekcie
-
-\begin{equation}
-    a_t
-    =
-    \operatorname*{arg\,max}_{a \in A(s_t)}
-    Q_{\theta}(s_t,a),
-\end{equation}
-
-gdzie \(A(s_t)\) oznacza zbiór legalnych akcji.
-
-Maskowanie wykorzystywane jest w dwóch niezależnych miejscach.
-Pierwszym jest wybór działania przez agenta. Drugim jest
-obliczanie celu Bellmana dla następnego stanu.
-
-Drugie zastosowanie jest szczególnie istotne, ponieważ bez niego
-algorytm mógłby propagować podczas uczenia wysoką wartość
-\(Q\) przypisaną akcji, której wykonanie w danym stanie
-nie jest możliwe.
-
-\subsection{Strategia epsilon-greedy}
-\label{subsec:dqn-epsilon-greedy}
-
-Podczas treningu zastosowano strategię eksploracji
-epsilon-greedy. Z prawdopodobieństwem \(\epsilon\) agent wybiera
-losową akcję spośród akcji legalnych. W pozostałych przypadkach
-wybierana jest legalna akcja o największej wartości przewidywanej
-przez sieć Q.
-
-Prawdopodobieństwo eksploracji jest zmniejszane liniowo zgodnie
-z zależnością
-
-\begin{equation}
-    \epsilon_t
-    =
-    \epsilon_{\mathrm{start}}
-    +
-    \left(
-        \epsilon_{\mathrm{end}}
-        -
-        \epsilon_{\mathrm{start}}
-    \right)
-    \min
-    \left(
-        \frac{t}{T_{\mathrm{decay}}},
-        1
-    \right).
-\end{equation}
-
-W konfiguracji bazowej przyjęto
-
-\begin{equation}
-    \epsilon_{\mathrm{start}} = 1,
+    \rightarrow 256
+    \rightarrow 256
+    \rightarrow 6,
     \qquad
-    \epsilon_{\mathrm{end}} = 0{,}05.
+    d_{\mathrm{state}} \in \{373,393\}.
 \end{equation}
 
-Po osiągnięciu końca harmonogramu wartość epsilon pozostaje równa
-\(\epsilon_{\mathrm{end}}\).
+Nie wszystkie akcje są legalne w każdej fazie rozdania. Przed
+wyborem decyzji wartości odpowiadające akcjom niedozwolonym są
+maskowane. To samo ograniczenie stosowane jest podczas wyznaczania
+celu dla następnego stanu.
 
-Podczas ewaluacji eksploracja zostaje całkowicie wyłączona przez
-ustawienie
+Podczas treningu wykorzystano strategię epsilon-greedy. Agent
+początkowo często wybiera losowe legalne akcje, a wraz z kolejnymi
+krokami prawdopodobieństwo eksploracji jest liniowo zmniejszane
+z $1{,}0$ do $0{,}05$. Podczas ewaluacji eksploracja jest wyłączona
+i wybierana jest akcja o największej przewidywanej wartości.
 
-\begin{equation}
-    \epsilon = 0.
-\end{equation}
+\subsection{Uczenie sieci Q}
 
-Oceniana jest więc deterministyczna polityka zachłanna wynikająca
-z wyuczonych wartości Q.
+Przejścia pomiędzy stanami zapisywane są w buforze experience replay.
+Do aktualizacji sieci losowany jest minibatch wcześniejszych
+doświadczeń. Oprócz aktualizowanej sieci Q utrzymywana jest osobna
+sieć docelowa, której parametry są okresowo synchronizowane.
 
-\subsection{Bufor doświadczeń}
-\label{subsec:dqn-replay-buffer}
-
-DQN wykorzystuje mechanizm experience replay
-\cite{mnih_dqn_2015}. Każda interakcja ze środowiskiem jest
-zapisywana jako przejście
-
-\begin{equation}
-    e_t
-    =
-    \left(
-        s_t,
-        a_t,
-        r_t,
-        s_{t+1},
-        d_t,
-        m_{t+1}
-    \right),
-\end{equation}
-
-gdzie \(d_t\) określa, czy krok zakończył epizod, natomiast
-\(m_{t+1}\) jest maską legalnych akcji następnej obserwacji.
-
-Dla przejścia terminalnego następny stan oraz następna maska
-nie występują. Zapobiega to przypadkowemu wykonywaniu bootstrapu
-po zakończeniu rozdania.
-
-Bufor posiada ograniczoną pojemność. Po jej osiągnięciu najstarsze
-przejścia są zastępowane nowymi. Minibatch jest losowany bez
-zwracania za pomocą niezależnego generatora liczb pseudolosowych.
-
-\subsection{Sieć docelowa i cel Bellmana}
-\label{subsec:dqn-bellman-target}
-
-W implementacji utrzymywane są dwie sieci o identycznej
-architekturze. Pierwsza z nich, określana jako policy network,
-jest aktualizowana przez optymalizator. Druga, target network,
-służy do wyznaczania wartości docelowych.
-
-Dla przejścia terminalnego cel ma postać
+Dla przejścia nieterminalnego cel Bellmana ma postać
 
 \begin{equation}
-    y_t = r_t.
-\end{equation}
-
-Nie następuje wtedy bootstrap z następnego stanu.
-
-Dla przejścia nieterminalnego stosowany jest cel
-
-\begin{equation}
-    y_t
-    =
-    r_t
-    +
+    y_t =
+    r_t +
     \gamma
     \max_{a' \in A(s_{t+1})}
     Q_{\theta^-}(s_{t+1},a'),
 \end{equation}
 
-gdzie \(\theta^-\) oznacza parametry sieci docelowej.
-
-Maksimum jest wyznaczane wyłącznie po akcjach legalnych w następnym
-stanie. Obliczenie wartości docelowej wykonywane jest bez śledzenia
-gradientów.
-
-Parametry target network nie są bezpośrednio modyfikowane przez
-optymalizator. Są okresowo zastępowane parametrami policy network.
-
-\subsection{Funkcja straty i optymalizacja}
-\label{subsec:dqn-optimization}
-
-Dla każdego przejścia policy network wyznacza wartości wszystkich
-akcji, lecz funkcja straty wykorzystuje jedynie wartość odpowiadającą
-akcji faktycznie wykonanej w danym stanie:
+natomiast dla przejścia terminalnego
 
 \begin{equation}
-    Q_{\theta}(s_t,a_t).
+    y_t = r_t.
 \end{equation}
 
-Jako funkcję straty zastosowano Smooth L1 Loss, określaną również
-jako Huber loss:
+Sieć uczona jest poprzez minimalizację funkcji Smooth L1 pomiędzy
+$Q_\theta(s_t,a_t)$ a wartością docelową $y_t$. Do aktualizacji
+parametrów zastosowano optymalizator Adam.
 
-\begin{equation}
-    L_t
-    =
-    \mathcal{L}_{\mathrm{Huber}}
-    \left(
-        Q_{\theta}(s_t,a_t),
-        y_t
-    \right).
-\end{equation}
+Podstawowa konfiguracja wykorzystuje learning rate $0{,}001$,
+$\gamma=0{,}99$, minibatch 64 przejść, bufor 10000 przejść oraz
+synchronizację sieci docelowej co 1000 kroków. Przez pierwsze
+1000 kroków bufor jest jedynie wypełniany.
 
-Parametry policy network są aktualizowane za pomocą optymalizatora
-Adam. Target network nie należy do parametrów przekazywanych
-optymalizatorowi.
-
-\subsection{Przebieg treningu}
-\label{subsec:dqn-training-loop}
-
-Pojedynczy epizod treningowy odpowiada jednemu rozdaniu Ultimate
-Texas Hold'em. Na początku epizodu środowisko generuje nową
-obserwację preflop.
-
-W każdym kroku wykonywana jest następująca sekwencja:
-
-\begin{enumerate}
-    \item zakodowanie bieżącej obserwacji przez wybrany
-          \texttt{StateEncoder},
-    \item ustawienie wartości epsilon wynikającej z aktualnego
-          kroku treningu,
-    \item wybór legalnej akcji przez agenta,
-    \item wykonanie akcji w środowisku,
-    \item wyznaczenie nagrody za pomocą wybranej implementacji
-          \texttt{RewardFunction},
-    \item utworzenie przejścia i zapisanie go w buforze doświadczeń,
-    \item po zakończeniu fazy rozgrzewkowej wylosowanie minibatcha,
-    \item wykonanie kroku optymalizacji,
-    \item okresowa synchronizacja sieci docelowej.
-\end{enumerate}
-
-Proces trwa do osiągnięcia stanu terminalnego, a następnie
-rozpoczynane jest kolejne niezależne rozdanie.
-
-\subsection{Konfiguracja treningu}
-\label{subsec:dqn-training-config}
-
-Parametry treningu są przechowywane w niemutowalnym obiekcie
-\texttt{DQNConfig}. Konfiguracja wykorzystana w pierwszym pilotażowym
-uruchomieniu została przedstawiona w
-tabeli~\ref{tab:dqn-default-config}.
-
-\begin{table}[ht]
-    \centering
-    \caption{Konfiguracja pilotażowego treningu DQN}
-    \label{tab:dqn-default-config}
-    \footnotesize
-    \begin{tabular}{lc}
-        \hline
-        Parametr & Wartość \\
-        \hline
-        Learning rate & \(0{,}001\) \\
-        Gamma & \(0{,}99\) \\
-        Batch size & 64 \\
-        Replay capacity & 10000 \\
-        Warmup steps & 1000 \\
-        Target sync interval & 1000 \\
-        Epsilon start & \(1{,}0\) \\
-        Epsilon end & \(0{,}05\) \\
-        Epsilon decay steps & 10000 \\
-        Warstwy ukryte & \(256,256\) \\
-        Epizody treningowe & 10000 \\
-        \hline
-    \end{tabular}
-\end{table}
-
-Konfiguracja ta służyła do weryfikacji kompletnego procesu treningu
-i nie jest traktowana jako wynik końcowego strojenia hiperparametrów.
-
-\subsection{Reprodukowalność treningu}
-\label{subsec:dqn-reproducibility}
-
-W celu ograniczenia niekontrolowanego sprzężenia różnych źródeł
-losowości z jednego głównego seeda deterministycznie wyprowadzane
-są osobne seedy dla inicjalizacji PyTorch, generowania rozdań,
-strategii epsilon-greedy oraz próbkowania bufora doświadczeń.
-
-Oznacza to, że pobranie próbki z replay buffera nie zmienia
-kolejności przyszłych rozdań, a losowa eksploracja agenta nie
-zużywa liczb pseudolosowych generatora środowiska.
-
-Testy integracyjne potwierdzają, że dla tej samej konfiguracji
-i tego samego głównego seeda dwa krótkie uruchomienia treningowe
-generują identyczne statystyki epizodów oraz identyczne parametry
-policy network w tym samym środowisku wykonawczym.
-
-Nie zakłada się natomiast bitowej identyczności pomiędzy wszystkimi
-platformami sprzętowymi oraz wersjami biblioteki PyTorch.
-
-\subsection{Zapisywanie modeli}
-\label{subsec:dqn-checkpoints}
-
-Wyuczona policy network może zostać zapisana jako checkpoint.
-Oprócz parametrów sieci przechowywane są informacje umożliwiające
-jednoznaczną interpretację modelu:
-
-\begin{itemize}
-    \item wersja formatu checkpointu,
-    \item wymiar wejścia,
-    \item rozmiary warstw ukrytych,
-    \item wariant reprezentacji stanu,
-    \item wariant funkcji nagrody,
-    \item seed treningowy,
-    \item pełna konfiguracja \texttt{DQNConfig}.
-\end{itemize}
-
-Podczas odczytu sprawdzana jest zgodność architektury sieci,
-reprezentacji stanu oraz zapisanej konfiguracji. Checkpoint
-nie zawiera całego obiektu środowiska ani bufora doświadczeń.
-Służy przede wszystkim do odtworzenia wyuczonej polityki
-i przeprowadzenia późniejszej ewaluacji.
-
-\subsection{Macierz wariantów DQN}
-\label{subsec:dqn-variants}
-
-Ponieważ implementacja DQN jest niezależna od konkretnego
-\texttt{StateEncoder} oraz \texttt{RewardFunction}, możliwe jest
-utworzenie czterech wariantów:
-
-\begin{table}[ht]
-    \centering
-    \caption{Warianty DQN wynikające z reprezentacji stanu i funkcji nagrody}
-    \label{tab:dqn-variants}
-    \footnotesize
-    \begin{tabular}{lcc}
-        \hline
-        Wariant & Reprezentacja & Nagroda \\
-        \hline
-        DQN-A-A & State A & Reward A \\
-        DQN-A-B & State A & Reward B \\
-        DQN-B-A & State B & Reward A \\
-        DQN-B-B & State B & Reward B \\
-        \hline
-    \end{tabular}
-\end{table}
-
-Pozwala to analizować wpływ reprezentacji oraz skali sygnału nagrody
-przy zachowaniu tej samej implementacji algorytmu DQN.
+Źródła losowości związane z inicjalizacją sieci, środowiskiem,
+strategią eksploracji i próbkowaniem bufora wykorzystują osobne
+generatory wyprowadzone z głównego seeda eksperymentu. Wyuczone
+parametry sieci wraz z konfiguracją, reprezentacją stanu i wariantem
+nagrody mogą zostać zapisane do checkpointu i później wykorzystane
+do deterministycznej ewaluacji.
