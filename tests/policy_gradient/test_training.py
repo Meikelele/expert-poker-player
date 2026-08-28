@@ -6,6 +6,7 @@ from expert_poker_player.policy_gradient import (
     PolicyGradientTrainingResult,
     train_policy_gradient,
 )
+from expert_poker_player.policy_gradient.network import PolicyNetwork
 from expert_poker_player.rewards import (
     NetProfitReward,
     StakeScaledNetProfitReward,
@@ -184,4 +185,151 @@ def test_training_optimizes_partial_final_batch() -> None:
         (4, 7),
         (8, 9),
     ]
+
+def test_training_notifies_observer_with_completed_episode_count() -> None:
+    config = PolicyGradientConfig(
+        batch_size=2,
+        hidden_sizes=(16,),
+        training_episodes=4,
+        seed=42,
+    )
+
+    completed_episodes: list[int] = []
+
+    def observer(
+        episode: int,
+        network: PolicyNetwork,
+    ) -> None:
+        assert isinstance(
+            network,
+            PolicyNetwork,
+        )
+
+        completed_episodes.append(
+            episode
+        )
+
+    train_policy_gradient(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+        on_episode_completed=observer,
+    )
+
+    assert completed_episodes == [
+        1,
+        2,
+        3,
+        4,
+    ]
+
+def test_pg_observer_runs_after_batch_update() -> None:
+    config = PolicyGradientConfig(
+        learning_rate=1e-3,
+        gamma=1.0,
+        batch_size=2,
+        hidden_sizes=(16,),
+        training_episodes=2,
+        seed=42,
+    )
+
+    observed_parameters: list[
+        tuple[torch.Tensor, ...]
+    ] = []
+
+    def observer(
+        episode: int,
+        network: PolicyNetwork,
+    ) -> None:
+        if episode != 2:
+            return
+
+        observed_parameters.append(
+            tuple(
+                parameter.detach().clone()
+                for parameter in network.parameters()
+            )
+        )
+
+    result = train_policy_gradient(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+        on_episode_completed=observer,
+    )
+
+    assert len(
+        observed_parameters
+    ) == 1
+
+    final_parameters = tuple(
+        parameter.detach().clone()
+        for parameter in result.policy_network.parameters()
+    )
+
+    assert all(
+        torch.equal(
+            observed,
+            final,
+        )
+        for observed, final in zip(
+            observed_parameters[0],
+            final_parameters,
+        )
+    )
+
+def test_pg_final_observer_sees_partial_batch_update() -> None:
+    config = PolicyGradientConfig(
+        learning_rate=1e-3,
+        gamma=1.0,
+        batch_size=4,
+        hidden_sizes=(16,),
+        training_episodes=2,
+        seed=42,
+    )
+
+    observed_parameters: list[
+        tuple[torch.Tensor, ...]
+    ] = []
+
+    def observer(
+        episode: int,
+        network: PolicyNetwork,
+    ) -> None:
+        if episode != 2:
+            return
+
+        observed_parameters.append(
+            tuple(
+                parameter.detach().clone()
+                for parameter in network.parameters()
+            )
+        )
+
+    result = train_policy_gradient(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+        on_episode_completed=observer,
+    )
+
+    assert len(
+        observed_parameters
+    ) == 1
+
+    final_parameters = tuple(
+        parameter.detach().clone()
+        for parameter in result.policy_network.parameters()
+    )
+
+    assert all(
+        torch.equal(
+            observed,
+            final,
+        )
+        for observed, final in zip(
+            observed_parameters[0],
+            final_parameters,
+        )
+    )
 

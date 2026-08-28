@@ -11,6 +11,11 @@ from expert_poker_player.experiments.schedules import (
     build_final_evaluation_schedule,
     build_validation_schedule,
 )
+from expert_poker_player.experiments.periodic_evaluation import (
+    DQNPeriodicEvaluator,
+    PolicyEvaluationSnapshot,
+    PolicyGradientPeriodicEvaluator,
+)
 
 __all__ = [
     "FINAL_TRAINING_SEEDS",
@@ -22,4 +27,7 @@ __all__ = [
     "build_deck_schedule",
     "build_final_evaluation_schedule",
     "build_validation_schedule",
+    "DQNPeriodicEvaluator",
+    "PolicyEvaluationSnapshot",
+    "PolicyGradientPeriodicEvaluator",
 ]

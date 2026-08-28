@@ -67,3 +67,7 @@ _minted-*/
 # Temporary files
 *.tmp
 *.bak
+
+__pycache__/
+*.pyc
+.pytest_cache/

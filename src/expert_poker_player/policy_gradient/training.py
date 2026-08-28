@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from collections.abc import Callable
 
 from expert_poker_player.policy_gradient.agent import (
     PolicyGradientAgent,
@@ -39,6 +40,12 @@ from expert_poker_player.uth import (
     UTHGame,
     UTHObservation,
 )
+
+
+PolicyGradientTrainingObserver = Callable[
+    [int, PolicyNetwork],
+    None,
+]
 
 
 @dataclass(
@@ -103,6 +110,9 @@ def train_policy_gradient(
     config: PolicyGradientConfig,
     probe_states: tuple[ProbeState, ...] | None = None,
     probe_checkpoints: tuple[int, ...] = PROBE_CHECKPOINTS,
+    on_episode_completed: (
+        PolicyGradientTrainingObserver | None
+    ) = None,
 ) -> PolicyGradientTrainingResult:
     """Trenuje politykę REINFORCE w środowisku UTH."""
 
@@ -170,7 +180,7 @@ def train_policy_gradient(
         ProbeSnapshot
     ] = []
 
-    requested_checkpoints = (
+    requested_checkpoints = ( # type: ignore
         frozenset(probe_checkpoints)
         if probe_states
         else frozenset()
@@ -179,7 +189,7 @@ def train_policy_gradient(
     _maybe_capture_probe_snapshot(
         agent=agent,
         probe_states=probe_states,
-        checkpoints=requested_checkpoints,
+        checkpoints=requested_checkpoints, # type: ignore
         update=0,
         snapshots=probe_snapshots,
     )
@@ -284,12 +294,31 @@ def train_policy_gradient(
             _maybe_capture_probe_snapshot(
                 agent=agent,
                 probe_states=probe_states,
-                checkpoints=requested_checkpoints,
+                checkpoints=requested_checkpoints, # type: ignore
                 update=optimizer_updates,
                 snapshots=probe_snapshots,
             )
 
             pending_trajectories.clear()
+
+        is_final_episode = (
+            episode + 1
+            == config.training_episodes
+        )
+
+        has_unflushed_partial_batch = (
+            is_final_episode
+            and bool(pending_trajectories)
+        )
+
+        if (
+            on_episode_completed is not None
+            and not has_unflushed_partial_batch
+        ):
+            on_episode_completed(
+                episode + 1,
+                policy_network,
+            )
 
     if pending_trajectories:
         batch_size = len(
@@ -318,10 +347,16 @@ def train_policy_gradient(
         _maybe_capture_probe_snapshot(
             agent=agent,
             probe_states=probe_states,
-            checkpoints=requested_checkpoints,
+            checkpoints=requested_checkpoints, # type: ignore
             update=optimizer_updates,
             snapshots=probe_snapshots,
         )
+
+        if on_episode_completed is not None:
+            on_episode_completed(
+                config.training_episodes,
+                policy_network,
+            )
 
     return PolicyGradientTrainingResult(
         agent=agent,
