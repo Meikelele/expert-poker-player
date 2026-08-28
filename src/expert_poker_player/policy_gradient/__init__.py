@@ -8,6 +8,9 @@ from expert_poker_player.policy_gradient.trajectory import (
     PolicyStep,
     Trajectory,
 )
+from expert_poker_player.policy_gradient.returns import (
+    compute_discounted_returns,
+)
 
 
 __all__ = [
@@ -15,4 +18,5 @@ __all__ = [
     "PolicyNetwork",
     "PolicyStep",
     "Trajectory",
+    "compute_discounted_returns",
 ]
