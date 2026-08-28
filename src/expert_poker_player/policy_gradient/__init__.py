@@ -22,6 +22,11 @@ from expert_poker_player.policy_gradient.training import (
     PolicyGradientTrainingResult,
     train_policy_gradient,
 )
+from expert_poker_player.policy_gradient.checkpoint import (
+    LoadedPolicyGradientCheckpoint,
+    load_policy_gradient_checkpoint,
+    save_policy_gradient_checkpoint,
+)
 
 
 __all__ = [
@@ -35,4 +40,7 @@ __all__ = [
     "PolicyGradientEpisodeStats",
     "PolicyGradientTrainingResult",
     "train_policy_gradient",
+    "LoadedPolicyGradientCheckpoint",
+    "load_policy_gradient_checkpoint",
+    "save_policy_gradient_checkpoint",
 ]
