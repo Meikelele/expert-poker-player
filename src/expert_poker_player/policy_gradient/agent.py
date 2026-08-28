@@ -105,6 +105,68 @@ class PolicyGradientAgent:
                 "for a terminal observation"
             )
 
+        probabilities = self._masked_action_probabilities(
+            observation
+        )
+
+        if self._deterministic:
+            action_index = int(
+                torch.argmax(
+                    probabilities
+                ).item()
+            )
+
+            return action_from_index(
+                action_index
+            )
+
+        return self._sample_action(
+            probabilities,
+            observation,
+        )
+
+    def action_probabilities(
+        self,
+        observation: UTHObservation,
+    ) -> tuple[float, ...]:
+        """
+        Zwraca maskowany rozkład prawdopodobieństwa akcji.
+
+        Metoda diagnostyczna używana do inspekcji polityki, niezależna
+        od trybu `deterministic`. Nielegalne akcje mają
+        prawdopodobieństwo dokładnie 0.0.
+        """
+
+        if not isinstance(
+            observation,
+            UTHObservation,
+        ):  # type: ignore
+            raise TypeError(
+                "observation must be an instance "
+                "of UTHObservation"
+            )
+
+        if observation.terminated:
+            raise ValueError(
+                "cannot compute action probabilities "
+                "for a terminal observation"
+            )
+
+        probabilities = self._masked_action_probabilities(
+            observation
+        )
+
+        return tuple(
+            float(value)
+            for value in probabilities.detach().cpu().tolist()  # type: ignore[reportUnknownMemberType]
+        )
+
+    def _masked_action_probabilities(
+        self,
+        observation: UTHObservation,
+    ) -> torch.Tensor:
+        """Liczy maskowany softmax logitów sieci dla obserwacji."""
+
         state = self._state_encoder.encode(
             observation
         )
@@ -134,27 +196,12 @@ class PolicyGradientAgent:
                 action_mask,
             )
 
-            if self._deterministic:
-                action_index = int(
-                    torch.argmax(
-                        masked_logits,
-                        dim=1,
-                    ).item()
-                )
-
-                return action_from_index(
-                    action_index
-                )
-
             probabilities = torch.softmax(
                 masked_logits,
                 dim=1,
             ).squeeze(0)
 
-        return self._sample_action(
-            probabilities,
-            observation,
-        )
+        return probabilities
 
     def _sample_action(
         self,

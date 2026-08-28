@@ -69,14 +69,20 @@ def test_loss_matches_single_step_reinforce_objective() -> None:
         )
     )
 
-    loss = optimizer.optimize(
+    result = optimizer.optimize(
         trajectory
     )
 
-    assert loss == pytest.approx(
+    assert result.loss == pytest.approx(
         2.0 * math.log(3.0),
         rel=1e-5,
     )
+
+    assert math.isfinite(
+        result.gradient_norm
+    )
+
+    assert result.gradient_norm >= 0.0
 
 def test_loss_uses_probability_of_taken_action() -> None:
     network = PolicyNetwork(
@@ -126,11 +132,11 @@ def test_loss_uses_probability_of_taken_action() -> None:
         )
     )
 
-    loss = optimizer.optimize(
+    result = optimizer.optimize(
         trajectory
     )
 
-    assert loss == pytest.approx(
+    assert result.loss == pytest.approx(
         2.0 * math.log(2.0),
         rel=1e-5,
     )
@@ -244,11 +250,11 @@ def test_loss_uses_discounted_returns() -> None:
         )
     )
 
-    loss = optimizer.optimize(
+    result = optimizer.optimize(
         trajectory
     )
 
-    assert loss == pytest.approx(
+    assert result.loss == pytest.approx(
         3.0 * math.log(3.0),
         rel=1e-5,
     )
@@ -313,11 +319,11 @@ def test_batch_loss_is_averaged_over_episodes() -> None:
         ),
     )
 
-    loss = optimizer.optimize_batch(
+    result = optimizer.optimize_batch(
         trajectories
     )
 
-    assert loss == pytest.approx(
+    assert result.loss == pytest.approx(
         2.0 * math.log(3.0),
         rel=1e-5,
     )
@@ -358,11 +364,11 @@ def test_discounted_returns_do_not_cross_episode_boundaries() -> None:
         ),
     )
 
-    loss = optimizer.optimize_batch(
+    result = optimizer.optimize_batch(
         trajectories
     )
 
-    assert loss == pytest.approx(
+    assert result.loss == pytest.approx(
         (
             1.0
             + 2.0

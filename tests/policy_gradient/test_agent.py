@@ -8,6 +8,9 @@ from expert_poker_player.policy_gradient import (
     PolicyGradientAgent,
     PolicyNetwork,
 )
+from expert_poker_player.rl.actions import (
+    action_from_index,
+)
 from expert_poker_player.state_representation import (
     FEATURE_STATE_SIZE,
     RAW_STATE_SIZE,
@@ -239,6 +242,98 @@ def test_rejects_terminal_observation() -> None:
         agent.select_action(
             result.observation
         )
+
+def test_action_probabilities_sums_to_one_over_legal_actions() -> None:
+    agent = PolicyGradientAgent(
+        policy_network=PolicyNetwork(
+            input_size=RAW_STATE_SIZE
+        ),
+        state_encoder=RawStateEncoder(),
+    )
+
+    observation = UTHGame(
+        seed=1
+    ).reset()
+
+    probabilities = agent.action_probabilities(
+        observation
+    )
+
+    assert len(probabilities) == 6
+
+    for action_index, probability in enumerate(
+        probabilities
+    ):
+        if action_from_index(action_index) not in observation.legal_actions:
+            assert probability == 0.0
+
+    assert sum(probabilities) == pytest.approx(
+        1.0,
+        rel=1e-5,
+    )
+
+
+def test_action_probabilities_independent_of_deterministic_mode() -> None:
+    network = PolicyNetwork(
+        input_size=RAW_STATE_SIZE
+    )
+
+    observation = UTHGame(
+        seed=1
+    ).reset()
+
+    deterministic_agent = PolicyGradientAgent(
+        policy_network=network,
+        state_encoder=RawStateEncoder(),
+        deterministic=True,
+    )
+
+    stochastic_agent = PolicyGradientAgent(
+        policy_network=network,
+        state_encoder=RawStateEncoder(),
+        deterministic=False,
+        seed=1,
+    )
+
+    assert (
+        deterministic_agent.action_probabilities(
+            observation
+        )
+        == stochastic_agent.action_probabilities(
+            observation
+        )
+    )
+
+
+def test_action_probabilities_rejects_terminal_observation() -> None:
+    game = UTHGame(
+        seed=1
+    )
+
+    game.reset()
+
+    result = game.step(
+        Action.BET_4X
+    )
+
+    agent = PolicyGradientAgent(
+        policy_network=PolicyNetwork(
+            input_size=RAW_STATE_SIZE
+        ),
+        state_encoder=RawStateEncoder(),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "cannot compute action probabilities "
+            "for a terminal observation"
+        ),
+    ):
+        agent.action_probabilities(
+            result.observation
+        )
+
 
 def test_rejects_mismatched_network_input_size() -> None:
     with pytest.raises(

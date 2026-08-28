@@ -15,11 +15,18 @@ from expert_poker_player.evaluation import (
 )
 from expert_poker_player.policy_gradient import (
     PolicyGradientConfig,
+    ProbeState,
+    UntrainedControlResult,
+    generate_probe_states,
+    run_untrained_control,
     train_policy_gradient,
 )
 from expert_poker_player.rewards import (
     RewardType,
     build_reward_function,
+)
+from expert_poker_player.rl.actions import (
+    ACTION_ORDER,
 )
 from expert_poker_player.state_representation import (
     StateRepresentation,
@@ -42,6 +49,10 @@ DEFAULT_EVALUATION_ROUNDS = 10_000
 
 DEFAULT_TRAINING_SEED = 20260823
 DEFAULT_DECK_SCHEDULE_SEED = 20260815
+
+# Wspólny, niezależny od reprezentacji stanu i funkcji nagrody zestaw
+# sond, żeby te same 100 rozdań można było porównywać między wariantami.
+PROBE_STATES: tuple[ProbeState, ...] = generate_probe_states()
 
 
 @dataclass(
@@ -163,6 +174,41 @@ def metrics_to_dict(
                 action
             ]
             for action in Action
+        },
+    }
+
+
+def untrained_control_to_dict(
+    *,
+    control: UntrainedControlResult,
+    input_size: int,
+) -> dict[str, object]:
+    return {
+        "input_size": input_size,
+        "action_counts": {
+            action.name: control.action_counts[
+                action
+            ]
+            for action in Action
+        },
+        "mean_max_probability": (
+            control.mean_max_probability
+        ),
+        "mean_normalized_entropy": (
+            sum(
+                snapshot.normalized_entropy
+                for snapshot in control.probe_snapshots
+            )
+            / len(
+                control.probe_snapshots
+            )
+        ),
+        "mean_preflop_action_probabilities": {
+            action.value: probability
+            for action, probability in zip(
+                ACTION_ORDER,
+                control.mean_preflop_probabilities,
+            )
         },
     }
 
@@ -349,10 +395,29 @@ def main() -> None:
         / f"{prefix}_updates.csv"
     )
 
+    policy_diagnostics_path = (
+        args.output_dir
+        / f"{prefix}_policy_diagnostics.csv"
+    )
+
+    untrained_control_path = (
+        args.output_dir
+        / f"{prefix}_untrained_control.json"
+    )
+
     summary_variants: dict[
         str,
         object,
     ] = {}
+
+    untrained_control_variants: dict[
+        str,
+        object,
+    ] = {}
+
+    computed_state_representations: set[
+        StateRepresentation
+    ] = set()
 
     with training_path.open(
         "w",
@@ -366,7 +431,11 @@ def main() -> None:
         "w",
         encoding="utf-8",
         newline="",
-    ) as updates_file:
+    ) as updates_file, policy_diagnostics_path.open(
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as policy_diagnostics_file:
         training_writer = csv.writer(
             training_file
         )
@@ -377,6 +446,10 @@ def main() -> None:
 
         updates_writer = csv.writer(
             updates_file
+        )
+
+        policy_diagnostics_writer = csv.writer(
+            policy_diagnostics_file
         )
 
         training_writer.writerow(
@@ -399,6 +472,11 @@ def main() -> None:
                 "last_episode",
                 "batch_size",
                 "loss",
+                "gradient_norm",
+                "cumulative_steps",
+                "mean_episode_length",
+                "mean_abs_return",
+                "max_abs_return",
             ]
         )
 
@@ -415,11 +493,54 @@ def main() -> None:
             ]
         )
 
+        policy_diagnostics_writer.writerow(
+            [
+                "state_representation",
+                "reward_type",
+                "training_seed",
+                "update",
+                "phase",
+                "probe_index",
+                "normalized_entropy",
+                "max_probability",
+                *(
+                    f"prob_{action.value}"
+                    for action in ACTION_ORDER
+                ),
+            ]
+        )
+
         for variant in VARIANTS:
             print()
             print(
                 f"Training {variant.name}"
             )
+
+            if (
+                variant.state_representation
+                not in computed_state_representations
+            ):
+                computed_state_representations.add(
+                    variant.state_representation
+                )
+
+                control = run_untrained_control(
+                    state_encoder=build_state_encoder(
+                        variant.state_representation
+                    ),
+                    config=training_config,
+                    evaluation_config=evaluation_config,
+                    probe_states=PROBE_STATES,
+                )
+
+                untrained_control_variants[
+                    variant.state_representation.value
+                ] = untrained_control_to_dict(
+                    control=control,
+                    input_size=build_state_encoder(
+                        variant.state_representation
+                    ).output_size,
+                )
 
             training_result = (
                 train_policy_gradient(
@@ -430,6 +551,7 @@ def main() -> None:
                         variant.reward_type
                     ),
                     config=training_config,
+                    probe_states=PROBE_STATES,
                 )
             )
 
@@ -455,6 +577,26 @@ def main() -> None:
                         update.last_episode,
                         update.batch_size,
                         update.loss,
+                        update.gradient_norm,
+                        update.cumulative_steps,
+                        update.mean_episode_length,
+                        update.mean_abs_return,
+                        update.max_abs_return,
+                    ]
+                )
+
+            for snapshot in training_result.probe_snapshots:
+                policy_diagnostics_writer.writerow(
+                    [
+                        variant.state_representation.value,
+                        variant.reward_type.value,
+                        args.training_seed,
+                        snapshot.update,
+                        snapshot.phase.value,
+                        snapshot.probe_index,
+                        snapshot.normalized_entropy,
+                        snapshot.max_probability,
+                        *snapshot.probabilities,
                     ]
                 )
 
@@ -533,6 +675,9 @@ def main() -> None:
         "experiment": "policy_gradient_pilot",
         "algorithm": "reinforce",
         "training_seed": args.training_seed,
+        "randomness_design": (
+            "common_training_seed_across_variants"
+        ),
         "training_config": (
             training_config.to_dict()
         ),
@@ -559,11 +704,42 @@ def main() -> None:
 
         summary_file.write("\n")
 
+    untrained_control: dict[str, object] = {
+        "training_seed": args.training_seed,
+        "deck_schedule_seed": args.deck_seed,
+        "evaluation_round_count": (
+            evaluation_config.round_count
+        ),
+        "probe_count": len(
+            {
+                probe.probe_index
+                for probe in PROBE_STATES
+            }
+        ),
+        "variants": untrained_control_variants,
+    }
+
+    with untrained_control_path.open(
+        "w",
+        encoding="utf-8",
+    ) as untrained_control_file:
+        json.dump(
+            untrained_control,
+            untrained_control_file,
+            indent=2,
+            sort_keys=True,
+        )
+
+        untrained_control_file.write("\n")
+
     print()
     print("Saved results")
-    print(f"Summary:  {summary_path}")
-    print(f"Training: {training_path}")
-    print(f"Episodes: {episodes_path}")
+    print(f"Summary:            {summary_path}")
+    print(f"Training:           {training_path}")
+    print(f"Episodes:           {episodes_path}")
+    print(f"Updates:            {updates_path}")
+    print(f"Policy diagnostics: {policy_diagnostics_path}")
+    print(f"Untrained control:  {untrained_control_path}")
 
 
 if __name__ == "__main__":

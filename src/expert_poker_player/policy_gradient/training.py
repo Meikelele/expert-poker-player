@@ -1,7 +1,4 @@
 from dataclasses import dataclass
-import random
-
-import torch
 
 from expert_poker_player.policy_gradient.agent import (
     PolicyGradientAgent,
@@ -9,11 +6,20 @@ from expert_poker_player.policy_gradient.agent import (
 from expert_poker_player.policy_gradient.config import (
     PolicyGradientConfig,
 )
+from expert_poker_player.policy_gradient.diagnostics import (
+    PROBE_CHECKPOINTS,
+    ProbeSnapshot,
+    ProbeState,
+    compute_probe_snapshots,
+)
 from expert_poker_player.policy_gradient.network import (
     PolicyNetwork,
 )
 from expert_poker_player.policy_gradient.optimization import (
     ReinforceOptimizer,
+)
+from expert_poker_player.policy_gradient.seeding import (
+    build_initial_policy_network,
 )
 from expert_poker_player.policy_gradient.trajectory import (
     PolicyStep,
@@ -58,6 +64,11 @@ class PolicyGradientUpdateStats:
     last_episode: int
     batch_size: int
     loss: float
+    gradient_norm: float
+    cumulative_steps: int
+    mean_episode_length: float
+    mean_abs_return: float
+    max_abs_return: float
 
 
 @dataclass(
@@ -77,6 +88,10 @@ class PolicyGradientTrainingResult:
         PolicyGradientUpdateStats,
         ...
     ]
+    probe_snapshots: tuple[
+        ProbeSnapshot,
+        ...
+    ]
     total_steps: int
     optimizer_updates: int
 
@@ -86,6 +101,8 @@ def train_policy_gradient(
     state_encoder: StateEncoder,
     reward_function: RewardFunction,
     config: PolicyGradientConfig,
+    probe_states: tuple[ProbeState, ...] | None = None,
+    probe_checkpoints: tuple[int, ...] = PROBE_CHECKPOINTS,
 ) -> PolicyGradientTrainingResult:
     """Trenuje politykę REINFORCE w środowisku UTH."""
 
@@ -114,32 +131,9 @@ def train_policy_gradient(
             "of PolicyGradientConfig"
         )
 
-    seed_rng = random.Random(
-        config.seed
-    )
-
-    torch_seed = seed_rng.randrange(
-        0,
-        2**63,
-    )
-
-    environment_seed = seed_rng.randrange(
-        0,
-        2**63,
-    )
-
-    agent_seed = seed_rng.randrange(
-        0,
-        2**63,
-    )
-
-    torch.manual_seed(  # pyright: ignore[reportUnknownMemberType]
-        torch_seed
-    )
-
-    policy_network = PolicyNetwork(
-        input_size=state_encoder.output_size,
-        hidden_sizes=config.hidden_sizes,
+    policy_network, seeds = build_initial_policy_network(
+        state_encoder=state_encoder,
+        config=config,
     )
 
     policy_network.train()
@@ -154,11 +148,11 @@ def train_policy_gradient(
         policy_network=policy_network,
         state_encoder=state_encoder,
         deterministic=False,
-        seed=agent_seed,
+        seed=seeds.agent_seed,
     )
 
     game = UTHGame(
-        seed=environment_seed
+        seed=seeds.environment_seed
     )
 
     total_steps = 0
@@ -171,6 +165,24 @@ def train_policy_gradient(
     update_stats: list[
         PolicyGradientUpdateStats
     ] = []
+
+    probe_snapshots: list[
+        ProbeSnapshot
+    ] = []
+
+    requested_checkpoints = (
+        frozenset(probe_checkpoints)
+        if probe_states
+        else frozenset()
+    )
+
+    _maybe_capture_probe_snapshot(
+        agent=agent,
+        probe_states=probe_states,
+        checkpoints=requested_checkpoints,
+        update=0,
+        snapshots=probe_snapshots,
+    )
 
     pending_trajectories: list[
         Trajectory
@@ -250,62 +262,66 @@ def train_policy_gradient(
             len(pending_trajectories)
             == config.batch_size
         ):
-            loss = optimizer.optimize_batch(
-                tuple(
-                    pending_trajectories
-                )
+            stats, optimizer_updates = _finalize_batch(
+                optimizer=optimizer,
+                pending_trajectories=pending_trajectories,
+                optimizer_updates=optimizer_updates,
+                first_episode=(
+                    episode
+                    - len(
+                        pending_trajectories
+                    )
+                    + 1
+                ),
+                last_episode=episode,
+                cumulative_steps=total_steps,
             )
 
             update_stats.append(
-                PolicyGradientUpdateStats(
-                    update=optimizer_updates,
-                    first_episode=(
-                        episode
-                        - len(
-                            pending_trajectories
-                        )
-                        + 1
-                    ),
-                    last_episode=episode,
-                    batch_size=len(
-                        pending_trajectories
-                    ),
-                    loss=loss,
-                )
+                stats
             )
 
-            optimizer_updates += 1
+            _maybe_capture_probe_snapshot(
+                agent=agent,
+                probe_states=probe_states,
+                checkpoints=requested_checkpoints,
+                update=optimizer_updates,
+                snapshots=probe_snapshots,
+            )
 
             pending_trajectories.clear()
 
     if pending_trajectories:
-        loss = optimizer.optimize_batch(
-            tuple(
-                pending_trajectories
-            )
-        )
-
         batch_size = len(
             pending_trajectories
         )
 
-        update_stats.append(
-            PolicyGradientUpdateStats(
-                update=optimizer_updates,
-                first_episode=(
-                    config.training_episodes
-                    - batch_size
-                ),
-                last_episode=(
-                    config.training_episodes
-                    - 1
-                ),
-                batch_size=batch_size,
-                loss=loss,
-            )
+        stats, optimizer_updates = _finalize_batch(
+            optimizer=optimizer,
+            pending_trajectories=pending_trajectories,
+            optimizer_updates=optimizer_updates,
+            first_episode=(
+                config.training_episodes
+                - batch_size
+            ),
+            last_episode=(
+                config.training_episodes
+                - 1
+            ),
+            cumulative_steps=total_steps,
         )
 
-        optimizer_updates += 1
+        update_stats.append(
+            stats
+        )
+
+        _maybe_capture_probe_snapshot(
+            agent=agent,
+            probe_states=probe_states,
+            checkpoints=requested_checkpoints,
+            update=optimizer_updates,
+            snapshots=probe_snapshots,
+        )
 
     return PolicyGradientTrainingResult(
         agent=agent,
@@ -315,6 +331,9 @@ def train_policy_gradient(
         ),
         update_stats=tuple(
             update_stats
+        ),
+        probe_snapshots=tuple(
+            probe_snapshots
         ),
         total_steps=total_steps,
         optimizer_updates=optimizer_updates,
@@ -327,4 +346,86 @@ def _build_action_mask(
     return tuple(
         action in observation.legal_actions
         for action in ACTION_ORDER
+    )
+
+
+def _finalize_batch(
+    *,
+    optimizer: ReinforceOptimizer,
+    pending_trajectories: list[Trajectory],
+    optimizer_updates: int,
+    first_episode: int,
+    last_episode: int,
+    cumulative_steps: int,
+) -> tuple[PolicyGradientUpdateStats, int]:
+    """
+    Wykonuje jeden update REINFORCE i buduje jego statystyki.
+
+    Współdzielona przez pełny batch i końcowy niepełny batch, żeby
+    nie duplikować logiki liczenia statystyk update'u.
+    """
+
+    trajectories = tuple(
+        pending_trajectories
+    )
+
+    result = optimizer.optimize_batch(
+        trajectories
+    )
+
+    episode_lengths = [
+        len(trajectory)
+        for trajectory in trajectories
+    ]
+
+    absolute_returns = [
+        abs(trajectory.total_reward)
+        for trajectory in trajectories
+    ]
+
+    stats = PolicyGradientUpdateStats(
+        update=optimizer_updates,
+        first_episode=first_episode,
+        last_episode=last_episode,
+        batch_size=len(
+            trajectories
+        ),
+        loss=result.loss,
+        gradient_norm=result.gradient_norm,
+        cumulative_steps=cumulative_steps,
+        mean_episode_length=(
+            sum(episode_lengths)
+            / len(episode_lengths)
+        ),
+        mean_abs_return=(
+            sum(absolute_returns)
+            / len(absolute_returns)
+        ),
+        max_abs_return=max(
+            absolute_returns
+        ),
+    )
+
+    return stats, optimizer_updates + 1
+
+
+def _maybe_capture_probe_snapshot(
+    *,
+    agent: PolicyGradientAgent,
+    probe_states: tuple[ProbeState, ...] | None,
+    checkpoints: frozenset[int],
+    update: int,
+    snapshots: list[ProbeSnapshot],
+) -> None:
+    """Dopisuje zrzut sond, jeśli ten update znajduje się w harmonogramie."""
+
+    if not probe_states or update not in checkpoints:
+        return
+
+    snapshots.extend(
+        compute_probe_snapshots(
+            agent=agent,
+            probe_states=probe_states,
+            update=update,
+        )
     )

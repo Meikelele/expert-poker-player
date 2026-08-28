@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import math
 
 import torch
@@ -15,6 +16,39 @@ from expert_poker_player.policy_gradient.trajectory import (
 from expert_poker_player.rl.actions import (
     mask_action_values,
 )
+
+
+@dataclass(
+    frozen=True,
+    slots=True,
+)
+class BatchOptimizationResult:
+    """Wynik jednego update'u REINFORCE dla batcha epizodów."""
+
+    loss: float
+    gradient_norm: float
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.loss,
+            float,
+        ):  # type: ignore
+            raise TypeError(
+                "loss must be a float"
+            )
+
+        if not isinstance(
+            self.gradient_norm,
+            float,
+        ):  # type: ignore
+            raise TypeError(
+                "gradient_norm must be a float"
+            )
+
+        if self.gradient_norm < 0.0:
+            raise ValueError(
+                "gradient_norm cannot be negative"
+            )
 
 
 class ReinforceOptimizer:
@@ -97,7 +131,7 @@ class ReinforceOptimizer:
     def optimize(
         self,
         trajectory: Trajectory,
-    ) -> float:
+    ) -> BatchOptimizationResult:
         """Wykonuje jeden update REINFORCE dla pełnego epizodu."""
 
         if not isinstance(
@@ -121,7 +155,7 @@ class ReinforceOptimizer:
             Trajectory,
             ...,
         ],
-    ) -> float:
+    ) -> BatchOptimizationResult:
         """Wykonuje jeden update REINFORCE dla wielu epizodów naraz."""
 
         if not isinstance(
@@ -255,8 +289,41 @@ class ReinforceOptimizer:
 
         loss.backward() # type: ignore
 
+        gradient_norm = _compute_gradient_norm(
+            self._policy_network
+        )
+
         self._optimizer.step()  # pyright: ignore[reportUnknownMemberType]
 
-        return float(
-            loss.item() # type: ignore
+        return BatchOptimizationResult(
+            loss=float(
+                loss.item() # type: ignore
+            ),
+            gradient_norm=gradient_norm,
         )
+
+
+def _compute_gradient_norm(
+    policy_network: PolicyNetwork,
+) -> float:
+    """
+    Liczy globalną normę L2 gradientów przed krokiem optymalizatora.
+
+    Wywoływana po `loss.backward()`, a przed `optimizer.step()`, żeby
+    opisywać gradienty wyprodukowane przez bieżący batch, zanim Adam
+    zmieni parametry sieci.
+    """
+
+    squared_norm_sum = 0.0
+
+    for parameter in policy_network.parameters():
+        if parameter.grad is None:
+            continue
+
+        squared_norm_sum += float(
+            parameter.grad.detach().norm(2).item() ** 2
+        )
+
+    return math.sqrt(
+        squared_norm_sum
+    )
