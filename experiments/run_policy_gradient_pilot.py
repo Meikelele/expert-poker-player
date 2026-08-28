@@ -35,6 +35,8 @@ DEFAULT_OUTPUT_DIR = Path(
     "experiments/results"
 )
 
+import math
+DEFAULT_LEARNING_RATE = 1e-3
 DEFAULT_TRAINING_EPISODES = 10_000
 DEFAULT_EVALUATION_ROUNDS = 10_000
 
@@ -52,6 +54,7 @@ class PilotArgs:
     training_seed: int
     deck_seed: int
     output_dir: Path
+    learning_rate: float
 
 
 @dataclass(
@@ -116,9 +119,11 @@ def build_evaluation_config(
 def build_training_config(
     *,
     training_episodes: int,
+    learning_rate: float,
     seed: int,
 ) -> PolicyGradientConfig:
     return PolicyGradientConfig(
+        learning_rate=learning_rate,
         training_episodes=training_episodes,
         seed=seed,
     )
@@ -212,6 +217,12 @@ def parse_args() -> PilotArgs:
     )
 
     parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=DEFAULT_LEARNING_RATE,
+    )
+
+    parser.add_argument(
         "--evaluation-rounds",
         type=int,
         default=DEFAULT_EVALUATION_ROUNDS,
@@ -262,6 +273,16 @@ def parse_args() -> PilotArgs:
         namespace.output_dir,
     )
 
+    learning_rate = cast( # type: ignore
+        float,
+        namespace.learning_rate,
+    )
+
+    if not math.isfinite(learning_rate) or learning_rate <= 0.0:
+        parser.error(
+            "--learning-rate must be positive and finite"
+        )
+
     if training_episodes <= 0:
         parser.error(
             "--training-episodes must be positive"
@@ -277,6 +298,7 @@ def parse_args() -> PilotArgs:
         evaluation_rounds=evaluation_rounds,
         training_seed=training_seed,
         deck_seed=deck_seed,
+        learning_rate=learning_rate,
         output_dir=output_dir,
     )
 
@@ -291,6 +313,7 @@ def main() -> None:
 
     training_config = build_training_config(
         training_episodes=args.training_episodes,
+        learning_rate=args.learning_rate,
         seed=args.training_seed,
     )
 
