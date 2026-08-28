@@ -11,6 +11,9 @@ from expert_poker_player.policy_gradient.trajectory import (
 from expert_poker_player.policy_gradient.returns import (
     compute_discounted_returns,
 )
+from expert_poker_player.policy_gradient.optimization import (
+    ReinforceOptimizer,
+)
 
 
 __all__ = [
@@ -19,4 +22,5 @@ __all__ = [
     "PolicyStep",
     "Trajectory",
     "compute_discounted_returns",
+    "ReinforceOptimizer",
 ]
