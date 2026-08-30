@@ -368,24 +368,24 @@ def run_variant(
         spec
     )
 
-    _write_learning_curve(
+    write_learning_curve(
         learning_curve_path,
         result,
     )
 
-    _save_checkpoint(
+    save_checkpoint(
         checkpoint_path,
         variant,
         result,
     )
 
-    _write_summary(
+    write_summary(
         summary_path,
         result,
     )
 
 
-def _write_summary(
+def write_summary(
     path: Path,
     result: ExperimentExecutionResult,
 ) -> None:
@@ -398,7 +398,7 @@ def _write_summary(
     )
 
 
-def _write_learning_curve(
+def write_learning_curve(
     path: Path,
     result: ExperimentExecutionResult,
 ) -> None:
@@ -438,7 +438,7 @@ def _write_learning_curve(
             )
 
 
-def _save_checkpoint(
+def save_checkpoint(
     path: Path,
     variant: ExperimentVariant,
     result: ExperimentExecutionResult,

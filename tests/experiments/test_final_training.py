@@ -11,6 +11,8 @@ from expert_poker_player.experiments import (
     ExperimentRunSpec,
 )
 
+import experiments.run_extended_training as extended_training
+
 
 def test_manifest_defines_exact_final_matrix(
     tmp_path: Path,
@@ -210,19 +212,19 @@ def test_partial_run_is_executed_again(
 
     monkeypatch.setattr(
         final_training,
-        "_write_learning_curve",
+        "write_learning_curve",
         lambda path, result: None, # type: ignore
     )
 
     monkeypatch.setattr(
         final_training,
-        "_save_checkpoint",
+        "save_checkpoint",
         lambda path, variant, result: None, # type: ignore
     )
 
     monkeypatch.setattr(
         final_training,
-        "_write_summary",
+        "write_summary",
         lambda path, result: None, # type: ignore
     )
 
@@ -323,3 +325,68 @@ def test_final_orchestration_runs_exact_matrix(
     ) == 40
 
     assert manifest_write_count == 41
+
+def test_extended_training_uses_selected_variants() -> None:
+    assert len(
+        extended_training.EXTENDED_VARIANTS
+    ) == 2
+
+    dqn_variant = (
+        extended_training.EXTENDED_VARIANTS[0]
+    )
+
+    reinforce_variant = (
+        extended_training.EXTENDED_VARIANTS[1]
+    )
+
+    assert (
+        dqn_variant.algorithm
+        is extended_training.RLAlgorithm.DQN
+    )
+
+    assert (
+        dqn_variant.state_representation
+        is extended_training.StateRepresentation.FEATURES
+    )
+
+    assert (
+        dqn_variant.reward_type
+        is extended_training.RewardType.NET_PROFIT
+    )
+
+    assert (
+        reinforce_variant.algorithm
+        is extended_training.RLAlgorithm.REINFORCE
+    )
+
+    assert (
+        reinforce_variant.state_representation
+        is extended_training.StateRepresentation.FEATURES
+    )
+
+    assert (
+        reinforce_variant.reward_type
+        is extended_training.RewardType.STAKE_SCALED_NET_PROFIT
+    )
+
+
+def test_extended_manifest_defines_ten_runs(
+    tmp_path: Path,
+) -> None:
+    args = (
+        extended_training.ExtendedTrainingArgs(
+            output_dir=tmp_path,
+        )
+    )
+
+    manifest = extended_training.build_manifest(
+        args
+    )
+
+    assert manifest["training_episodes"] == 100_000
+    assert manifest["variant_count"] == 2
+    assert manifest["training_seed_count"] == 5
+    assert manifest["run_count"] == 10
+    assert manifest["completed_runs"] == 0
+    assert manifest["partial_runs"] == 0
+    assert manifest["pending_runs"] == 10
