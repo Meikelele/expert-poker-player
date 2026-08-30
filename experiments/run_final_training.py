@@ -3,6 +3,7 @@ import json
 
 from argparse import ArgumentParser
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import cast
 
@@ -40,6 +41,54 @@ DEFAULT_OUTPUT_DIR = Path(
 @dataclass(frozen=True, slots=True)
 class FinalTrainingArgs:
     output_dir: Path
+
+
+class FinalRunStatus(str, Enum):
+    PENDING = "pending"
+    PARTIAL = "partial"
+    COMPLETED = "completed"
+
+
+@dataclass(frozen=True, slots=True)
+class FinalTrainingManifestEntry:
+    variant: ExperimentVariant
+    training_seed: int
+    run_dir: Path
+    status: FinalRunStatus
+
+    def to_dict(
+        self,
+    ) -> dict[str, object]:
+        return {
+            "variant": {
+                "name": self.variant.name,
+                "algorithm": (
+                    self.variant.algorithm.value
+                ),
+                "state_representation": (
+                    self.variant
+                    .state_representation
+                    .value
+                ),
+                "reward_type": (
+                    self.variant.reward_type.value
+                ),
+            },
+            "training_seed": self.training_seed,
+            "status": self.status.value,
+            "run_dir": str(
+                self.run_dir
+            ),
+            "summary_path": str(
+                self.run_dir / "summary.json"
+            ),
+            "learning_curve_path": str(
+                self.run_dir / "learning_curve.csv"
+            ),
+            "checkpoint_path": str(
+                self.run_dir / "model.pt"
+            ),
+        }
 
 
 def build_validation_checkpoints(
@@ -86,15 +135,161 @@ def build_validation_checkpoints(
     return tuple(checkpoints)
 
 
+def build_run_dir(
+    *,
+    output_dir: Path,
+    variant: ExperimentVariant,
+    training_seed: int,
+) -> Path:
+    return (
+        output_dir
+        / variant.name
+        / f"seed_{training_seed}"
+        / f"episodes_{FINAL_TRAINING_EPISODES}"
+    )
+
+
+def get_run_status(
+    run_dir: Path,
+) -> FinalRunStatus:
+    artifact_paths = (
+        run_dir / "summary.json",
+        run_dir / "learning_curve.csv",
+        run_dir / "model.pt",
+    )
+
+    existing_count = sum(
+        path.exists()
+        for path in artifact_paths
+    )
+
+    if existing_count == 0:
+        return FinalRunStatus.PENDING
+
+    if existing_count == len(
+        artifact_paths
+    ):
+        return FinalRunStatus.COMPLETED
+
+    return FinalRunStatus.PARTIAL
+
+
+def build_manifest(
+    args: FinalTrainingArgs,
+) -> dict[str, object]:
+    entries = tuple(
+        FinalTrainingManifestEntry(
+            variant=variant,
+            training_seed=training_seed,
+            run_dir=build_run_dir(
+                output_dir=args.output_dir,
+                variant=variant,
+                training_seed=training_seed,
+            ),
+            status=get_run_status(
+                build_run_dir(
+                    output_dir=args.output_dir,
+                    variant=variant,
+                    training_seed=training_seed,
+                )
+            ),
+        )
+        for variant in FINAL_VARIANTS
+        for training_seed in FINAL_TRAINING_SEEDS
+    )
+
+    completed_runs = sum(
+        entry.status
+        is FinalRunStatus.COMPLETED
+        for entry in entries
+    )
+
+    partial_runs = sum(
+        entry.status
+        is FinalRunStatus.PARTIAL
+        for entry in entries
+    )
+
+    return {
+        "schema_version": 1,
+        "training_episodes": (
+            FINAL_TRAINING_EPISODES
+        ),
+        "validation_rounds": (
+            FINAL_VALIDATION_ROUNDS
+        ),
+        "validation_interval": (
+            FINAL_VALIDATION_INTERVAL
+        ),
+        "variant_count": len(
+            FINAL_VARIANTS
+        ),
+        "training_seed_count": len(
+            FINAL_TRAINING_SEEDS
+        ),
+        "run_count": len(
+            entries
+        ),
+        "completed_runs": completed_runs,
+        "partial_runs": partial_runs,
+        "pending_runs": (
+            len(entries)
+            - completed_runs
+            - partial_runs
+        ),
+        "runs": [
+            entry.to_dict()
+            for entry in entries
+        ],
+    }
+
+
+def write_manifest(
+    args: FinalTrainingArgs,
+) -> None:
+    args.output_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    manifest_path = (
+        args.output_dir / "manifest.json"
+    )
+
+    temporary_path = (
+        args.output_dir / "manifest.json.tmp"
+    )
+
+    temporary_path.write_text(
+        json.dumps(
+            build_manifest(args),
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    temporary_path.replace(
+        manifest_path
+    )
+
+
 def run_final_training(
     args: FinalTrainingArgs,
 ) -> None:
+    write_manifest(
+        args
+    )
+
     for variant in FINAL_VARIANTS:
         for training_seed in FINAL_TRAINING_SEEDS:
             run_variant(
                 variant=variant,
                 training_seed=training_seed,
                 args=args,
+            )
+
+            write_manifest(
+                args
             )
 
 
@@ -104,11 +299,10 @@ def run_variant(
     training_seed: int,
     args: FinalTrainingArgs,
 ) -> None:
-    run_dir = (
-        args.output_dir
-        / variant.name
-        / f"seed_{training_seed}"
-        / f"episodes_{FINAL_TRAINING_EPISODES}"
+    run_dir = build_run_dir(
+        output_dir=args.output_dir,
+        variant=variant,
+        training_seed=training_seed,
     )
 
     summary_path = (
@@ -124,9 +318,8 @@ def run_variant(
     )
 
     if (
-        summary_path.exists()
-        and learning_curve_path.exists()
-        and checkpoint_path.exists()
+        get_run_status(run_dir)
+        is FinalRunStatus.COMPLETED
     ):
         print(
             f"Skipping {variant.name}, "
