@@ -16,6 +16,13 @@ from expert_poker_player.experiments.periodic_evaluation import (
     PolicyEvaluationSnapshot,
     PolicyGradientPeriodicEvaluator,
 )
+from expert_poker_player.experiments.results import (
+    RESULT_SCHEMA_VERSION,
+    EvaluationRecord,
+    ExperimentRunSummary,
+    LearningCurvePoint,
+    build_learning_curve,
+)
 
 __all__ = [
     "FINAL_TRAINING_SEEDS",
@@ -30,4 +37,9 @@ __all__ = [
     "DQNPeriodicEvaluator",
     "PolicyEvaluationSnapshot",
     "PolicyGradientPeriodicEvaluator",
+    "RESULT_SCHEMA_VERSION",
+    "EvaluationRecord",
+    "ExperimentRunSummary",
+    "LearningCurvePoint",
+    "build_learning_curve",
 ]
