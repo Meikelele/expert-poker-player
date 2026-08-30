@@ -71,3 +71,4 @@ _minted-*/
 __pycache__/
 *.pyc
 .pytest_cache/
+*-SAVE-ERROR

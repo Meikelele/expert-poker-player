@@ -1,0 +1,206 @@
+\chapter{Metodyka eksperymentów}
+\label{chap:eksperymenty}
+
+Celem eksperymentów jest porównanie wpływu zastosowanego algorytmu
+uczenia przez wzmacnianie, reprezentacji stanu oraz funkcji nagrody
+na jakość strategii uzyskiwanej w środowisku Ultimate Texas Hold'em.
+W badaniu wykorzystano dwa algorytmy opisane w rozdziale
+\ref{chap:metody-rl}: DQN oraz REINFORCE.
+
+Eksperyment zaprojektowano w taki sposób, aby poszczególne warianty
+różniły się wyłącznie badanymi elementami. Pozostałe właściwości
+środowiska, sposób generowania rozdań oraz procedura ewaluacji są
+wspólne dla wszystkich konfiguracji.
+
+\section{Macierz eksperymentalna}
+
+Porównanie obejmuje dwa algorytmy uczenia, dwie reprezentacje stanu
+oraz dwie funkcje nagrody. Łącznie daje to osiem konfiguracji:
+
+\begin{equation}
+2 \times 2 \times 2 = 8.
+\end{equation}
+
+Dla każdego algorytmu analizowane są reprezentacje RAW oraz FEATURES.
+Pierwsza z nich zawiera bezpośrednie kodowanie obserwowanych kart,
+fazy rozdania oraz zbioru legalnych akcji. Druga rozszerza tę
+reprezentację o cechy pokerowe wyznaczane na podstawie informacji
+dostępnych graczowi.
+
+W przypadku funkcji nagrody porównywana jest bezpośrednia wartość
+zysku netto z rozdania oraz jej wersja przeskalowana przez maksymalną
+wartość stawki. Skalowanie nie zmienia kierunku optymalizacji i nie
+wprowadza obcinania wartości nagrody.
+
+Ostateczna macierz obejmuje następujące konfiguracje:
+
+\begin{table}[ht]
+    \centering
+    \caption{Konfiguracje wykorzystane w eksperymencie}
+    \label{tab:experiment-configurations}
+    \begin{tabular}{lll}
+        \hline
+        Algorytm & Reprezentacja & Nagroda \\
+        \hline
+        DQN & RAW & zysk netto \\
+        DQN & RAW & zysk netto skalowany \\
+        DQN & FEATURES & zysk netto \\
+        DQN & FEATURES & zysk netto skalowany \\
+        REINFORCE & RAW & zysk netto \\
+        REINFORCE & RAW & zysk netto skalowany \\
+        REINFORCE & FEATURES & zysk netto \\
+        REINFORCE & FEATURES & zysk netto skalowany \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Powtarzalność eksperymentów}
+
+Ze względu na losowy charakter procesu uczenia pojedynczy przebieg
+nie jest wystarczający do wiarygodnej oceny konfiguracji.
+Każdy z ośmiu wariantów jest dlatego trenowany z użyciem pięciu
+niezależnych ziaren losowości. Prowadzi to do wykonania łącznie
+
+\begin{equation}
+8 \times 5 = 40
+\end{equation}
+
+niezależnych procesów treningowych.
+
+Ten sam zestaw pięciu ziaren jest wykorzystywany dla wszystkich
+wariantów. Takie rozwiązanie pozwala ograniczyć wpływ przypadkowych
+różnic wynikających z losowania rozdań i ułatwia porównanie wpływu
+reprezentacji stanu oraz funkcji nagrody.
+
+Oddzielne generatory liczb pseudolosowych wykorzystywane są przez
+środowisko oraz mechanizmy eksploracji agentów. Ewaluacja okresowa
+nie modyfikuje stanu generatorów używanych podczas treningu, dzięki
+czemu jej wykonywanie nie wpływa na dalszy przebieg uczenia.
+
+\section{Budżet treningowy}
+
+Podstawowy budżet treningowy ustalono na 50~000 epizodów dla każdej
+konfiguracji. Wartość tę wybrano na podstawie wcześniejszego
+eksperymentu diagnostycznego, w którym obserwowano zachowanie
+wszystkich ośmiu wariantów podczas treningu.
+
+W przypadku DQN zwiększanie liczby epizodów nie prowadziło do
+systematycznego wzrostu jakości polityki. W części konfiguracji
+obserwowano również pogorszenie wyniku po dłuższym treningu.
+
+W przypadku REINFORCE część przebiegów osiągała stabilne, proste
+polityki, takie jak wybieranie tego samego zakładu dla większości
+stanów. Dodatkowy przebieg diagnostyczny rozszerzony do 100~000
+epizodów wykazał, że dalsze zwiększanie budżetu nie prowadziło do
+trwałej poprawy. Polityka przechodziła pomiędzy różnymi strategiami,
+a następnie ponownie zbliżała się do wcześniej obserwowanego
+rozwiązania.
+
+Z tego powodu przyjęto wspólny budżet 50~000 epizodów dla obu
+algorytmów. Pozwala to również zachować porównywalność kosztu
+uczenia pomiędzy DQN i REINFORCE.
+
+\section{Walidacja okresowa}
+
+W trakcie treningu wykonywana jest okresowa ewaluacja aktualnej
+polityki. Jej celem jest obserwacja procesu uczenia i budowa krzywych
+przedstawiających zależność jakości strategii od liczby wykonanych
+epizodów.
+
+Walidacja wykonywana jest co 4~000 epizodów oraz dodatkowo po
+zakończeniu 50~000 epizodów. Każdy punkt walidacyjny obejmuje
+2~000 rozdań wygenerowanych na podstawie tego samego, ustalonego
+harmonogramu talii.
+
+Zastosowanie wspólnego harmonogramu oznacza, że kolejne wersje
+polityki są oceniane na identycznym zestawie sytuacji pokerowych.
+Zmiana wartości oczekiwanej pomiędzy punktami walidacyjnymi wynika
+więc ze zmiany zachowania agenta, a nie z wykorzystania innego
+zestawu kart.
+
+Podczas walidacji wyłączona jest eksploracja. Agent DQN wybiera
+legalną akcję o najwyższej wartości Q. W przypadku REINFORCE
+wybierana jest legalna akcja o najwyższym prawdopodobieństwie
+zgodnie z aktualną polityką. Pozwala to oceniać deterministyczną
+strategię wynikającą z aktualnego stanu modelu.
+
+Harmonogram używany podczas walidacji jest niezależny od rozdań
+wykorzystywanych w procesie treningowym.
+
+\section{Rozszerzona analiza treningu}
+
+Po wykonaniu podstawowej macierzy eksperymentalnej planowana jest
+dodatkowa analiza długiego treningu. Na podstawie wyników
+walidacyjnych wybrany zostanie jeden wariant DQN oraz jeden wariant
+REINFORCE.
+
+Wybrane konfiguracje zostaną dodatkowo wytrenowane do 100~000
+epizodów. Celem tej części badania nie jest zastąpienie podstawowego
+budżetu 50~000 epizodów ani wyszukiwanie najlepszego chwilowego
+checkpointu. Analiza ma umożliwić ocenę, czy dalszy trening prowadzi
+do trwałej poprawy strategii, stabilizacji polityki lub jej dalszych
+oscylacji.
+
+Wyniki tej części są traktowane jako analiza uzupełniająca i nie
+zmieniają podstawowej macierzy 40 procesów treningowych.
+
+\section{Ewaluacja końcowa}
+
+Po zakończeniu treningu modele są oceniane na oddzielnym,
+nieużywanym wcześniej harmonogramie rozdań. Harmonogram końcowy
+nie jest wykorzystywany podczas treningu, walidacji ani wyboru
+budżetu treningowego.
+
+Końcowa ewaluacja obejmuje 100~000 identycznych rozdań dla każdej
+ocenianej strategii. Na tym samym zbiorze oceniani są również
+RandomAgent oraz RuleBasedAgent. Agenci bazowi nie wymagają procesu
+treningowego, dlatego liczba 100~000 dotyczy w ich przypadku
+wyłącznie liczby rozegranych rund ewaluacyjnych.
+
+Podstawową miarą jakości strategii jest średni zysk netto na jedno
+rozdanie:
+
+\begin{equation}
+EV =
+\frac{1}{N}
+\sum_{i=1}^{N} p_i,
+\end{equation}
+
+gdzie $p_i$ oznacza zysk netto uzyskany w $i$-tym rozdaniu, natomiast
+$N$ oznacza liczbę rozdań ewaluacyjnych.
+
+Oprócz wartości oczekiwanej rejestrowane są odchylenie standardowe
+wyników, błąd standardowy średniej, średnia wartość postawionych
+żetonów, liczności wyników rozdania oraz częstości wyboru
+poszczególnych akcji.
+
+\section{Porównania sparowane}
+
+Wszystkie strategie podczas ewaluacji końcowej rozgrywają ten sam
+uporządkowany zestaw rozdań. Umożliwia to wykorzystanie porównań
+sparowanych.
+
+Dla dwóch porównywanych strategii $A$ oraz $B$ dla każdego rozdania
+wyznaczana jest różnica
+
+\begin{equation}
+d_i = p_{A,i} - p_{B,i}.
+\end{equation}
+
+Średnia różnica wynosi
+
+\begin{equation}
+\bar{d} =
+\frac{1}{N}
+\sum_{i=1}^{N} d_i.
+\end{equation}
+
+Na podstawie rozkładu różnic wyznaczane są również odchylenie
+standardowe, błąd standardowy oraz 95-procentowy przedział ufności.
+Podejście sparowane ogranicza wpływ zmienności wynikającej z
+różnych układów kart, ponieważ obie strategie oceniane są w tych
+samych sytuacjach.
+
+Analiza końcowa obejmuje porównanie algorytmów DQN i REINFORCE,
+wpływu reprezentacji RAW i FEATURES, wpływu zastosowanej funkcji
+nagrody oraz odniesienie uzyskanych wyników do agentów bazowych.
