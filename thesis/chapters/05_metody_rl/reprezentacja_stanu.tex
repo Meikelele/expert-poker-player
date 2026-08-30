@@ -1,40 +1,113 @@
 \section{Reprezentacja stanu}
 \label{sec:reprezentacja-stanu}
+Według Macieja Lewczuka, autora artykułu o uczeniu przez wzmacnianie, stan to
+opis aktualnej sytuacji agenta w środowisku \cite{state_representation}.
 
-W badaniach zastosowano dwa warianty reprezentacji stanu.
-Oba powstają wyłącznie na podstawie obiektu
+W moich rozważaniach zastosowałem dwa warianty funkcji stanu, które nazwałem
+State A i State B. Obie funkcje powstają wyłącznie na podstawie obiektu
 \texttt{UTHObservation}, a więc informacji dostępnych graczowi.
-Karty krupiera oraz pozostałe elementy pełnego stanu środowiska
-nie są przekazywane do modeli.
 
-Pierwszy wariant, dalej określany jako State A, stanowi reprezentację
-surową. Dwie karty prywatne oraz pięć miejsc przeznaczonych na karty
-wspólne kodowane są one-hot w przestrzeni 52 kart. Nieodkryte jeszcze
-karty wspólne reprezentowane są wektorami zerowymi. Do reprezentacji
-dołączono kod aktualnej fazy rozdania oraz maskę sześciu możliwych
-akcji. Łączny wymiar State A wynosi
+\subsection{State A: reprezentacja surowa}
+\label{subsec:state-a}
+
+Pierwszy wariant, który określiłem jako State A, stanowi surowy wektor
+reprezentujący karty. Każda karta jest reprezentowana jako wektor one-hot
+o długości 52.
+
+Kodowanie jednej karty jako one-hot, a nie jako pojedynczej wartości
+porządkowej, wynika z tego, co właściwie koduję. Sama ranga karty ma
+charakter porządkowy i w tej postaci wykorzystuję ją w cechach domenowych
+State B opisanych w podrozdziale~\ref{subsec:state-b}. Tutaj jednak koduję
+całą kartę, czyli konkretną kombinację rangi i koloru, a kolor nie ma w
+pokerze żadnej naturalnej hierarchii. Przypisanie 52 kartom pojedynczych,
+kolejnych numerów mogłoby sugerować sieci nieistniejącą zależność, na przykład
+że dwie karty o bliskich numerach są sobie w jakimś sensie bliskie. Kodowanie
+one-hot tego problemu nie ma, ponieważ każda karta dostaje własną,
+niezależną pozycję w wektorze.
+
+Kodowanie one-hot polega na tym, że każdą wartość ze zbioru możliwych
+wartości reprezentuję jako wektor samych zer z pojedynczą jedynką na
+pozycji odpowiadającej tej konkretnej wartości \cite{one_hot_encoding}.
+A zatem każda karta to 52 liczby, z czego 51 to zera. Jedynka stoi na
+pozycji przypisanej dokładnie tej karcie (np. As pik), jak przedstawiono
+na rysunku~\ref{fig:one-hot-karta}. Więc agentowi dostarczam informacje
+o obecności karty. Nieodkryte karty to wektory zerowe.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={font=\small},
+        cell/.style={draw, minimum width=7mm, minimum height=7mm, inner sep=0pt},
+        hi/.style={cell, very thick}
+    ]
+        \node[cell] (c1) at (0,0) {0};
+        \node[cell] (c2) at (8mm,0) {0};
+        \node[cell] (c3) at (16mm,0) {0};
+        \node (d1) at (24mm,0) {$\cdots$};
+        \node[hi] (hi) at (32mm,0) {1};
+        \node (d2) at (40mm,0) {$\cdots$};
+        \node[cell] (c4) at (48mm,0) {0};
+        \node[cell] (c5) at (56mm,0) {0};
+        \node[cell] (c6) at (64mm,0) {0};
+
+        \node[above=6mm of d1, xshift=8mm] {52 elementy (jedna karta)};
+        \node[below=6mm of hi, align=center] {jedynka na pozycji\\konkretnej karty (np.\ As pik)};
+    \end{tikzpicture}
+    \caption{Kodowanie one-hot pojedynczej karty. Wektor ma 52 elementy,
+    z których 51 to zera, a jedynka stoi na pozycji przypisanej konkretnej
+    karcie}
+    \label{fig:one-hot-karta}
+\end{figure}
+
+Do reprezentacji stanu dołączyłem zakodowaną aktualną fazę rozdania oraz
+maskę sześciu możliwych akcji, dzięki której sieć neuronowa ma
+bezpośredni dostęp do informacji o tym, które akcje są w danym
+momencie możliwe do wykonania.
+Łączny wymiar State A wynosi
 
 \begin{equation}
     d_A = 7 \cdot 52 + 3 + 6 = 373.
+    \label{eq:state-a-dim}
 \end{equation}
 
-State A nie zawiera ręcznie przygotowanych informacji o sile układu
-pokerowego. Model musi więc samodzielnie nauczyć się zależności
-pomiędzy widocznymi kartami a wartością poszczególnych decyzji.
+Chciałem, aby State A nie zawierał informacji o sile układu
+pokerowego. Model musi więc samodzielnie nauczyć się korelacji pomiędzy
+kartami a ich wartością w pokerze.
 
-Drugi wariant, State B, rozszerza State A o 20 cech domenowych.
-Obejmują one właściwości kart prywatnych, kategorię najlepszego
-widocznego układu oraz informacje opisujące strukturę kart,
-między innymi pary, zgodność kolorów i możliwość utworzenia strita.
-Wszystkie cechy wyznaczane są wyłącznie na podstawie kart widocznych
-dla gracza.
+\subsection{State B: reprezentacja z cechami domenowymi}
+\label{subsec:state-b}
+
+Drugi wariant, który nazwałem State B, jest rozszerzeniem surowego wariantu
+opisanego w podrozdziale~\ref{subsec:state-a} o 20 dodatkowych cech
+domenowych, tak jak przedstawiłem na rysunku~\ref{fig:state-b-rozszerzenie}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={font=\small},
+        box/.style={draw, rounded corners, align=center, minimum height=12mm}
+    ]
+        \node[box, minimum width=55mm] (a) {State A\\373 elementy};
+        \node[box, minimum width=22mm, very thick, right=2mm of a] (extra)
+            {+ cechy\\domenowe\\(20 elementów)};
+    \end{tikzpicture}
+    \caption{State B jako State A rozszerzone o 20 cech domenowych}
+    \label{fig:state-b-rozszerzenie}
+\end{figure}
+
+Oprócz informacji o kartach, fazie rozdania i dostępnych akcjach, do
+reprezentacji tego wariantu dołączyłem informacje o właściwościach kart
+prywatnych, o kategorii najlepszego widocznego układu oraz o strukturze
+kart, między innymi o parach, zgodności kolorów i możliwości utworzenia
+strita.
 
 Wymiar drugiego wariantu wynosi
 
 \begin{equation}
     d_B = 373 + 20 = 393.
+    \label{eq:state-b-dim}
 \end{equation}
 
-Porównanie obu reprezentacji pozwala ocenić, czy przekazanie modelowi
-jawnych cech pokerowych ułatwia proces uczenia w porównaniu
-z reprezentacją opartą głównie na surowym kodowaniu kart.
+Porównanie obu reprezentacji pozwala mi ocenić, czy przekazanie modelowi
+cech pokerowych ułatwia proces uczenia w porównaniu z reprezentacją opartą
+głównie na surowym kodowaniu kart.

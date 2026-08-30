@@ -2,13 +2,21 @@
 \label{sec:dqn}
 
 Pierwszym zastosowanym algorytmem jest Deep Q-Network
-\cite{mnih_dqn_2015,sutton_barto_rl}. Sieć neuronowa aproksymuje
-funkcję wartości akcji $Q(s,a)$ i dla otrzymanego stanu zwraca
-wartość dla każdej z sześciu możliwych decyzji.
+\cite{mnih_dqn_2015,sutton_barto_rl}. W przeciwieństwie do podejścia
+tablicowego, w którym wartość każdej pary stanu i akcji przechowuje
+się osobno, DQN aproksymuje funkcję wartości akcji $Q(s,a)$ siecią
+neuronową, dzięki czemu radzi sobie z dużą przestrzenią stanów
+Ultimate Texas Hold'em opisaną w
+rozdziale~\ref{chap:podstawy-teoretyczne}.
 
-Model przyjmuje reprezentację State A lub State B. Zastosowano dwie
-warstwy ukryte po 256 neuronów z funkcją aktywacji ReLU oraz warstwę
-wyjściową o sześciu neuronach:
+\subsection{Sieć Q i maskowanie akcji}
+
+Sieć \texttt{QNetwork} przyjmuje reprezentację State A lub State B
+i dla otrzymanego stanu zwraca wartość $Q$ dla każdej z sześciu
+możliwych decyzji naraz, zamiast wymagać osobnego przejścia sieci dla
+każdej akcji z osobna. Zastosowano dwie warstwy ukryte po 256
+neuronów z funkcją aktywacji ReLU oraz warstwę wyjściową o sześciu
+neuronach:
 
 \begin{equation}
     d_{\mathrm{state}}
@@ -19,23 +27,50 @@ wyjściową o sześciu neuronach:
     d_{\mathrm{state}} \in \{373,393\}.
 \end{equation}
 
-Nie wszystkie akcje są legalne w każdej fazie rozdania. Przed
-wyborem decyzji wartości odpowiadające akcjom niedozwolonym są
-maskowane. To samo ograniczenie stosowane jest podczas wyznaczania
-celu dla następnego stanu.
+Nie wszystkie akcje są legalne w każdej fazie rozdania, na przykład
+spasowanie jest dostępne dopiero po odkryciu wszystkich kart
+wspólnych. Przed wyborem decyzji wartości $Q$ odpowiadające akcjom
+niedozwolonym w bieżącej fazie są maskowane, dzięki czemu agent nigdy
+nie może wybrać nielegalnej akcji. To samo ograniczenie stosowane
+jest podczas wyznaczania celu dla następnego stanu, co opisuję w
+dalszej części tego podrozdziału.
 
-Podczas treningu wykorzystano strategię epsilon-greedy. Agent
-początkowo często wybiera losowe legalne akcje, a wraz z kolejnymi
-krokami prawdopodobieństwo eksploracji jest liniowo zmniejszane
-z $1{,}0$ do $0{,}05$. Podczas ewaluacji eksploracja jest wyłączona
-i wybierana jest akcja o największej przewidywanej wartości.
+\subsection{Eksploracja epsilon-greedy}
 
-\subsection{Uczenie sieci Q}
+Sieć $Q$ uczy się wyłącznie na podstawie akcji, które agent
+faktycznie wykonał, dlatego musi je najpierw wypróbować, aby poznać
+ich wartość. Agent postępujący wyłącznie zachłannie, czyli zawsze
+wybierający akcję o obecnie najwyżej ocenionej wartości, mógłby
+utknąć przy pierwszej, niekoniecznie najlepszej ocenie i nigdy nie
+sprawdzić alternatywy, która w rzeczywistości przynosi lepszy wynik.
+Z tego powodu podczas treningu wykorzystano strategię
+epsilon-greedy. Agent początkowo często wybiera losowe legalne
+akcje, a wraz z kolejnymi krokami prawdopodobieństwo eksploracji
+jest liniowo zmniejszane z $1{,}0$ do $0{,}05$ w ciągu pierwszych
+10000 kroków treningowych. Podczas ewaluacji eksploracja jest
+wyłączona i wybierana jest akcja o największej przewidywanej
+wartości.
 
-Przejścia pomiędzy stanami zapisywane są w buforze experience replay.
-Do aktualizacji sieci losowany jest minibatch wcześniejszych
-doświadczeń. Oprócz aktualizowanej sieci Q utrzymywana jest osobna
-sieć docelowa, której parametry są okresowo synchronizowane.
+\subsection{Bufor doświadczeń}
+
+Kolejne przejścia pomiędzy stanami nie są wykorzystywane do
+aktualizacji sieci od razu, lecz zapisywane w buforze doświadczeń
+\texttt{ReplayBuffer} jako obiekty \texttt{Transition}. Uczenie
+bezpośrednio na kolejnych przejściach z tego samego rozdania byłoby
+problematyczne, ponieważ sąsiednie przejścia są ze sobą silnie
+skorelowane, gdyż dotyczą tych samych kart, co mogłoby zdestabilizować
+trening. Do każdej aktualizacji losowany jest więc minibatch przejść
+pochodzących z wielu różnych, niepowiązanych ze sobą rozdań, a każde
+zapisane przejście może zostać wykorzystane wielokrotnie.
+
+\subsection{Sieć docelowa i cel Bellmana}
+
+Oprócz aktualizowanej sieci $Q$ utrzymywana jest osobna sieć
+docelowa o identycznej architekturze, której parametry są okresowo
+synchronizowane z siecią aktualizowaną, zamiast być zmieniane na
+bieżąco. Bez tego rozróżnienia cel, do którego dąży trening,
+zmieniałby się przy każdej pojedynczej aktualizacji razem z samą
+siecią, co utrudniałoby zbieżność metody.
 
 Dla przejścia nieterminalnego cel Bellmana ma postać
 
@@ -53,14 +88,36 @@ natomiast dla przejścia terminalnego
     y_t = r_t.
 \end{equation}
 
-Sieć uczona jest poprzez minimalizację funkcji Smooth L1 pomiędzy
-$Q_\theta(s_t,a_t)$ a wartością docelową $y_t$. Do aktualizacji
-parametrów zastosowano optymalizator Adam.
+Funkcję \texttt{compute\_bellman\_targets()} implementuję zgodnie z
+powyższymi równaniami, maskując przy tym akcje niedozwolone w stanie
+$s_{t+1}$ w dokładnie taki sam sposób jak przy wyborze akcji przez
+agenta.
 
-Podstawowa konfiguracja wykorzystuje learning rate $0{,}001$,
-$\gamma=0{,}99$, minibatch 64 przejść, bufor 10000 przejść oraz
-synchronizację sieci docelowej co 1000 kroków. Przez pierwsze
-1000 kroków bufor jest jedynie wypełniany.
+\subsection{Strata i optymalizacja}
+
+Sieć $Q$ uczona jest poprzez minimalizację funkcji Smooth L1
+pomiędzy $Q_\theta(s_t,a_t)$ a wartością docelową $y_t$, za pomocą
+klasy \texttt{DQNOptimizer}. W porównaniu ze zwykłym błędem
+średniokwadratowym Smooth L1 karze duże odchylenia łagodniej, co ma
+w tym środowisku konkretne uzasadnienie: jak pokazuje
+tabela~\ref{tab:blind_payouts}, pojedyncze rozdanie może zakończyć
+się wypłatą zakładu Blind w stosunku aż 500:1, a taki rzadki,
+skrajnie wysoki wynik nie powinien jednorazowo zdominować całej
+aktualizacji sieci. Do aktualizacji parametrów zastosowano
+optymalizator Adam.
+
+\subsection{Konfiguracja, reprodukowalność i checkpointy}
+
+Podstawowa konfiguracja \texttt{DQNConfig} wykorzystuje learning
+rate $0{,}001$, $\gamma=0{,}99$, minibatch 64 przejść, bufor 10000
+przejść oraz synchronizację sieci docelowej co 1000 kroków. Przez
+pierwsze 1000 kroków bufor jest jedynie wypełniany, bez wykonywania
+aktualizacji sieci. Jest to konfiguracja pilotażowa, służąca do
+zweryfikowania poprawności działania całego procesu treningu, a nie
+wynik finalnego strojenia hiperparametrów. Trening w tej
+konfiguracji obsługuje zarówno State A, jak i State B, oraz oba
+warianty funkcji nagrody opisane w
+podrozdziale~\ref{sec:reward-functions}.
 
 Źródła losowości związane z inicjalizacją sieci, środowiskiem,
 strategią eksploracji i próbkowaniem bufora wykorzystują osobne
