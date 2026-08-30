@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "variant": {
+    "name": "dqn_features_stake_scaled_net_profit",
+    "algorithm": "dqn",
+    "state_representation": "features",
+    "reward_type": "stake_scaled_net_profit"
+  },
+  "training_seed": 20260831,
+  "training_episodes": 50000,
+  "total_steps": 106571,
+  "optimizer_updates": 105572,
+  "training_config": {
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "batch_size": 64,
+    "replay_capacity": 10000,
+    "warmup_steps": 1000,
+    "target_sync_interval": 1000,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay_steps": 10000,
+    "hidden_sizes": [
+      256,
+      256
+    ],
+    "training_episodes": 50000,
+    "seed": 20260831
+  },
+  "validation_curve": [
+    {
+      "completed_episodes": 4000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -760.0,
+        "estimated_ev": -0.38,
+        "total_staked": 8918.0,
+        "mean_staked": 4.459,
+        "standard_deviation": 4.373804417499858,
+        "standard_error": 0.09780123997818552,
+        "outcome_counts": {
+          "PLAYER_WIN": 919,
+          "DEALER_WIN": 893,
+          "PUSH": 73,
+          "PLAYER_FOLD": 115
+        },
+        "action_counts": {
+          "CHECK": 1514,
+          "BET_4X": 547,
+          "BET_3X": 536,
+          "BET_2X": 320,
+          "BET_1X": 482,
+          "FOLD": 115
+        }
+      }
+    },
+    {
+      "completed_episodes": 8000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -866.5,
+        "estimated_ev": -0.43325,
+        "total_staked": 8406.0,
+        "mean_staked": 4.203,
+        "standard_deviation": 4.175959621078542,
+        "standard_error": 0.09337729584025883,
+        "outcome_counts": {
+          "PLAYER_WIN": 892,
+          "DEALER_WIN": 824,
+          "PUSH": 70,
+          "PLAYER_FOLD": 214
+        },
+        "action_counts": {
+          "CHECK": 1855,
+          "BET_4X": 475,
+          "BET_3X": 426,
+          "BET_2X": 343,
+          "BET_1X": 542,
+          "FOLD": 214
+        }
+      }
+    },
+    {
+      "completed_episodes": 12000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -795.0,
+        "estimated_ev": -0.3975,
+        "total_staked": 7593.0,
+        "mean_staked": 3.7965,
+        "standard_deviation": 3.825743314174773,
+        "standard_error": 0.08554622114960127,
+        "outcome_counts": {
+          "PLAYER_WIN": 865,
+          "DEALER_WIN": 731,
+          "PUSH": 67,
+          "PLAYER_FOLD": 337
+        },
+        "action_counts": {
+          "CHECK": 2350,
+          "BET_4X": 280,
+          "BET_3X": 371,
+          "BET_2X": 348,
+          "BET_1X": 664,
+          "FOLD": 337
+        }
+      }
+    },
+    {
+      "completed_episodes": 16000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -860.0,
+        "estimated_ev": -0.43,
+        "total_staked": 7548.0,
+        "mean_staked": 3.774,
+        "standard_deviation": 3.8339209009494923,
+        "standard_error": 0.08572907754880302,
+        "outcome_counts": {
+          "PLAYER_WIN": 839,
+          "DEALER_WIN": 708,
+          "PUSH": 72,
+          "PLAYER_FOLD": 381
+        },
+        "action_counts": {
+          "CHECK": 2378,
+          "BET_4X": 307,
+          "BET_3X": 377,
+          "BET_2X": 254,
+          "BET_1X": 681,
+          "FOLD": 381
+        }
+      }
+    },
+    {
+      "completed_episodes": 20000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -903.0,
+        "estimated_ev": -0.4515,
+        "total_staked": 7216.0,
+        "mean_staked": 3.608,
+        "standard_deviation": 3.663517221088855,
+        "standard_error": 0.08191873543095805,
+        "outcome_counts": {
+          "PLAYER_WIN": 838,
+          "DEALER_WIN": 711,
+          "PUSH": 70,
+          "PLAYER_FOLD": 381
+        },
+        "action_counts": {
+          "CHECK": 2668,
+          "BET_4X": 265,
+          "BET_3X": 272,
+          "BET_2X": 258,
+          "BET_1X": 824,
+          "FOLD": 381
+        }
+      }
+    },
+    {
+      "completed_episodes": 24000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -909.5,
+        "estimated_ev": -0.45475,
+        "total_staked": 7492.0,
+        "mean_staked": 3.746,
+        "standard_deviation": 3.801388261393057,
+        "standard_error": 0.08500162561344615,
+        "outcome_counts": {
+          "PLAYER_WIN": 856,
+          "DEALER_WIN": 732,
+          "PUSH": 68,
+          "PLAYER_FOLD": 344
+        },
+        "action_counts": {
+          "CHECK": 2522,
+          "BET_4X": 358,
+          "BET_3X": 273,
+          "BET_2X": 216,
+          "BET_1X": 809,
+          "FOLD": 344
+        }
+      }
+    },
+    {
+      "completed_episodes": 28000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -840.0,
+        "estimated_ev": -0.42,
+        "total_staked": 7365.0,
+        "mean_staked": 3.6825,
+        "standard_deviation": 3.7542172384582075,
+        "standard_error": 0.0839468494749409,
+        "outcome_counts": {
+          "PLAYER_WIN": 861,
+          "DEALER_WIN": 713,
+          "PUSH": 66,
+          "PLAYER_FOLD": 360
+        },
+        "action_counts": {
+          "CHECK": 2539,
+          "BET_4X": 264,
+          "BET_3X": 358,
+          "BET_2X": 217,
+          "BET_1X": 801,
+          "FOLD": 360
+        }
+      }
+    },
+    {
+      "completed_episodes": 32000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -848.5,
+        "estimated_ev": -0.42425,
+        "total_staked": 7321.0,
+        "mean_staked": 3.6605,
+        "standard_deviation": 3.7279130361775676,
+        "standard_error": 0.08335866963100673,
+        "outcome_counts": {
+          "PLAYER_WIN": 850,
+          "DEALER_WIN": 692,
+          "PUSH": 68,
+          "PLAYER_FOLD": 390
+        },
+        "action_counts": {
+          "CHECK": 2535,
+          "BET_4X": 246,
+          "BET_3X": 368,
+          "BET_2X": 237,
+          "BET_1X": 759,
+          "FOLD": 390
+        }
+      }
+    },
+    {
+      "completed_episodes": 36000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -849.5,
+        "estimated_ev": -0.42475,
+        "total_staked": 7435.0,
+        "mean_staked": 3.7175,
+        "standard_deviation": 3.771548054163228,
+        "standard_error": 0.08433437829516036,
+        "outcome_counts": {
+          "PLAYER_WIN": 863,
+          "DEALER_WIN": 710,
+          "PUSH": 68,
+          "PLAYER_FOLD": 359
+        },
+        "action_counts": {
+          "CHECK": 2557,
+          "BET_4X": 351,
+          "BET_3X": 233,
+          "BET_2X": 275,
+          "BET_1X": 782,
+          "FOLD": 359
+        }
+      }
+    },
+    {
+      "completed_episodes": 40000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -912.0,
+        "estimated_ev": -0.456,
+        "total_staked": 7413.0,
+        "mean_staked": 3.7065,
+        "standard_deviation": 3.7848350675087707,
+        "standard_error": 0.08463148494574617,
+        "outcome_counts": {
+          "PLAYER_WIN": 840,
+          "DEALER_WIN": 684,
+          "PUSH": 67,
+          "PLAYER_FOLD": 409
+        },
+        "action_counts": {
+          "CHECK": 2533,
+          "BET_4X": 355,
+          "BET_3X": 230,
+          "BET_2X": 297,
+          "BET_1X": 709,
+          "FOLD": 409
+        }
+      }
+    },
+    {
+      "completed_episodes": 44000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -819.0,
+        "estimated_ev": -0.4095,
+        "total_staked": 7302.0,
+        "mean_staked": 3.651,
+        "standard_deviation": 3.7177911097004475,
+        "standard_error": 0.08313233647434579,
+        "outcome_counts": {
+          "PLAYER_WIN": 857,
+          "DEALER_WIN": 682,
+          "PUSH": 66,
+          "PLAYER_FOLD": 395
+        },
+        "action_counts": {
+          "CHECK": 2626,
+          "BET_4X": 323,
+          "BET_3X": 221,
+          "BET_2X": 286,
+          "BET_1X": 775,
+          "FOLD": 395
+        }
+      }
+    },
+    {
+      "completed_episodes": 48000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -913.0,
+        "estimated_ev": -0.4565,
+        "total_staked": 7234.0,
+        "mean_staked": 3.617,
+        "standard_deviation": 3.4647669553705214,
+        "standard_error": 0.07747454438403466,
+        "outcome_counts": {
+          "PLAYER_WIN": 844,
+          "DEALER_WIN": 678,
+          "PUSH": 66,
+          "PLAYER_FOLD": 412
+        },
+        "action_counts": {
+          "CHECK": 2651,
+          "BET_4X": 297,
+          "BET_3X": 223,
+          "BET_2X": 309,
+          "BET_1X": 759,
+          "FOLD": 412
+        }
+      }
+    },
+    {
+      "completed_episodes": 50000,
+      "evaluation": {
+        "round_count": 2000,
+        "total_net_profit": -961.0,
+        "estimated_ev": -0.4805,
+        "total_staked": 7225.0,
+        "mean_staked": 3.6125,
+        "standard_deviation": 3.6732636963729606,
+        "standard_error": 0.08213667324372087,
+        "outcome_counts": {
+          "PLAYER_WIN": 841,
+          "DEALER_WIN": 685,
+          "PUSH": 65,
+          "PLAYER_FOLD": 409
+        },
+        "action_counts": {
+          "CHECK": 2638,
+          "BET_4X": 272,
+          "BET_3X": 224,
+          "BET_2X": 370,
+          "BET_1X": 725,
+          "FOLD": 409
+        }
+      }
+    }
+  ],
+  "final_evaluation": null
+}
