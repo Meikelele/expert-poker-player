@@ -23,6 +23,11 @@ from expert_poker_player.experiments.results import (
     LearningCurvePoint,
     build_learning_curve,
 )
+from expert_poker_player.experiments.runner import (
+    ExperimentExecutionResult,
+    ExperimentRunSpec,
+    run_experiment,
+)
 
 __all__ = [
     "FINAL_TRAINING_SEEDS",
@@ -42,4 +47,7 @@ __all__ = [
     "ExperimentRunSummary",
     "LearningCurvePoint",
     "build_learning_curve",
+    "ExperimentExecutionResult",
+    "ExperimentRunSpec",
+    "run_experiment",
 ]
