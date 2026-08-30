@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import random
-
+from collections.abc import Callable
 import torch
 
 from expert_poker_player.dqn.actions import (
@@ -34,6 +34,11 @@ from expert_poker_player.uth import (
     UTHGame,
     UTHObservation,
 )
+
+DQNTrainingObserver = Callable[
+    [int, QNetwork],
+    None,
+]
 
 
 @dataclass(
@@ -71,6 +76,7 @@ def train_dqn(
     state_encoder: StateEncoder,
     reward_function: RewardFunction,
     config: DQNConfig,
+    on_episode_completed: DQNTrainingObserver | None = None,
 ) -> DQNTrainingResult:
     """Trenuje agenta DQN w środowisku Ultimate Texas Hold'em."""
 
@@ -283,6 +289,12 @@ def train_dqn(
                 epsilon=agent.epsilon,
             )
         )
+
+        if on_episode_completed is not None:
+            on_episode_completed(
+                episode + 1,
+                policy_network,
+            )
 
     return DQNTrainingResult(
         agent=agent,

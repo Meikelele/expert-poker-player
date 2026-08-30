@@ -5,6 +5,7 @@ from expert_poker_player.dqn import (
     DQNTrainingResult,
     train_dqn,
 )
+from expert_poker_player.dqn.network import QNetwork
 from expert_poker_player.rewards import (
     NetProfitReward,
     StakeScaledNetProfitReward,
@@ -280,3 +281,34 @@ def test_target_network_does_not_sync_before_interval_elapses() -> None:
         )
     )
 
+def test_training_notifies_observer_after_each_episode() -> None:
+    config = build_test_config()
+
+    completed_episodes: list[int] = []
+
+    def observer(
+        episode: int,
+        network: QNetwork,
+    ) -> None:
+        assert isinstance(
+            network,
+            QNetwork,
+        )
+
+        completed_episodes.append(
+            episode
+        )
+
+    train_dqn(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=config,
+        on_episode_completed=observer,
+    )
+
+    assert completed_episodes == list(
+        range(
+            1,
+            config.training_episodes + 1,
+        )
+    )
