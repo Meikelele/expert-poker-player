@@ -2339,10 +2339,10 @@ def plot_headline_comparison(
     labels = (
         "Random",
         "RuleBased",
-        f"DQN najlepszy ("
+        f"DQN wybrany walidacyjnie ("
         f"{_state_label(dqn_state)} | "
         f"{_reward_label(dqn_reward)})",
-        f"REINFORCE najlepszy ("
+        f"REINFORCE wybrany walidacyjnie ("
         f"{_state_label(reinforce_state)} | "
         f"{_reward_label(reinforce_reward)})",
     )
@@ -5121,6 +5121,11 @@ def plot_ev_advantage_waterfall(
                 contribution_estimates,
             )
         ):
+            segment_end = (
+                cumulative
+                + contribution
+            )
+
             axis.bar( # type: ignore
                 index,
                 contribution,
@@ -5135,8 +5140,7 @@ def plot_ev_advantage_waterfall(
 
             axis.errorbar( # type: ignore
                 index,
-                cumulative
-                + contribution / 2,
+                segment_end,
                 yerr=(
                     estimate.ci95_high
                     - estimate.mean
@@ -5147,7 +5151,7 @@ def plot_ev_advantage_waterfall(
                 linewidth=1.0,
             )
 
-            cumulative += contribution
+            cumulative = segment_end
 
         total_per_seed = tuple(
             sum(
@@ -5172,7 +5176,7 @@ def plot_ev_advantage_waterfall(
 
         axis.errorbar( # type: ignore
             path_count,
-            cumulative / 2,
+            cumulative,
             yerr=(
                 total_estimate.ci95_high
                 - total_estimate.mean
