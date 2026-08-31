@@ -1,0 +1,114 @@
+\chapter{Wyniki eksperymentów}
+\label{chap:wyniki}
+
+W tym rozdziale przedstawiam wyniki eksperymentów przeprowadzonych
+zgodnie z metodyką opisaną w rozdziale~\ref{chap:eksperymenty}.
+Analizuję jakość końcowych strategii, wpływ reprezentacji stanu
+i funkcji nagrody, przebieg procesu uczenia oraz zachowanie modeli po
+zwiększeniu budżetu treningowego.
+
+Podstawę głównej analizy stanowi osiem konfiguracji powstałych
+z połączenia dwóch algorytmów, dwóch reprezentacji stanu oraz dwóch
+funkcji nagrody. Każdą konfigurację wytrenowałem pięciokrotnie
+z wykorzystaniem tego samego zestawu pięciu seedów treningowych.
+Końcową ocenę każdego modelu przeprowadziłem na wspólnym harmonogramie
+100\,000 rozdań, który nie był wykorzystywany podczas treningu,
+walidacji ani wyboru konfiguracji.
+
+Jako podstawową miarę jakości strategii wykorzystuję średni zysk netto
+na rozdanie, wyrażony w jednostkach zakładu Ante. Wartości bliższe zeru
+oznaczają mniejszą średnią stratę gracza, natomiast wartość dodatnia
+oznaczałaby strategię osiągającą dodatni średni wynik w badanej próbie.
+
+\section{Wyniki końcowej ewaluacji}
+\label{sec:wyniki-koncowej-ewaluacji}
+
+W pierwszej kolejności porównałem końcowe wyniki wszystkich ośmiu
+podstawowych konfiguracji po 50\,000 epizodów treningowych.
+Dla każdej konfiguracji obliczyłem średnią wartość EV z pięciu
+niezależnych przebiegów treningowych oraz odchylenie standardowe między
+seedami. Wyniki przedstawiam w tabeli~\ref{tab:final-ev-50k}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Wyniki końcowej ewaluacji modeli po 50\,000 epizodów treningowych}
+    \label{tab:final-ev-50k}
+    \begin{tabular}{lllrr}
+        \toprule
+        Algorytm & Reprezentacja & Nagroda & Średnie EV & SD seedów \\
+        \midrule
+        DQN & RAW & zysk netto
+            & -0{,}6450 & 0{,}0184 \\
+        DQN & RAW & skalowana
+            & -0{,}5681 & 0{,}0401 \\
+        DQN & FEATURES & zysk netto
+            & -0{,}4076 & 0{,}0080 \\
+        DQN & FEATURES & skalowana
+            & -0{,}4165 & 0{,}0169 \\
+        \midrule
+        REINFORCE & RAW & zysk netto
+            & -0{,}3785 & 0{,}0074 \\
+        REINFORCE & RAW & skalowana
+            & -0{,}3804 & 0{,}0014 \\
+        REINFORCE & FEATURES & zysk netto
+            & -0{,}3823 & 0{,}0014 \\
+        REINFORCE & FEATURES & skalowana
+            & -0{,}3211 & 0{,}0657 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Najwyższe średnie EV spośród wariantów DQN uzyskała konfiguracja
+FEATURES z funkcją nagrody opartą na zysku netto. Jej średni wynik
+wyniósł $-0{,}4076$. Dla REINFORCE najwyższy średni wynik uzyskała
+konfiguracja FEATURES ze skalowaną funkcją nagrody, dla której średnie
+EV wyniosło $-0{,}3211$.
+
+Widoczna jest jednocześnie wyraźna różnica w zmienności tych wyników.
+Dla wybranego wariantu DQN odchylenie standardowe między pięcioma
+seedami wyniosło jedynie $0{,}0080$, natomiast dla konfiguracji
+REINFORCE FEATURES ze skalowaną nagrodą osiągnęło $0{,}0657$.
+Oznacza to, że wysoka średnia wartość EV wariantu REINFORCE była
+związana z dużo większym zróżnicowaniem jakości polityk uzyskanych
+w poszczególnych przebiegach. Zjawisko to analizuję dokładniej
+w dalszej części rozdziału.
+
+Na tym samym harmonogramie 100\,000 rozdań ponownie oceniłem dwóch
+agentów bazowych. Agent losowy uzyskał EV równe $-0{,}5173$, natomiast
+agent regułowy $-0{,}0106$. Wartość uzyskana przez agenta regułowego
+znajdowała się więc znacznie bliżej zera niż wyniki wszystkich
+wytrenowanych modeli uczenia przez wzmacnianie.
+
+Jednocześnie większość konfiguracji RL osiągnęła wyższe średnie EV niż
+agent losowy. Wyjątek stanowiły dwa warianty DQN wykorzystujące
+reprezentację RAW, których średnie EV wyniosły odpowiednio
+$-0{,}6450$ i $-0{,}5681$. Po zastosowaniu reprezentacji FEATURES
+oba warianty DQN uzyskały już wynik wyższy niż agent losowy.
+W przypadku REINFORCE wszystkie cztery badane konfiguracje osiągnęły
+wyższe średnie EV od tego punktu odniesienia.
+
+Zestawienie wyników poszczególnych seedów, ich średnich oraz położenia
+agentów bazowych przedstawiam na
+rysunku~\ref{fig:final-ev-50k}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=\textwidth
+    ]{../experiments/results/final_analysis/01_final_ev_50k.pdf}
+    \caption{Końcowe wartości EV ośmiu konfiguracji po 50\,000
+    epizodów treningowych. Małe punkty przedstawiają wyniki
+    poszczególnych seedów, a większe znaczniki średnie wartości
+    konfiguracji wraz z 95-procentowymi przedziałami ufności
+    wyznaczonymi na podstawie pięciu przebiegów treningowych.
+    Linie pionowe oznaczają wyniki agentów Random i RuleBased.}
+    \label{fig:final-ev-50k}
+\end{figure}
+
+Wyniki pokazują również, że sama informacja o zastosowanym algorytmie
+nie wystarcza do oceny jakości uzyskanej strategii. Szczególnie
+w przypadku DQN rezultat zmienia się silnie wraz ze sposobem
+reprezentacji stanu. W przypadku REINFORCE największą różnicę pomiędzy
+wariantami obserwuję dla połączenia reprezentacji FEATURES ze
+skalowaną funkcją nagrody. W kolejnych sekcjach analizuję oba czynniki
+oddzielnie, wykorzystując sparowanie tych samych seedów treningowych.
