@@ -216,7 +216,8 @@ rysunku~\ref{fig:loss-backprop}.
 
         \draw[-{Latex}] (q.east) -- (loss.north west);
         \draw[-{Latex}] (target.east) -- (loss.south west);
-        \draw[-{Latex}, dashed, thick] (loss.north) -- (50mm,28mm) -| (q.east);
+        \draw[-{Latex}, dashed, thick]
+            (loss.north) -- (50mm,28mm) -- (23mm,28mm) -- (23mm,24mm) -- (q.east);
         \node[above] at (35mm,28mm) {propagacja gradientu};
     \end{tikzpicture}
     \caption{Obie sieci wyznaczają wartości potrzebne do policzenia
