@@ -99,20 +99,6 @@ def test_run_status_tracks_artifact_completeness(
         final_training.get_run_status(
             run_dir
         )
-        is final_training.FinalRunStatus.PARTIAL
-    )
-
-    (
-        run_dir / "training_diagnostics.csv"
-    ).write_text(
-        "",
-        encoding="utf-8",
-    )
-
-    assert (
-        final_training.get_run_status(
-            run_dir
-        )
         is final_training.FinalRunStatus.COMPLETED
     )
 
@@ -156,13 +142,6 @@ def test_completed_run_is_skipped(
         run_dir / "model.pt"
     ).write_bytes(
         b"checkpoint"
-    )
-
-    (
-        run_dir / "training_diagnostics.csv"
-    ).write_text(
-        "",
-        encoding="utf-8",
     )
 
     def fail_run_experiment(

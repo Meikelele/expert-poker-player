@@ -25,6 +25,7 @@ from expert_poker_player.hands.hand_rank import (
     HandRank,
 )
 from experiments.analyze_final_results import (
+    STUDENT_T_95_DF4_CRITICAL_VALUE,
     EvaluationTargetData,
     FinalResultsData,
     MeanEstimate,
@@ -41,6 +42,7 @@ from experiments.analyze_final_results import (
     paired_seed_comparison,
     reconstruct_postflop_hand_ranks,
     reconstruct_preflop_hole_cards,
+    summarize_values,
 )
 
 
@@ -2278,37 +2280,6 @@ def _aggregate_outcome_counts(
     return totals
 
 
-def _representative_seed_target(
-    targets: tuple[
-        EvaluationTargetData,
-        ...
-    ],
-) -> EvaluationTargetData:
-    """Zwraca target, którego EV jest najbliższe średniej z jego grupy seedów."""
-
-    values = tuple(
-        get_evaluation_ev(
-            target
-        )
-        for target in targets
-    )
-
-    mean_ev = fmean(
-        values
-    )
-
-    return min(
-        zip(
-            targets,
-            values,
-        ),
-        key=lambda pair: abs(
-            pair[1]
-            - mean_ev
-        ),
-    )[0]
-
-
 def plot_headline_comparison(
     results: FinalResultsData,
     *,
@@ -2496,8 +2467,8 @@ def plot_headline_comparison(
     )
 
     axis.set_title( # type: ignore
-        "Najlepsze modele na tle "
-        "strategii bazowych"
+        "Konfiguracje wybrane na "
+        "podstawie walidacji"
     )
 
     axis.grid( # type: ignore
@@ -2539,55 +2510,53 @@ def plot_payout_distribution(
         reinforce_reward,
     ) = BEST_VARIANTS[1]
 
-    dqn_target = _representative_seed_target(
-        find_model_targets(
-            results,
-            algorithm=dqn_algorithm,
-            state_representation=dqn_state,
-            reward_type=dqn_reward,
-            training_episodes=(
-                FINAL_TRAINING_EPISODES
-            ),
-        )
+    dqn_targets = find_model_targets(
+        results,
+        algorithm=dqn_algorithm,
+        state_representation=dqn_state,
+        reward_type=dqn_reward,
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
-    reinforce_target = (
-        _representative_seed_target(
-            find_model_targets(
-                results,
-                algorithm=reinforce_algorithm,
-                state_representation=(
-                    reinforce_state
-                ),
-                reward_type=(
-                    reinforce_reward
-                ),
-                training_episodes=(
-                    FINAL_TRAINING_EPISODES
-                ),
-            )
-        )
+    reinforce_targets = find_model_targets(
+        results,
+        algorithm=reinforce_algorithm,
+        state_representation=(
+            reinforce_state
+        ),
+        reward_type=(
+            reinforce_reward
+        ),
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
     series = (
         (
             "Random",
-            random_target,
+            (
+                random_target,
+            ),
             "0.35",
         ),
         (
             "RuleBased",
-            rule_based_target,
+            (
+                rule_based_target,
+            ),
             "0.1",
         ),
         (
             "DQN",
-            dqn_target,
+            dqn_targets,
             "C0",
         ),
         (
             "REINFORCE",
-            reinforce_target,
+            reinforce_targets,
             "C1",
         ),
     )
@@ -2614,13 +2583,17 @@ def plot_payout_distribution(
         )
     )
 
-    for (label, target, color), offset in zip(
+    for (label, targets, color), offset in zip(
         series,
         offsets,
     ):
-        values = load_round_net_profits(
-            target.rounds_path
-        )
+        values = [
+            value
+            for target in targets
+            for value in load_round_net_profits(
+                target.rounds_path
+            )
+        ]
 
         total = len(
             values
@@ -2719,6 +2692,20 @@ def plot_payout_distribution(
         framealpha=1.0,
     )
 
+    figure.text( # type: ignore
+        0.5,
+        0.005,
+        "DQN i REINFORCE: rozdania zebrane ze wszystkich pięciu "
+        "seedów konfiguracji (500 tys. rozdań), nie z jednego "
+        "wybranego przebiegu.",
+        ha="center",
+        fontsize=8,
+    )
+
+    figure.subplots_adjust(
+        bottom=0.14
+    )
+
     _save_figure(
         figure,
         output_dir=output_dir,
@@ -2753,55 +2740,53 @@ def plot_bankroll_curve(
         reinforce_reward,
     ) = BEST_VARIANTS[1]
 
-    dqn_target = _representative_seed_target(
-        find_model_targets(
-            results,
-            algorithm=dqn_algorithm,
-            state_representation=dqn_state,
-            reward_type=dqn_reward,
-            training_episodes=(
-                FINAL_TRAINING_EPISODES
-            ),
-        )
+    dqn_targets = find_model_targets(
+        results,
+        algorithm=dqn_algorithm,
+        state_representation=dqn_state,
+        reward_type=dqn_reward,
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
-    reinforce_target = (
-        _representative_seed_target(
-            find_model_targets(
-                results,
-                algorithm=reinforce_algorithm,
-                state_representation=(
-                    reinforce_state
-                ),
-                reward_type=(
-                    reinforce_reward
-                ),
-                training_episodes=(
-                    FINAL_TRAINING_EPISODES
-                ),
-            )
-        )
+    reinforce_targets = find_model_targets(
+        results,
+        algorithm=reinforce_algorithm,
+        state_representation=(
+            reinforce_state
+        ),
+        reward_type=(
+            reinforce_reward
+        ),
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
     series = (
         (
             "Random",
-            random_target,
+            (
+                random_target,
+            ),
             "0.35",
         ),
         (
             "RuleBased",
-            rule_based_target,
+            (
+                rule_based_target,
+            ),
             "0.1",
         ),
         (
             "DQN",
-            dqn_target,
+            dqn_targets,
             "C0",
         ),
         (
             "REINFORCE",
-            reinforce_target,
+            reinforce_targets,
             "C1",
         ),
     )
@@ -2813,11 +2798,28 @@ def plot_bankroll_curve(
         )
     )
 
-    for label, target, color in series:
+    for label, targets, color in series:
+        # Wszystkie targety danej serii grają na identycznym
+        # harmonogramie talii, więc uśredniam wynik po seedach
+        # w każdej pozycji rozdania, zamiast pokazywać jeden
+        # wybrany przebieg.
+        per_target_values = [
+            [
+                float(value)
+                for value in load_round_net_profits(
+                    target.rounds_path
+                )
+            ]
+            for target in targets
+        ]
+
         values = [
-            float(value)
-            for value in load_round_net_profits(
-                target.rounds_path
+            fmean(
+                round_values
+            )
+            for round_values in zip(
+                *per_target_values,
+                strict=True,
             )
         ]
 
@@ -2882,6 +2884,20 @@ def plot_bankroll_curve(
     )
 
     axis.legend() # type: ignore
+
+    figure.text( # type: ignore
+        0.5,
+        0.005,
+        "DQN i REINFORCE: wynik uśredniony po pięciu seedach "
+        "konfiguracji w każdej pozycji rozdania, nie z jednego "
+        "wybranego przebiegu.",
+        ha="center",
+        fontsize=8,
+    )
+
+    figure.subplots_adjust(
+        bottom=0.14
+    )
 
     _save_figure(
         figure,
@@ -3238,34 +3254,28 @@ def plot_preflop_agreement(
         reinforce_reward,
     ) = BEST_VARIANTS[1]
 
-    dqn_target = _representative_seed_target(
-        find_model_targets(
-            results,
-            algorithm=dqn_algorithm,
-            state_representation=dqn_state,
-            reward_type=dqn_reward,
-            training_episodes=(
-                FINAL_TRAINING_EPISODES
-            ),
-        )
+    dqn_targets = find_model_targets(
+        results,
+        algorithm=dqn_algorithm,
+        state_representation=dqn_state,
+        reward_type=dqn_reward,
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
-    reinforce_target = (
-        _representative_seed_target(
-            find_model_targets(
-                results,
-                algorithm=reinforce_algorithm,
-                state_representation=(
-                    reinforce_state
-                ),
-                reward_type=(
-                    reinforce_reward
-                ),
-                training_episodes=(
-                    FINAL_TRAINING_EPISODES
-                ),
-            )
-        )
+    reinforce_targets = find_model_targets(
+        results,
+        algorithm=reinforce_algorithm,
+        state_representation=(
+            reinforce_state
+        ),
+        reward_type=(
+            reinforce_reward
+        ),
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
     rule_based_actions = load_round_actions(
@@ -3275,11 +3285,11 @@ def plot_preflop_agreement(
     comparisons = (
         (
             "DQN",
-            dqn_target,
+            dqn_targets,
         ),
         (
             "REINFORCE",
-            reinforce_target,
+            reinforce_targets,
         ),
     )
 
@@ -3292,14 +3302,10 @@ def plot_preflop_agreement(
         ),
     )
 
-    for axis, (label, target) in zip(
+    for axis, (label, targets) in zip(
         axes,
         comparisons,
     ):
-        comparison_actions = load_round_actions(
-            target.rounds_path
-        )
-
         matrix = [
             [
                 0
@@ -3308,20 +3314,25 @@ def plot_preflop_agreement(
             for _ in PREFLOP_ACTIONS
         ]
 
-        for rule_sequence, comparison_sequence in zip(
-            rule_based_actions,
-            comparison_actions,
-            strict=True,
-        ):
-            row = PREFLOP_ACTIONS.index(
-                rule_sequence[0]
+        for target in targets:
+            comparison_actions = load_round_actions(
+                target.rounds_path
             )
 
-            column = PREFLOP_ACTIONS.index(
-                comparison_sequence[0]
-            )
+            for rule_sequence, comparison_sequence in zip(
+                rule_based_actions,
+                comparison_actions,
+                strict=True,
+            ):
+                row = PREFLOP_ACTIONS.index(
+                    rule_sequence[0]
+                )
 
-            matrix[row][column] += 1
+                column = PREFLOP_ACTIONS.index(
+                    comparison_sequence[0]
+                )
+
+                matrix[row][column] += 1
 
         total = sum(
             sum(row)
@@ -3414,6 +3425,20 @@ def plot_preflop_agreement(
     figure.suptitle( # type: ignore
         "Zgodność decyzji preflop "
         "z agentem regułowym"
+    )
+
+    figure.text( # type: ignore
+        0.5,
+        0.01,
+        "Macierze zsumowane po pięciu seedach konfiguracji "
+        "(500 tys. rozdań każda), nie z jednego wybranego "
+        "przebiegu.",
+        ha="center",
+        fontsize=8,
+    )
+
+    figure.subplots_adjust(
+        bottom=0.15
     )
 
     _save_figure(
@@ -3762,34 +3787,28 @@ def plot_preflop_range_chart(
         reinforce_reward,
     ) = BEST_VARIANTS[1]
 
-    dqn_target = _representative_seed_target(
-        find_model_targets(
-            results,
-            algorithm=dqn_algorithm,
-            state_representation=dqn_state,
-            reward_type=dqn_reward,
-            training_episodes=(
-                FINAL_TRAINING_EPISODES
-            ),
-        )
+    dqn_targets = find_model_targets(
+        results,
+        algorithm=dqn_algorithm,
+        state_representation=dqn_state,
+        reward_type=dqn_reward,
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
-    reinforce_target = (
-        _representative_seed_target(
-            find_model_targets(
-                results,
-                algorithm=reinforce_algorithm,
-                state_representation=(
-                    reinforce_state
-                ),
-                reward_type=(
-                    reinforce_reward
-                ),
-                training_episodes=(
-                    FINAL_TRAINING_EPISODES
-                ),
-            )
-        )
+    reinforce_targets = find_model_targets(
+        results,
+        algorithm=reinforce_algorithm,
+        state_representation=(
+            reinforce_state
+        ),
+        reward_type=(
+            reinforce_reward
+        ),
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
     deck_seeds = load_deck_seeds(
@@ -3803,15 +3822,17 @@ def plot_preflop_range_chart(
     series = (
         (
             "RuleBased",
-            rule_based_target,
+            (
+                rule_based_target,
+            ),
         ),
         (
             "DQN",
-            dqn_target,
+            dqn_targets,
         ),
         (
             "REINFORCE",
-            reinforce_target,
+            reinforce_targets,
         ),
     )
 
@@ -3830,51 +3851,52 @@ def plot_preflop_range_chart(
         ),
     )
 
-    for axis, (label, target) in zip(
+    for axis, (label, targets) in zip(
         axes,
         series,
     ):
-        actions = load_round_actions(
-            target.rounds_path
-        )
-
         cell_actions: dict[
             tuple[int, int],
             list[str],
         ] = {}
 
-        for (
-            player_card_a,
-            player_card_b,
-        ), action_sequence in zip(
-            hole_cards,
-            actions,
-            strict=True,
-        ):
-            high_card, low_card = sorted(
-                (
-                    player_card_a,
-                    player_card_b,
-                ),
-                key=lambda card: card.rank.value,
-                reverse=True,
+        for target in targets:
+            actions = load_round_actions(
+                target.rounds_path
             )
 
-            cell = _canonical_hand_cell(
-                high_card.rank,
-                low_card.rank,
-                suited=(
-                    high_card.suit
-                    == low_card.suit
-                ),
-            )
+            for (
+                player_card_a,
+                player_card_b,
+            ), action_sequence in zip(
+                hole_cards,
+                actions,
+                strict=True,
+            ):
+                high_card, low_card = sorted(
+                    (
+                        player_card_a,
+                        player_card_b,
+                    ),
+                    key=lambda card: card.rank.value,
+                    reverse=True,
+                )
 
-            cell_actions.setdefault(
-                cell,
-                [],
-            ).append(
-                action_sequence[0]
-            )
+                cell = _canonical_hand_cell(
+                    high_card.rank,
+                    low_card.rank,
+                    suited=(
+                        high_card.suit
+                        == low_card.suit
+                    ),
+                )
+
+                cell_actions.setdefault(
+                    cell,
+                    [],
+                ).append(
+                    action_sequence[0]
+                )
 
         grid = [
             [
@@ -3956,6 +3978,15 @@ def plot_preflop_range_chart(
     figure.suptitle( # type: ignore
         "Decyzja preflop w zależności od układu "
         "startowego (dominująca akcja)"
+    )
+
+    figure.text( # type: ignore
+        0.5,
+        -0.12,
+        "DQN i REINFORCE: decyzje zebrane ze wszystkich pięciu "
+        "seedów konfiguracji, nie z jednego wybranego przebiegu.",
+        ha="center",
+        fontsize=8,
     )
 
     figure.subplots_adjust(
@@ -4123,8 +4154,8 @@ def plot_training_stability_by_reward_scale(
         )
 
     figure.suptitle( # type: ignore
-        "Stabilność treningu w zależności "
-        "od skali nagrody"
+        "Norma gradientu w zależności "
+        "od skali funkcji nagrody"
     )
 
     figure.text( # type: ignore
@@ -4148,15 +4179,27 @@ def plot_training_stability_by_reward_scale(
     )
 
 
-def _representative_series(
+def _reference_series(
     results: FinalResultsData,
 ) -> tuple[
     tuple[
         str,
-        EvaluationTargetData,
+        tuple[
+            EvaluationTargetData,
+            ...,
+        ],
     ],
     ...,
 ]:
+    """
+    Zwraca cztery serie odniesienia: Random, RuleBased oraz najlepszy
+    wariant DQN/REINFORCE, każdy jako pełny zestaw pięciu seedów.
+
+    Baseline'y mają tylko jeden target (nie trenuje się ich), więc
+    dostają jednoelementowy tuple, żeby wszystkie serie miały ten
+    sam kształt danych dla wywołującego kodu.
+    """
+
     (
         dqn_algorithm,
         dqn_state,
@@ -4169,58 +4212,56 @@ def _representative_series(
         reinforce_reward,
     ) = BEST_VARIANTS[1]
 
-    dqn_target = _representative_seed_target(
-        find_model_targets(
-            results,
-            algorithm=dqn_algorithm,
-            state_representation=dqn_state,
-            reward_type=dqn_reward,
-            training_episodes=(
-                FINAL_TRAINING_EPISODES
-            ),
-        )
+    dqn_targets = find_model_targets(
+        results,
+        algorithm=dqn_algorithm,
+        state_representation=dqn_state,
+        reward_type=dqn_reward,
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
-    reinforce_target = (
-        _representative_seed_target(
-            find_model_targets(
-                results,
-                algorithm=reinforce_algorithm,
-                state_representation=(
-                    reinforce_state
-                ),
-                reward_type=(
-                    reinforce_reward
-                ),
-                training_episodes=(
-                    FINAL_TRAINING_EPISODES
-                ),
-            )
-        )
+    reinforce_targets = find_model_targets(
+        results,
+        algorithm=reinforce_algorithm,
+        state_representation=(
+            reinforce_state
+        ),
+        reward_type=(
+            reinforce_reward
+        ),
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
     return (
         (
             "Random",
-            find_target(
-                results,
-                "baseline_random",
+            (
+                find_target(
+                    results,
+                    "baseline_random",
+                ),
             ),
         ),
         (
             "RuleBased",
-            find_target(
-                results,
-                "baseline_rule_based",
+            (
+                find_target(
+                    results,
+                    "baseline_rule_based",
+                ),
             ),
         ),
         (
             "DQN",
-            dqn_target,
+            dqn_targets,
         ),
         (
             "REINFORCE",
-            reinforce_target,
+            reinforce_targets,
         ),
     )
 
@@ -4230,18 +4271,22 @@ def plot_action_funnel_by_street(
     *,
     output_dir: Path,
 ) -> None:
-    series = _representative_series(
+    series = _reference_series(
         results
     )
 
     series_actions = tuple(
         (
             label,
-            load_round_actions(
-                target.rounds_path
+            tuple(
+                sequence
+                for target in targets
+                for sequence in load_round_actions(
+                    target.rounds_path
+                )
             ),
         )
-        for label, target in series
+        for label, targets in series
     )
 
     figure, axes = plt.subplots(
@@ -4377,7 +4422,8 @@ def plot_action_funnel_by_street(
         0.01,
         "Udziały akcji liczone wyłącznie wśród rozdań, które "
         "faktycznie dotarły do danej ulicy (preflop = 100% "
-        "rozdań z definicji).",
+        "rozdań z definicji). DQN i REINFORCE: rozdania "
+        "zebrane ze wszystkich pięciu seedów konfiguracji.",
         ha="center",
         fontsize=9,
     )
@@ -4398,9 +4444,16 @@ def plot_postflop_action_by_hand_strength(
     *,
     output_dir: Path,
 ) -> None:
-    series = _representative_series(
+    series = _reference_series(
         results
     )
+
+    colors = {
+        "Random": "0.55",
+        "RuleBased": "0.15",
+        "DQN": "C0",
+        "REINFORCE": "C1",
+    }
 
     figure, axes = plt.subplots(
         1,
@@ -4427,80 +4480,117 @@ def plot_postflop_action_by_hand_strength(
     )
 
     for axis, street_label, street_index, aggressive_action in specs:
-        for label, target in series:
-            deck_seeds = load_deck_seeds(
-                target.rounds_path
-            )
+        for label, targets in series:
+            # Każdy seed liczony osobno, żeby oprócz przeciętnej
+            # agresji pokazać też jej rozrzut pomiędzy seedami
+            # (zamiast wybierać jeden reprezentatywny przebieg).
+            per_seed_fractions: list[
+                dict[
+                    HandRank,
+                    float,
+                ]
+            ] = []
 
-            actions = load_round_actions(
-                target.rounds_path
-            )
-
-            hand_ranks = reconstruct_postflop_hand_ranks(
-                deck_seeds
-            )
-
-            aggression_by_rank: dict[
-                HandRank,
-                list[
-                    bool
-                ],
-            ] = {
-                rank: []
-                for rank in HAND_RANK_ORDER
-            }
-
-            for sequence, (
-                flop_rank,
-                river_rank,
-            ) in zip(
-                actions,
-                hand_ranks,
-            ):
-                if len(sequence) <= street_index:
-                    continue
-
-                hand_rank = (
-                    flop_rank
-                    if street_index == 1
-                    else river_rank
+            for target in targets:
+                deck_seeds = load_deck_seeds(
+                    target.rounds_path
                 )
 
-                aggression_by_rank[
-                    hand_rank
-                ].append(
-                    sequence[street_index]
-                    == aggressive_action
+                actions = load_round_actions(
+                    target.rounds_path
+                )
+
+                hand_ranks = reconstruct_postflop_hand_ranks(
+                    deck_seeds
+                )
+
+                aggression_by_rank: dict[
+                    HandRank,
+                    list[
+                        bool
+                    ],
+                ] = {
+                    rank: []
+                    for rank in HAND_RANK_ORDER
+                }
+
+                for sequence, (
+                    flop_rank,
+                    river_rank,
+                ) in zip(
+                    actions,
+                    hand_ranks,
+                ):
+                    if len(sequence) <= street_index:
+                        continue
+
+                    hand_rank = (
+                        flop_rank
+                        if street_index == 1
+                        else river_rank
+                    )
+
+                    aggression_by_rank[
+                        hand_rank
+                    ].append(
+                        sequence[street_index]
+                        == aggressive_action
+                    )
+
+                per_seed_fractions.append(
+                    {
+                        rank: (
+                            sum(decisions)
+                            / len(decisions)
+                        )
+                        for rank, decisions in aggression_by_rank.items()
+                        if decisions
+                    }
                 )
 
             x_positions = []
-            y_values = []
+            y_means = []
+            y_errors = []
 
             for index, rank in enumerate(
                 HAND_RANK_ORDER
             ):
-                decisions = aggression_by_rank[
-                    rank
+                values_for_rank = [
+                    fractions[rank]
+                    for fractions in per_seed_fractions
+                    if rank in fractions
                 ]
 
-                if not decisions:
+                if not values_for_rank:
                     continue
 
                 x_positions.append(
                     index
                 )
 
-                y_values.append(
-                    sum(decisions)
-                    / len(decisions)
+                y_means.append(
+                    fmean(
+                        values_for_rank
+                    )
                 )
 
-            axis.plot( # type: ignore
+                y_errors.append(
+                    stdev(
+                        values_for_rank
+                    )
+                    if len(values_for_rank) > 1
+                    else 0.0
+                )
+
+            axis.errorbar( # type: ignore
                 x_positions,
-                y_values,
+                y_means,
+                yerr=y_errors,
                 marker="o",
                 markersize=5,
                 linewidth=1.6,
+                capsize=3,
+                color=colors[label],
                 label=label,
             )
 
@@ -4555,7 +4645,8 @@ def plot_postflop_action_by_hand_strength(
         0.01,
         "Liczone wyłącznie wśród rozdań, które dotarły do danej "
         "ulicy. Puste kategorie (np. poker królewski na flopie) "
-        "są pominięte na wykresie.",
+        "są pominięte na wykresie. DQN i REINFORCE: średnia "
+        "i odchylenie standardowe po pięciu seedach konfiguracji.",
         ha="center",
         fontsize=9,
     )
@@ -4576,7 +4667,7 @@ def plot_agent_profile_radar(
     *,
     output_dir: Path,
 ) -> None:
-    series = _representative_series(
+    series = _reference_series(
         results
     )
 
@@ -4605,17 +4696,36 @@ def plot_agent_profile_radar(
         ]
     ] = []
 
-    for label, target in series:
-        actions = load_round_actions(
-            target.rounds_path
+    for label, targets in series:
+        # Behawioralne stawki i zmienność liczone na wszystkich
+        # rozdaniach ze wszystkich seedów razem (poolowanie), a EV
+        # tą samą metodą co reszta raportu (średnia po seedach
+        # z przedziałem ufności), zamiast wybierać jeden seed.
+        actions = tuple(
+            sequence
+            for target in targets
+            for sequence in load_round_actions(
+                target.rounds_path
+            )
         )
 
         net_profits = [
             float(value)
+            for target in targets
             for value in load_round_net_profits(
                 target.rounds_path
             )
         ]
+
+        ev = (
+            aggregate_model_ev(
+                targets
+            ).mean
+            if len(targets) > 1
+            else get_evaluation_ev(
+                targets[0]
+            )
+        )
 
         preflop_aggression = (
             sum(
@@ -4658,9 +4768,7 @@ def plot_agent_profile_radar(
             (
                 label,
                 (
-                    get_evaluation_ev(
-                        target
-                    ),
+                    ev,
                     preflop_aggression,
                     reach_river,
                     fold_at_river,
@@ -4822,7 +4930,9 @@ def plot_agent_profile_radar(
         0.5,
         0.02,
         "Każda oś znormalizowana min-max niezależnie, "
-        "względem czterech agentów, nie w skali absolutnej.",
+        "względem czterech agentów, nie w skali absolutnej. "
+        "DQN i REINFORCE: dane ze wszystkich pięciu seedów "
+        "konfiguracji.",
         ha="center",
         fontsize=8,
     )
@@ -4863,34 +4973,28 @@ def plot_ev_advantage_waterfall(
         reinforce_reward,
     ) = BEST_VARIANTS[1]
 
-    dqn_target = _representative_seed_target(
-        find_model_targets(
-            results,
-            algorithm=dqn_algorithm,
-            state_representation=dqn_state,
-            reward_type=dqn_reward,
-            training_episodes=(
-                FINAL_TRAINING_EPISODES
-            ),
-        )
+    dqn_targets = find_model_targets(
+        results,
+        algorithm=dqn_algorithm,
+        state_representation=dqn_state,
+        reward_type=dqn_reward,
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
-    reinforce_target = (
-        _representative_seed_target(
-            find_model_targets(
-                results,
-                algorithm=reinforce_algorithm,
-                state_representation=(
-                    reinforce_state
-                ),
-                reward_type=(
-                    reinforce_reward
-                ),
-                training_episodes=(
-                    FINAL_TRAINING_EPISODES
-                ),
-            )
-        )
+    reinforce_targets = find_model_targets(
+        results,
+        algorithm=reinforce_algorithm,
+        state_representation=(
+            reinforce_state
+        ),
+        reward_type=(
+            reinforce_reward
+        ),
+        training_episodes=(
+            FINAL_TRAINING_EPISODES
+        ),
     )
 
     figure, axes = plt.subplots(
@@ -4906,69 +5010,116 @@ def plot_ev_advantage_waterfall(
         (
             axes[0],
             "DQN vs RuleBased",
-            dqn_target,
+            dqn_targets,
         ),
         (
             axes[1],
             "REINFORCE vs RuleBased",
-            reinforce_target,
+            reinforce_targets,
         ),
     )
 
-    for axis, title, agent_target in specs:
-        agent_actions = load_round_actions(
-            agent_target.rounds_path
-        )
+    for axis, title, agent_targets in specs:
+        # Kontrybucję każdej ścieżki liczę osobno dla każdego z pięciu
+        # seedów, a dopiero potem uśredniam po seedach, zamiast liczyć
+        # ją raz na jednym wybranym przebiegu. Suma uśrednionych
+        # kontrybucji nadal jest dokładnie równa średniej różnicy EV.
+        per_seed_contributions: list[
+            list[
+                float
+            ]
+        ] = []
 
-        agent_profits = [
-            float(value)
-            for value in load_round_net_profits(
+        for agent_target in agent_targets:
+            agent_actions = load_round_actions(
                 agent_target.rounds_path
             )
-        ]
 
-        differences = [
-            agent_value - baseline_value
-            for agent_value, baseline_value in zip(
-                agent_profits,
-                baseline_profits,
-            )
-        ]
-
-        contributions = []
-
-        for path in DECISION_PATHS:
-            indices = [
-                index
-                for index, sequence in enumerate(
-                    agent_actions
+            agent_profits = [
+                float(value)
+                for value in load_round_net_profits(
+                    agent_target.rounds_path
                 )
-                if sequence == path
             ]
 
-            weight = (
-                len(indices)
-                / len(agent_actions)
-            )
-
-            mean_difference_on_path = (
-                fmean(
-                    differences[index]
-                    for index in indices
+            differences = [
+                agent_value - baseline_value
+                for agent_value, baseline_value in zip(
+                    agent_profits,
+                    baseline_profits,
                 )
-                if indices
-                else 0.0
+            ]
+
+            seed_contributions = []
+
+            for path in DECISION_PATHS:
+                indices = [
+                    index
+                    for index, sequence in enumerate(
+                        agent_actions
+                    )
+                    if sequence == path
+                ]
+
+                weight = (
+                    len(indices)
+                    / len(agent_actions)
+                )
+
+                mean_difference_on_path = (
+                    fmean(
+                        differences[index]
+                        for index in indices
+                    )
+                    if indices
+                    else 0.0
+                )
+
+                seed_contributions.append(
+                    weight
+                    * mean_difference_on_path
+                )
+
+            per_seed_contributions.append(
+                seed_contributions
             )
 
-            contributions.append(
-                weight
-                * mean_difference_on_path
+        path_count = len(
+            DECISION_PATHS
+        )
+
+        mean_contributions = [
+            fmean(
+                seed_contributions[path_index]
+                for seed_contributions in per_seed_contributions
             )
+            for path_index in range(
+                path_count
+            )
+        ]
+
+        contribution_estimates = [
+            summarize_values(
+                tuple(
+                    seed_contributions[path_index]
+                    for seed_contributions in per_seed_contributions
+                ),
+                critical_value=(
+                    STUDENT_T_95_DF4_CRITICAL_VALUE
+                ),
+            )
+            for path_index in range(
+                path_count
+            )
+        ]
 
         cumulative = 0.0
 
-        for index, contribution in enumerate(
-            contributions
+        for index, (contribution, estimate) in enumerate(
+            zip(
+                mean_contributions,
+                contribution_estimates,
+            )
         ):
             axis.bar( # type: ignore
                 index,
@@ -4982,15 +5133,54 @@ def plot_ev_advantage_waterfall(
                 width=0.6,
             )
 
+            axis.errorbar( # type: ignore
+                index,
+                cumulative
+                + contribution / 2,
+                yerr=(
+                    estimate.ci95_high
+                    - estimate.mean
+                ),
+                fmt="none",
+                ecolor="black",
+                capsize=3,
+                linewidth=1.0,
+            )
+
             cumulative += contribution
 
-        axis.bar( # type: ignore
-            len(
-                DECISION_PATHS
+        total_per_seed = tuple(
+            sum(
+                seed_contributions
+            )
+            for seed_contributions in per_seed_contributions
+        )
+
+        total_estimate = summarize_values(
+            total_per_seed,
+            critical_value=(
+                STUDENT_T_95_DF4_CRITICAL_VALUE
             ),
+        )
+
+        axis.bar( # type: ignore
+            path_count,
             cumulative,
             color="0.3",
             width=0.6,
+        )
+
+        axis.errorbar( # type: ignore
+            path_count,
+            cumulative / 2,
+            yerr=(
+                total_estimate.ci95_high
+                - total_estimate.mean
+            ),
+            fmt="none",
+            ecolor="black",
+            capsize=3,
+            linewidth=1.0,
         )
 
         axis.axhline( # type: ignore
@@ -5032,8 +5222,8 @@ def plot_ev_advantage_waterfall(
         )
 
     figure.suptitle( # type: ignore
-        "Skąd bierze się przewaga EV nad RuleBased, "
-        "rozłożona na ścieżki decyzji"
+        "Źródła różnicy EV względem RuleBased, "
+        "rozłożone na ścieżki decyzji"
     )
 
     figure.text( # type: ignore
@@ -5042,7 +5232,9 @@ def plot_ev_advantage_waterfall(
         "Dekompozycja dokładna, nie kontrfaktyczna: wkład "
         "ścieżki = jej częstość razy średnia różnica EV na "
         "rozdaniach, które nią poszły. Suma słupków = "
-        "całkowita średnia różnica.",
+        "całkowita średnia różnica. Kontrybucja liczona osobno "
+        "dla każdego z pięciu seedów, słupki i wąsy błędu to "
+        "średnia i 95% przedział ufności po seedach.",
         ha="center",
         fontsize=8,
     )

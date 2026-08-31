@@ -159,7 +159,6 @@ def get_run_status(
         run_dir / "summary.json",
         run_dir / "learning_curve.csv",
         run_dir / "model.pt",
-        run_dir / "training_diagnostics.csv",
     )
 
     existing_count = sum(
