@@ -20,6 +20,7 @@ from expert_poker_player.dqn.targets import (
     compute_bellman_targets,
 )
 from expert_poker_player.dqn.optimization import (
+    DQNOptimizationResult,
     DQNOptimizer,
 )
 from expert_poker_player.dqn.training import (
@@ -49,6 +50,7 @@ __all__ = [
     "Transition",
     "DQNConfig",
     "compute_bellman_targets",
+    "DQNOptimizationResult",
     "DQNOptimizer",
     "DQNEpisodeStats",
     "DQNTrainingResult",

@@ -218,6 +218,12 @@ def test_partial_run_is_executed_again(
 
     monkeypatch.setattr(
         final_training,
+        "write_training_diagnostics",
+        lambda path, result: None, # type: ignore
+    )
+
+    monkeypatch.setattr(
+        final_training,
         "save_checkpoint",
         lambda path, variant, result: None, # type: ignore
     )

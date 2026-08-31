@@ -1,3 +1,5 @@
+import math
+
 import pytest
 import torch
 
@@ -204,20 +206,48 @@ def test_optimization_returns_finite_loss() -> None:
         gamma=0.99,
     )
 
-    loss = optimizer.optimize(
+    result = optimizer.optimize(
         (
             build_terminal_transition(),
         )
     )
 
     assert isinstance(
-        loss,
+        result.loss,
         float,
     )
 
     assert torch.isfinite(
-        torch.tensor(loss)
+        torch.tensor(result.loss)
     )
+
+def test_optimization_returns_finite_gradient_norm() -> None:
+    policy = QNetwork(
+        input_size=INPUT_SIZE
+    )
+
+    target = QNetwork(
+        input_size=INPUT_SIZE
+    )
+
+    optimizer = DQNOptimizer(
+        policy_network=policy,
+        target_network=target,
+        learning_rate=1e-3,
+        gamma=0.99,
+    )
+
+    result = optimizer.optimize(
+        (
+            build_terminal_transition(),
+        )
+    )
+
+    assert math.isfinite(
+        result.gradient_norm
+    )
+
+    assert result.gradient_norm >= 0.0
 
 def test_loss_uses_q_value_for_taken_action() -> None:
     policy = QNetwork(
@@ -268,13 +298,13 @@ def test_loss_uses_q_value_for_taken_action() -> None:
         next_action_mask=None,
     )
 
-    loss = optimizer.optimize(
+    result = optimizer.optimize(
         (
             transition,
         )
     )
 
-    assert loss == 0.0
+    assert result.loss == 0.0
 
 def test_loss_matches_smooth_l1_for_known_nonzero_residual() -> None:
     """Odróżnia SmoothL1Loss od MSE/L1 na znanym, niezerowym residuum."""
@@ -327,7 +357,7 @@ def test_loss_matches_smooth_l1_for_known_nonzero_residual() -> None:
         next_action_mask=None,
     )
 
-    loss = optimizer.optimize(
+    result = optimizer.optimize(
         (
             transition,
         )
@@ -337,6 +367,6 @@ def test_loss_matches_smooth_l1_for_known_nonzero_residual() -> None:
     # residual = |20.0 - 18.0| = 2.0 >= beta(1.0),
     # so SmoothL1Loss == |residual| - 0.5 * beta == 1.5.
     # MSELoss would give 4.0, L1Loss would give 2.0 -- both distinguishable.
-    assert loss == pytest.approx(1.5)
+    assert result.loss == pytest.approx(1.5)
 
 

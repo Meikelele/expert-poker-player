@@ -1,0 +1,3 @@
+identifier,estimated_ev,standard_error,mean_staked
+baseline_random,-0.517295,0.016742357566815937,4.75177
+baseline_rule_based,-0.01059,0.01649398372237557,4.17608

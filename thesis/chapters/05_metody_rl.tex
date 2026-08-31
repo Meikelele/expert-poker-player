@@ -20,26 +20,74 @@ zestawieniem różnic pomiędzy tymi dwoma podejściami.
 \section{Porównanie podejść}
 \label{sec:porownanie-dqn-pg}
 
-Oba zastosowane algorytmy rozwiązują ten sam problem decyzyjny, ale
-w odmienny sposób, co warto podsumować przed przejściem do wyników.
-
 DQN uczy się przybliżonej wartości $Q$ dla każdej pary stanu i akcji,
 a decyzję podejmuje pośrednio, wybierając akcję o najwyższej ocenionej
 wartości. Policy Gradient nie szacuje wartości poszczególnych akcji,
 tylko uczy się wprost rozkładu prawdopodobieństwa ich wyboru, więc
 decyzja wynika bezpośrednio z wyjścia sieci polityki.
 
-Różnica ta wpływa również na sposób wykorzystania zebranych danych.
-Ocena wartości akcji w DQN nie zależy od tego, jaka polityka
-aktualnie tę akcję wybiera, dlatego mogę wielokrotnie uczyć sieć na
-tych samych, wcześniej zebranych przejściach przechowywanych w
-buforze doświadczeń. Estymator REINFORCE zakłada natomiast, że dany
-epizod pochodzi z polityki właśnie aktualizowanej, dlatego każdy
-zebrany batch epizodów wykorzystuję tylko do jednej aktualizacji,
-a potem odrzucam.
+Różnica ta wpływa też na to, skąd bierze się cel każdej aktualizacji.
+DQN nie czeka na koniec rozdania, tylko szacuje cel na podstawie
+wartości ocenionej przez sieć docelową dla następnego stanu. Taką
+technikę nazywa się bootstrappingiem (ang. \emph{bootstrapping}).
+Wartość jednego stanu wyznacza się w niej na podstawie oszacowanej
+wartości stanu następnego, a nie na podstawie faktycznego wyniku
+całego epizodu \cite{sutton_barto_rl}. REINFORCE działa odwrotnie
+czeka, aż rozdanie się zakończy, i aktualizuje politykę na podstawie
+faktycznie otrzymanej wypłaty, czyli zwrotu $G_t$ z
+rysunku~\ref{fig:reinforce-return}.
+
+Ta różnica wpływa również na sposób wykorzystania zebranych danych.
+Ocena wartości akcji w DQN nie zależy od tego, jaka polityka aktualnie
+tę akcję wybiera.
+Estymator REINFORCE zakłada natomiast, że dany epizod pochodzi
+z polityki właśnie aktualizowanej, dlatego każdy zebrany batch
+epizodów wykorzystuję tylko do jednej aktualizacji, a potem odrzucam.
 
 Odmiennie wygląda też eksploracja. DQN wymaga osobnego mechanizmu
 epsilon-greedy, ponieważ sama sieć $Q$ zwraca deterministyczną ocenę
 wartości. W Policy Gradient eksploracja wynika naturalnie ze
-stochastycznego charakteru wyuczonej polityki, bez potrzeby
-dodatkowego, niezależnego losowania.
+stochastycznego charakteru wyuczonej polityki. Te różnice przedstawiłem na rysunku~\ref{fig:training-rhythm}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={font=\small},
+        box/.style={draw, rounded corners, align=center, minimum width=34mm, minimum height=9mm}
+    ]
+        \node[box, very thick] (dqn1) at (0,36mm) {krok w środowisku};
+        \node[box] (dqn2) at (0,24mm) {bufor doświadczeń};
+        \node[box] (dqn3) at (0,12mm) {minibatch};
+        \node[box] (dqn4) at (0,0mm) {bootstrap z sieci docelowej};
+        \node[box, very thick] (dqn5) at (0,-12mm) {aktualizacja};
+
+        \draw[-{Latex}] (dqn1) -- (dqn2);
+        \draw[-{Latex}] (dqn2) -- (dqn3);
+        \draw[-{Latex}] (dqn3) -- (dqn4);
+        \draw[-{Latex}] (dqn4) -- (dqn5);
+        \draw[-{Latex}] (dqn5.east) -- ++(12mm,0) |- (dqn1.east)
+            node[midway, right=1mm, align=left] {powtórz\\co krok};
+
+        \node[above=4mm of dqn1] {\textbf{DQN}};
+
+        \node[box, very thick] (pg1) at (62mm,36mm) {pełny epizod};
+        \node[box] (pg2) at (62mm,24mm) {batch 32 epizodów};
+        \node[box] (pg3) at (62mm,12mm) {prawdziwy zwrot $G_t$};
+        \node[box, very thick] (pg4) at (62mm,0mm) {jedna aktualizacja};
+        \node[box] (pg5) at (62mm,-12mm) {batch wyrzucony};
+
+        \draw[-{Latex}] (pg1) -- (pg2);
+        \draw[-{Latex}] (pg2) -- (pg3);
+        \draw[-{Latex}] (pg3) -- (pg4);
+        \draw[-{Latex}] (pg4) -- (pg5);
+        \draw[-{Latex}] (pg5.east) -- ++(12mm,0) |- (pg1.east)
+            node[midway, right=1mm, align=left] {powtórz\\co batch};
+
+        \node[above=4mm of pg1] {\textbf{REINFORCE}};
+    \end{tikzpicture}
+    \caption{DQN aktualizuje sieć na
+    bieżąco, ponownie wykorzystując stare przejścia z bufora.
+    REINFORCE zbiera cały batch epizodów z aktualnej polityki
+    i wykorzystuje go tylko raz.}
+    \label{fig:training-rhythm}
+\end{figure}

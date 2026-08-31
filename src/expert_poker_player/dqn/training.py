@@ -53,6 +53,7 @@ class DQNEpisodeStats:
     steps: int
     optimizer_updates: int
     mean_loss: float | None
+    mean_gradient_norm: float | None
     epsilon: float
 
 
@@ -184,6 +185,7 @@ def train_dqn(
         episode_updates = 0
 
         losses: list[float] = []
+        gradient_norms: list[float] = []
 
         while not observation.terminated:
             epsilon = config.epsilon_at_step(
@@ -253,12 +255,16 @@ def train_dqn(
                     config.batch_size
                 )
 
-                loss = optimizer.optimize(
+                result = optimizer.optimize(
                     transitions
                 )
 
                 losses.append(
-                    loss
+                    result.loss
+                )
+
+                gradient_norms.append(
+                    result.gradient_norm
                 )
 
                 optimizer_updates += 1
@@ -279,6 +285,12 @@ def train_dqn(
             else None
         )
 
+        mean_gradient_norm = (
+            sum(gradient_norms) / len(gradient_norms)
+            if gradient_norms
+            else None
+        )
+
         episode_stats.append(
             DQNEpisodeStats(
                 episode=episode,
@@ -286,6 +298,7 @@ def train_dqn(
                 steps=episode_steps,
                 optimizer_updates=episode_updates,
                 mean_loss=mean_loss,
+                mean_gradient_norm=mean_gradient_norm,
                 epsilon=agent.epsilon,
             )
         )
