@@ -8,6 +8,22 @@ from fractions import Fraction
 from math import isfinite, sqrt
 from statistics import fmean, stdev
 
+from expert_poker_player.cards import (
+    Card,
+    Deck,
+)
+from expert_poker_player.hands.evaluator import (
+    evaluate_best_hand,
+)
+from expert_poker_player.hands.hand_rank import (
+    HandRank,
+)
+from expert_poker_player.uth.dealing import (
+    deal_initial_cards,
+    reveal_flop,
+    reveal_turn_and_river,
+)
+
 
 FINAL_TRAINING_RUN_COUNT = 40
 EXTENDED_TRAINING_RUN_COUNT = 10
@@ -877,7 +893,7 @@ def find_target(
     return matches[0]
 
 
-def _load_round_net_profits(
+def load_round_net_profits(
     path: Path,
 ) -> tuple[
     Fraction,
@@ -922,13 +938,13 @@ def paired_round_comparison(
     right: EvaluationTargetData,
 ) -> MeanEstimate:
     left_values = (
-        _load_round_net_profits(
+        load_round_net_profits(
             left.rounds_path
         )
     )
 
     right_values = (
-        _load_round_net_profits(
+        load_round_net_profits(
             right.rounds_path
         )
     )
@@ -964,6 +980,195 @@ def paired_round_comparison(
     )
 
 
+def load_deck_seeds(
+    path: Path,
+) -> tuple[
+    int,
+    ...
+]:
+    seeds: list[
+        int
+    ] = []
+
+    with path.open(
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        reader = csv.DictReader(
+            file
+        )
+
+        for row in reader:
+            seeds.append(
+                int(
+                    row["deck_seed"]
+                )
+            )
+
+    if (
+        len(seeds)
+        != FINAL_EVALUATION_ROUNDS
+    ):
+        raise ValueError(
+            f"{path} must contain "
+            "100000 deck seeds"
+        )
+
+    return tuple(
+        seeds
+    )
+
+
+def load_round_actions(
+    path: Path,
+) -> tuple[
+    tuple[str, ...],
+    ...
+]:
+    sequences: list[
+        tuple[str, ...]
+    ] = []
+
+    with path.open(
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        reader = csv.DictReader(
+            file
+        )
+
+        for row in reader:
+            sequences.append(
+                tuple(
+                    row["actions"].split(
+                        "|"
+                    )
+                )
+            )
+
+    if (
+        len(sequences)
+        != FINAL_EVALUATION_ROUNDS
+    ):
+        raise ValueError(
+            f"{path} must contain "
+            "100000 action sequences"
+        )
+
+    return tuple(
+        sequences
+    )
+
+
+def reconstruct_preflop_hole_cards(
+    deck_seeds: tuple[
+        int,
+        ...
+    ],
+) -> tuple[
+    tuple[Card, Card],
+    ...
+]:
+    """
+    Odtwarza karty prywatne gracza z ziarna talii.
+
+    Ten sam seed talii, przekazany do Deck, daje dokładnie taką samą
+    kolejność kart, jaka faktycznie została rozdana podczas ewaluacji,
+    ponieważ run_simulation korzysta z tego samego mechanizmu
+    (Deck(seed=deck_seed) jako źródło kart dla UTHGame).
+    """
+
+    hole_cards: list[
+        tuple[Card, Card]
+    ] = []
+
+    for deck_seed in deck_seeds:
+        state = deal_initial_cards(
+            Deck(
+                seed=deck_seed
+            )
+        )
+
+        hole_cards.append(
+            state.player_cards
+        )
+
+    return tuple(
+        hole_cards
+    )
+
+
+def reconstruct_postflop_hand_ranks(
+    deck_seeds: tuple[
+        int,
+        ...
+    ],
+) -> tuple[
+    tuple[
+        HandRank,
+        HandRank,
+    ],
+    ...,
+]:
+    """
+    Odtwarza kategorię najlepszego układu gracza na flopie i river.
+
+    Karty wspólne są rozdawane w tej samej kolejności niezależnie od
+    tego, na którym etapie gracz faktycznie podjął decyzję (w UTH
+    krupier zawsze dociąga cały flop, turn i river, żeby móc rozliczyć
+    zakład Play), więc odtworzenie działa dla każdego rozdania, nawet
+    jeśli realna sekwencja akcji z ewaluacji jest krótsza niż trzy
+    kroki.
+    """
+
+    ranks: list[
+        tuple[
+            HandRank,
+            HandRank,
+        ]
+    ] = []
+
+    for deck_seed in deck_seeds:
+        deck = Deck(
+            seed=deck_seed
+        )
+
+        preflop_state = deal_initial_cards(
+            deck
+        )
+
+        flop_state = reveal_flop(
+            preflop_state,
+            deck,
+        )
+
+        river_state = reveal_turn_and_river(
+            flop_state,
+            deck,
+        )
+
+        flop_rank = evaluate_best_hand(
+            flop_state.player_cards
+            + flop_state.community_cards
+        ).value.rank
+
+        river_rank = evaluate_best_hand(
+            river_state.player_cards
+            + river_state.community_cards
+        ).value.rank
+
+        ranks.append(
+            (
+                flop_rank,
+                river_rank,
+            )
+        )
+
+    return tuple(
+        ranks
+    )
 
 
 def main() -> None:

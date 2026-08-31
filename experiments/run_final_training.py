@@ -88,6 +88,9 @@ class FinalTrainingManifestEntry:
             "checkpoint_path": str(
                 self.run_dir / "model.pt"
             ),
+            "training_diagnostics_path": str(
+                self.run_dir / "training_diagnostics.csv"
+            ),
         }
 
 
@@ -156,6 +159,7 @@ def get_run_status(
         run_dir / "summary.json",
         run_dir / "learning_curve.csv",
         run_dir / "model.pt",
+        run_dir / "training_diagnostics.csv",
     )
 
     existing_count = sum(
@@ -317,6 +321,10 @@ def run_variant(
         run_dir / "model.pt"
     )
 
+    training_diagnostics_path = (
+        run_dir / "training_diagnostics.csv"
+    )
+
     if (
         get_run_status(run_dir)
         is FinalRunStatus.COMPLETED
@@ -370,6 +378,11 @@ def run_variant(
 
     write_learning_curve(
         learning_curve_path,
+        result,
+    )
+
+    write_training_diagnostics(
+        training_diagnostics_path,
         result,
     )
 
@@ -434,6 +447,34 @@ def write_learning_curve(
                     "mean_staked": (
                         point.evaluation.mean_staked
                     ),
+                }
+            )
+
+
+def write_training_diagnostics(
+    path: Path,
+    result: ExperimentExecutionResult,
+) -> None:
+    with path.open(
+        "w",
+        newline="",
+        encoding="utf-8",
+    ) as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=(
+                "episode",
+                "gradient_norm",
+            ),
+        )
+
+        writer.writeheader()
+
+        for episode, gradient_norm in result.diagnostics:
+            writer.writerow(
+                {
+                    "episode": episode,
+                    "gradient_norm": gradient_norm,
                 }
             )
 

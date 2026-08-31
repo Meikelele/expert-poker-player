@@ -1,42 +1,67 @@
 \chapter{Metodyka eksperymentów}
 \label{chap:eksperymenty}
 
-Celem eksperymentów jest porównanie wpływu zastosowanego algorytmu
-uczenia przez wzmacnianie, reprezentacji stanu oraz funkcji nagrody
-na jakość strategii uzyskiwanej w środowisku Ultimate Texas Hold'em.
-W badaniu wykorzystano dwa algorytmy opisane w rozdziale
-\ref{chap:metody-rl}: DQN oraz REINFORCE.
+Przeprowadziłem eksperymenty, w których porównuję wpływ algorytmu
+uczenia przez wzmacnianie, reprezentacji stanu oraz funkcji nagrody na
+jakość strategii uzyskiwanej w środowisku Ultimate Texas Hold'em.
+Wykorzystuję dwa algorytmy opisane w rozdziale~\ref{chap:metody-rl},
+tzn. DQN oraz REINFORCE. Za podstawową jednostkę treningu przyjmuję
+epizod, czyli pojedyncze rozdanie. Polityką nazywam sam wyuczony model
+decyzyjny, natomiast strategią konkretne zachowanie, które ta polityka
+realizuje w danym momencie treningu lub ewaluacji.
 
-Eksperyment zaprojektowano w taki sposób, aby poszczególne warianty
-różniły się wyłącznie badanymi elementami. Pozostałe właściwości
-środowiska, sposób generowania rozdań oraz procedura ewaluacji są
-wspólne dla wszystkich konfiguracji.
+Właściwości środowiska, sposób generowania rozdań oraz procedura
+ewaluacji są wspólne dla wszystkich eksperymentów, a poszczególne
+warianty eksperymentów różnią się wyłącznie badanymi elementami.
+Cały przebieg jednego eksperymentu, od treningu pojedynczego modelu do
+porównania wszystkich wariantów, przedstawiłem na
+rysunku~\ref{fig:experiment-pipeline}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={font=\small},
+        box/.style={draw, rounded corners, align=center, minimum width=28mm, minimum height=13mm}
+    ]
+        \node[box, very thick] (train) at (0,0) {trening\\do 50\,000 epizodów};
+        \node[box] (checkpoint) at (36mm,0) {checkpoint\\modelu};
+        \node[box] (eval) at (72mm,0) {ewaluacja końcowa\\100\,000 rozdań};
+        \node[box] (compare) at (108mm,0) {porównania\\sparowane};
+
+        \draw[-{Latex}, thick] (train) -- (checkpoint);
+        \draw[-{Latex}, thick] (checkpoint) -- (eval);
+        \draw[-{Latex}, thick] (eval) -- (compare);
+
+        \node[box, below=10mm of train] (validation) {walidacja\\2\,000 rozdań};
+
+        \draw[-{Latex}, thick] (train.south) -- (validation.north)
+            node[midway, right] {co 4\,000 epizodów};
+    \end{tikzpicture}
+    \caption{Przebieg jednego eksperymentu. Walidacja powtarza się
+    cyklicznie w trakcie treningu, natomiast ewaluacja końcowa
+    i porównania sparowane wykonuję już na wytrenowanym modelu.}
+    \label{fig:experiment-pipeline}
+\end{figure}
 
 \section{Macierz eksperymentalna}
 
-Porównanie obejmuje dwa algorytmy uczenia, dwie reprezentacje stanu
-oraz dwie funkcje nagrody. Łącznie daje to osiem konfiguracji:
+Tak jak wspomniałem, rozpatruję dwa algorytmy uczenia przez
+wzmacnianie, dwie reprezentacje stanu oraz dwie funkcje nagrody, co
+łącznie daje $2 \times 2 \times 2 = 8$ konfiguracji.
 
-\begin{equation}
-2 \times 2 \times 2 = 8.
-\end{equation}
+Dla każdego algorytmu analizuję reprezentacje RAW oraz FEATURES,
+odpowiadające State A i State B z podrozdziału~\ref{subsec:state-a}
+i~\ref{subsec:state-b}.
 
-Dla każdego algorytmu analizowane są reprezentacje RAW oraz FEATURES.
-Pierwsza z nich zawiera bezpośrednie kodowanie obserwowanych kart,
-fazy rozdania oraz zbioru legalnych akcji. Druga rozszerza tę
-reprezentację o cechy pokerowe wyznaczane na podstawie informacji
-dostępnych graczowi.
+W przypadku funkcji nagrody porównuję bezpośrednią wartość zysku
+netto z rozdania oraz jej wersję przeskalowaną przez maksymalną
+wartość stawki. 
 
-W przypadku funkcji nagrody porównywana jest bezpośrednia wartość
-zysku netto z rozdania oraz jej wersja przeskalowana przez maksymalną
-wartość stawki. Skalowanie nie zmienia kierunku optymalizacji i nie
-wprowadza obcinania wartości nagrody.
-
-Ostateczna macierz obejmuje następujące konfiguracje:
+Wszystkie osiem wariantów przedstawiam w tabeli~\ref{tab:experiment-configurations}.
 
 \begin{table}[ht]
     \centering
-    \caption{Konfiguracje wykorzystane w eksperymencie}
+    \caption{Konfiguracje wykorzystane w eksperymentach}
     \label{tab:experiment-configurations}
     \begin{tabular}{lll}
         \hline
@@ -56,109 +81,92 @@ Ostateczna macierz obejmuje następujące konfiguracje:
 
 \section{Powtarzalność eksperymentów}
 
-Ze względu na losowy charakter procesu uczenia pojedynczy przebieg
-nie jest wystarczający do wiarygodnej oceny konfiguracji.
-Każdy z ośmiu wariantów jest dlatego trenowany z użyciem pięciu
-niezależnych ziaren losowości. Prowadzi to do wykonania łącznie
+Ze względu na losowy charakter procesu uczenia pojedynczy przebieg nie
+jest wystarczający do wiarygodnej oceny konfiguracji. Każdy z ośmiu
+wariantów trenuję dlatego z użyciem pięciu niezależnych ziaren
+losowości, co daje w sumie $8 \times 5 = 40$ niezależnych procesów
+treningowych.
 
-\begin{equation}
-8 \times 5 = 40
-\end{equation}
-
-niezależnych procesów treningowych.
-
-Ten sam zestaw pięciu ziaren jest wykorzystywany dla wszystkich
-wariantów. Takie rozwiązanie pozwala ograniczyć wpływ przypadkowych
-różnic wynikających z losowania rozdań i ułatwia porównanie wpływu
-reprezentacji stanu oraz funkcji nagrody.
-
-Oddzielne generatory liczb pseudolosowych wykorzystywane są przez
-środowisko oraz mechanizmy eksploracji agentów. Ewaluacja okresowa
-nie modyfikuje stanu generatorów używanych podczas treningu, dzięki
-czemu jej wykonywanie nie wpływa na dalszy przebieg uczenia.
+Ten sam zestaw pięciu ziaren wykorzystuję dla wszystkich wariantów.
+W ten sposób ograniczam wpływ przypadkowych różnic wynikających
+z losowania rozdań, co również ułatwia porównanie wpływu reprezentacji
+stanu oraz funkcji nagrody.
 
 \section{Budżet treningowy}
 
-Podstawowy budżet treningowy ustalono na 50~000 epizodów dla każdej
-konfiguracji. Wartość tę wybrano na podstawie wcześniejszego
-eksperymentu diagnostycznego, w którym obserwowano zachowanie
+Podstawowy budżet treningowy ustaliłem na 50\,000 epizodów dla każdej
+konfiguracji. Wartość tę wybrałem na podstawie wcześniejszego
+eksperymentu diagnostycznego, w którym obserwowałem zachowanie
 wszystkich ośmiu wariantów podczas treningu.
 
 W przypadku DQN zwiększanie liczby epizodów nie prowadziło do
-systematycznego wzrostu jakości polityki. W części konfiguracji
-obserwowano również pogorszenie wyniku po dłuższym treningu.
+regularnego wzrostu jakości polityki. Co ciekawe, w części konfiguracji
+zaobserwowałem nawet pogorszenie wyniku po dłuższym treningu.
 
 W przypadku REINFORCE część przebiegów osiągała stabilne, proste
 polityki, takie jak wybieranie tego samego zakładu dla większości
-stanów. Dodatkowy przebieg diagnostyczny rozszerzony do 100~000
-epizodów wykazał, że dalsze zwiększanie budżetu nie prowadziło do
+stanów. Dodatkowy przebieg diagnostyczny, rozszerzony do 100\,000
+epizodów, wykazał, że dalsze zwiększanie budżetu nie prowadziło do
 trwałej poprawy. Polityka przechodziła pomiędzy różnymi strategiami,
 a następnie ponownie zbliżała się do wcześniej obserwowanego
 rozwiązania.
 
-Z tego powodu przyjęto wspólny budżet 50~000 epizodów dla obu
-algorytmów. Pozwala to również zachować porównywalność kosztu
-uczenia pomiędzy DQN i REINFORCE.
+Z tego powodu przyjąłem wspólny budżet 50\,000 epizodów dla obu
+algorytmów. Pozwala to również zachować porównywalność kosztu uczenia
+pomiędzy DQN i REINFORCE.
 
 \section{Walidacja okresowa}
 
-W trakcie treningu wykonywana jest okresowa ewaluacja aktualnej
-polityki. Jej celem jest obserwacja procesu uczenia i budowa krzywych
+W trakcie treningu wykonuję okresową ewaluację aktualnej polityki.
+Jej celem jest obserwacja procesu uczenia i budowa krzywych
 przedstawiających zależność jakości strategii od liczby wykonanych
 epizodów.
 
-Walidacja wykonywana jest co 4~000 epizodów oraz dodatkowo po
-zakończeniu 50~000 epizodów. Każdy punkt walidacyjny obejmuje
-2~000 rozdań wygenerowanych na podstawie tego samego, ustalonego
-harmonogramu talii.
+Walidację wykonuję co 4\,000 epizodów oraz dodatkowo po zakończeniu
+50\,000 epizodów. Każdy punkt walidacyjny obejmuje 2\,000 rozdań
+wygenerowanych na podstawie tego samego, ustalonego harmonogramu talii.
 
-Zastosowanie wspólnego harmonogramu oznacza, że kolejne wersje
-polityki są oceniane na identycznym zestawie sytuacji pokerowych.
-Zmiana wartości oczekiwanej pomiędzy punktami walidacyjnymi wynika
-więc ze zmiany zachowania agenta, a nie z wykorzystania innego
-zestawu kart.
+Dzięki wspólnemu harmonogramowi kolejne wersje polityki oceniam na
+identycznym zestawie sytuacji pokerowych. Zmiana wartości oczekiwanej
+pomiędzy punktami walidacyjnymi wynika więc ze zmiany zachowania
+agenta, a nie z wykorzystania innego zestawu kart.
 
-Podczas walidacji wyłączona jest eksploracja. Agent DQN wybiera
-legalną akcję o najwyższej wartości Q. W przypadku REINFORCE
-wybierana jest legalna akcja o najwyższym prawdopodobieństwie
-zgodnie z aktualną polityką. Pozwala to oceniać deterministyczną
-strategię wynikającą z aktualnego stanu modelu.
+Podczas walidacji wyłączam eksplorację. Agent DQN wybiera legalną
+akcję o najwyższej wartości $Q$, a agent REINFORCE legalną akcję
+o najwyższym prawdopodobieństwie zgodnie z aktualną polityką. Pozwala
+to oceniać deterministyczną strategię wynikającą z aktualnego stanu
+modelu.
 
-Harmonogram używany podczas walidacji jest niezależny od rozdań
-wykorzystywanych w procesie treningowym.
+Podkreślam, że harmonogram używany podczas walidacji jest niezależny
+od rozdań wykorzystywanych w procesie treningowym.
 
 \section{Rozszerzona analiza treningu}
 
-Po wykonaniu podstawowej macierzy eksperymentalnej planowana jest
-dodatkowa analiza długiego treningu. Na podstawie wyników
-walidacyjnych wybrany zostanie jeden wariant DQN oraz jeden wariant
-REINFORCE.
+Po wykonaniu podstawowego treningu przeprowadziłem
+dodatkową analizę wydłużonego treningu. Na podstawie wyników
+walidacyjnych wybrałem jeden wariant DQN oraz jeden wariant REINFORCE,
+oba z reprezentacją FEATURES, i wytrenowałem je ponownie do 100\,000
+epizodów.
 
-Wybrane konfiguracje zostaną dodatkowo wytrenowane do 100~000
-epizodów. Celem tej części badania nie jest zastąpienie podstawowego
-budżetu 50~000 epizodów ani wyszukiwanie najlepszego chwilowego
-checkpointu. Analiza ma umożliwić ocenę, czy dalszy trening prowadzi
-do trwałej poprawy strategii, stabilizacji polityki lub jej dalszych
-oscylacji.
-
-Wyniki tej części są traktowane jako analiza uzupełniająca i nie
-zmieniają podstawowej macierzy 40 procesów treningowych.
+Celem tej części bynajmniej nie była próba zastąpienia podstawowego budżetu 50\,000
+epizodów ani wyszukanie najlepszego chwilowego checkpointu, tylko
+sprawdzenie, czy dalszy trening prowadzi do trwałej poprawy strategii,
+jej stabilizacji, czy dalszych oscylacji. Traktuję te wyniki jako analizę uzupełniającą.
 
 \section{Ewaluacja końcowa}
 
-Po zakończeniu treningu modele są oceniane na oddzielnym,
-nieużywanym wcześniej harmonogramie rozdań. Harmonogram końcowy
-nie jest wykorzystywany podczas treningu, walidacji ani wyboru
-budżetu treningowego.
+Po zakończeniu treningu oceniam modele na oddzielnym harmonogramie
+rozdań, niewykorzystywanym ani podczas treningu, ani walidacji, ani
+nawet podczas wyboru budżetu treningowego.
 
-Końcowa ewaluacja obejmuje 100~000 identycznych rozdań dla każdej
-ocenianej strategii. Na tym samym zbiorze oceniani są również
-RandomAgent oraz RuleBasedAgent. Agenci bazowi nie wymagają procesu
-treningowego, dlatego liczba 100~000 dotyczy w ich przypadku
-wyłącznie liczby rozegranych rund ewaluacyjnych.
+Końcową ewaluację ustaliłem na 100\,000 identycznych rozdań dla każdej
+ocenianej strategii. Na tym samym zbiorze oceniam również
+\texttt{RandomAgent} oraz \texttt{RuleBasedAgent}. Agenci bazowi nie
+wymagają procesu treningowego, dlatego liczba 100\,000 dotyczy w ich
+przypadku wyłącznie liczby rozegranych rund ewaluacyjnych.
 
-Podstawową miarą jakości strategii jest średni zysk netto na jedno
-rozdanie:
+Dla przypomnienia, za podstawową miarą jakości strategii przyjmuję średni zysk netto na jedno
+rozdanie
 
 \begin{equation}
 EV =
@@ -169,19 +177,19 @@ EV =
 gdzie $p_i$ oznacza zysk netto uzyskany w $i$-tym rozdaniu, natomiast
 $N$ oznacza liczbę rozdań ewaluacyjnych.
 
-Oprócz wartości oczekiwanej rejestrowane są odchylenie standardowe
-wyników, błąd standardowy średniej, średnia wartość postawionych
+Oprócz wartości oczekiwanej badam również odchylenie standardowe
+wyników, błąd standardowy średniej, średnią wartość postawionych
 żetonów, liczności wyników rozdania oraz częstości wyboru
 poszczególnych akcji.
 
 \section{Porównania sparowane}
 
 Wszystkie strategie podczas ewaluacji końcowej rozgrywają ten sam
-uporządkowany zestaw rozdań. Umożliwia to wykorzystanie porównań
+uporządkowany zestaw rozdań, co umożliwia wykorzystanie porównań
 sparowanych.
 
 Dla dwóch porównywanych strategii $A$ oraz $B$ dla każdego rozdania
-wyznaczana jest różnica
+wyznaczam różnicę
 
 \begin{equation}
 d_i = p_{A,i} - p_{B,i}.
@@ -195,12 +203,8 @@ d_i = p_{A,i} - p_{B,i}.
 \sum_{i=1}^{N} d_i.
 \end{equation}
 
-Na podstawie rozkładu różnic wyznaczane są również odchylenie
-standardowe, błąd standardowy oraz 95-procentowy przedział ufności.
-Podejście sparowane ogranicza wpływ zmienności wynikającej z
-różnych układów kart, ponieważ obie strategie oceniane są w tych
-samych sytuacjach.
+Na podstawie rozkładu różnic wyznaczam również odchylenie standardowe,
+błąd standardowy oraz 95-procentowy przedział ufności. Podejście
+sparowane ogranicza wpływ zmienności wynikającej z różnych układów
+kart, ponieważ obie strategie oceniam w tych samych sytuacjach.
 
-Analiza końcowa obejmuje porównanie algorytmów DQN i REINFORCE,
-wpływu reprezentacji RAW i FEATURES, wpływu zastosowanej funkcji
-nagrody oraz odniesienie uzyskanych wyników do agentów bazowych.

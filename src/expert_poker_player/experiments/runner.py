@@ -166,6 +166,7 @@ class ExperimentExecutionResult:
     summary: ExperimentRunSummary
     policy_network: TrainedNetwork
     training_config: TrainingConfig
+    diagnostics: tuple[tuple[int, float], ...]
 
 
 def run_experiment(
@@ -243,6 +244,14 @@ def _run_dqn_experiment(
         summary=summary,
         policy_network=training_result.policy_network,
         training_config=config,
+        diagnostics=tuple(
+            (
+                stats.episode,
+                stats.mean_gradient_norm,
+            )
+            for stats in training_result.episode_stats
+            if stats.mean_gradient_norm is not None
+        ),
     )
 
 
@@ -301,6 +310,13 @@ def _run_policy_gradient_experiment(
         summary=summary,
         policy_network=training_result.policy_network,
         training_config=config,
+        diagnostics=tuple(
+            (
+                stats.last_episode,
+                stats.gradient_norm,
+            )
+            for stats in training_result.update_stats
+        ),
     )
 
 def _evaluate_dqn_final_policy(

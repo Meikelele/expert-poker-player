@@ -196,6 +196,33 @@ def test_training_records_finite_losses() -> None:
         for loss in losses
     )
 
+def test_training_records_finite_gradient_norms() -> None:
+    result = train_dqn(
+        state_encoder=RawStateEncoder(),
+        reward_function=NetProfitReward(),
+        config=build_test_config(),
+    )
+
+    gradient_norms = [
+        stats.mean_gradient_norm
+        for stats in result.episode_stats
+        if stats.mean_gradient_norm is not None
+    ]
+
+    assert gradient_norms
+
+    assert all(
+        torch.isfinite(
+            torch.tensor(gradient_norm)
+        )
+        for gradient_norm in gradient_norms
+    )
+
+    assert all(
+        gradient_norm >= 0.0
+        for gradient_norm in gradient_norms
+    )
+
 def test_warmup_steps_blocks_optimizer_updates() -> None:
     config = DQNConfig(
         batch_size=2,
@@ -218,6 +245,11 @@ def test_warmup_steps_blocks_optimizer_updates() -> None:
 
     assert all(
         stats.mean_loss is None
+        for stats in result.episode_stats
+    )
+
+    assert all(
+        stats.mean_gradient_norm is None
         for stats in result.episode_stats
     )
 

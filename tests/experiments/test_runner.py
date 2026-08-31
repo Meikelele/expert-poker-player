@@ -58,6 +58,16 @@ def test_dqn_experiment_builds_validation_curve() -> None:
         is None
     )
 
+    # default DQNConfig.warmup_steps (1000) exceeds this test's tiny
+    # training_episodes budget, so no optimizer updates happen here --
+    # only the shape of any recorded diagnostics is checked.
+    assert all(
+        isinstance(episode, int)
+        and isinstance(gradient_norm, float)
+        and gradient_norm >= 0.0
+        for episode, gradient_norm in result.diagnostics
+    )
+
 
 def test_policy_gradient_experiment_builds_validation_curve() -> None:
     spec = ExperimentRunSpec(
@@ -93,6 +103,15 @@ def test_policy_gradient_experiment_builds_validation_curve() -> None:
     ]
 
     assert result.summary.optimizer_updates == 1
+
+    assert result.diagnostics
+
+    assert all(
+        isinstance(episode, int)
+        and isinstance(gradient_norm, float)
+        and gradient_norm >= 0.0
+        for episode, gradient_norm in result.diagnostics
+    )
 
 
 def test_experiment_can_run_final_evaluation() -> None:

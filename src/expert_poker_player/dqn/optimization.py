@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import math
 
 import torch
@@ -12,6 +13,65 @@ from expert_poker_player.dqn.replay import (
 from expert_poker_player.dqn.targets import (
     compute_bellman_targets,
 )
+
+
+@dataclass(
+    frozen=True,
+    slots=True,
+)
+class DQNOptimizationResult:
+    """Wynik jednego kroku optymalizacji sieci Q."""
+
+    loss: float
+    gradient_norm: float
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.loss,
+            float,
+        ):  # type: ignore
+            raise TypeError(
+                "loss must be a float"
+            )
+
+        if not isinstance(
+            self.gradient_norm,
+            float,
+        ):  # type: ignore
+            raise TypeError(
+                "gradient_norm must be a float"
+            )
+
+        if self.gradient_norm < 0.0:
+            raise ValueError(
+                "gradient_norm cannot be negative"
+            )
+
+
+def _compute_gradient_norm(
+    policy_network: QNetwork,
+) -> float:
+    """
+    Liczy globalną normę L2 gradientów przed krokiem optymalizatora.
+
+    Wywoływana po `loss.backward()`, a przed `optimizer.step()`, żeby
+    opisywać gradienty wyprodukowane przez bieżący update, zanim Adam
+    zmieni parametry sieci.
+    """
+
+    squared_norm_sum = 0.0
+
+    for parameter in policy_network.parameters():
+        if parameter.grad is None:
+            continue
+
+        squared_norm_sum += float(
+            parameter.grad.detach().norm(2).item() ** 2
+        )
+
+    return math.sqrt(
+        squared_norm_sum
+    )
 
 
 class DQNOptimizer:
@@ -107,7 +167,7 @@ class DQNOptimizer:
     def optimize(
         self,
         transitions: tuple[Transition, ...],
-    ) -> float:
+    ) -> DQNOptimizationResult:
         """Wykonuje jeden krok optymalizacji policy network."""
 
         if not transitions:
@@ -190,10 +250,17 @@ class DQNOptimizer:
 
         loss.backward()
 
+        gradient_norm = _compute_gradient_norm(
+            self._policy_network
+        )
+
         self._optimizer.step()  # pyright: ignore[reportUnknownMemberType]
 
-        return float(
-            loss.item()
+        return DQNOptimizationResult(
+            loss=float(
+                loss.item()
+            ),
+            gradient_norm=gradient_norm,
         )
 
     def sync_target_network(
