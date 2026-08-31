@@ -1,14 +1,22 @@
 \section{Funkcja nagrody}
 \label{sec:reward-functions}
+Zgodnie z opracowaniem \emph{Google Developers}, funkcja nagrody to
+liczbowa ocena jakości decyzji, zwracana agentowi przez środowisko po
+wykonaniu przez niego działania w danym stanie \cite{reward_representation}.
 
-W obu wariantach zastosowano nagrodę terminalną. Kroki
+W obu wariantach zastosowałem nagrodę terminalną, przyznawaną dopiero na końcu rozdania. Kroki
 niekończące rozdania zwracają wartość zero, natomiast po zakończeniu
-epizodu nagroda wynika bezpośrednio z finansowego rozliczenia
-rozdania. Dzięki temu optymalizowany cel odpowiada rzeczywistemu
-wynikowi strategii, bez dodatkowego premiowania określonych akcji
-lub układów kart.
+epizodu nagroda wynika bezpośrednio z końcowego rozliczenia finansowego. 
 
-Pierwszy wariant, Reward A, wykorzystuje zysk netto gracza wyrażony
+Oznacza to, że pojedyncza decyzja podjęta na wczesnym etapie (na przykład przed
+flopem) nie otrzymuje żadnej bezpośredniej informacji zwrotnej.
+Algorytm musi zatem rozwiązać problem przypisania zasługi (ang.
+\emph{credit assignment problem}), czyli ocenić, w jakim stopniu ta wczesna
+decyzja przyczyniła się do ostatecznego wyniku \cite{credit_assignment_problem}.
+Ważną rolę pełni tu współczynnik dyskontowania $\gamma$, który omawiam przy
+opisie obu zastosowanych algorytmów.
+
+Pierwszy wariant, który nazwałem \emph{Reward A}, wykorzystuje zysk netto gracza wyrażony
 w jednostkach stawki Ante:
 
 \begin{equation}
@@ -19,19 +27,20 @@ w jednostkach stawki Ante:
     \end{cases}
 \end{equation}
 
-Drugi wariant, Reward B, stanowi liniowo przeskalowaną wersję
-pierwszego wariantu:
+gdzie $P_{\mathrm{net}}$ oznacza zysk netto gracza, czyli sumę wypłat
+z zakładów Ante, Blind i Play pomniejszoną o wniesione stawki.
+
+Drugi wariant, \emph{Reward B}, to liniowe przeskalowanie wariantu \emph{Reward A} tak, aby standardowa maksymalna nagroda wynosiła jeden:
 
 \begin{equation}
     R_B = \frac{R_A}{6}.
 \end{equation}
 
-Wartość sześć odpowiada największej standardowej sumie stawek
-Ante, Blind i Play w pojedynczym rozdaniu. Skalowanie nie jest
-clippingiem, dlatego przy wysokich wypłatach zakładu Blind
-nagroda nadal może przekraczać wartość jeden.
+Wartość sześć odpowiada maksymalnej standardowej sumie stawek Ante, Blind i Play w pojedynczym rozdaniu. 
 
-Oba warianty opisują ten sam cel ekonomiczny i zachowują
-uporządkowanie wyników. Różnią się wyłącznie skalą sygnału
-przekazywanego do algorytmu. Pozwala to zbadać wpływ skali nagrody
-na przebieg procesu uczenia bez zmiany optymalizowanego celu.
+Warto podkreślić, że zastosowane przeskalowanie nie jest obcinaniem nagród (ang. \emph{reward clipping}). 
+W przeciwieństwie do clippingu, który sztywno ogranicza wartości nagród do stałego przedziału (np. $[-1, 1]$), 
+liniowe skalowanie zachowuje pełne proporcje sygnału. Dzięki temu przy bardzo wysokich wypłatach z zakładu 
+Blind nagroda $R_B$ nadal może przekroczyć wartość jeden, nie tracąc informacji o skali wygranej \cite{mnih_dqn_2015}.
+
+Porównanie obu podejść pozwala mi na zbadanie wpływu samej skali nagrody na stabilność i szybkość procesu uczenia.

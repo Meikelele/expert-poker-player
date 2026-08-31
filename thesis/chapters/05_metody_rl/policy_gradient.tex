@@ -14,9 +14,9 @@ w pełnym stanie środowiska.
 
 \subsection{Sieć polityki i wybór akcji}
 
-Sieć polityki przyjmuje wektor utworzony przez wybrany
-\texttt{StateEncoder}. Liczba wejść wynosi więc 373 dla State A
-oraz 393 dla State B. Zastosowałem dwie warstwy ukryte po
+Sieć polityki \texttt{PolicyNetwork} przyjmuje wektor utworzony przez
+wybrany \texttt{StateEncoder}. Liczba wejść wynosi więc 373 dla
+State A oraz 393 dla State B. Zastosowałem dwie warstwy ukryte po
 256 neuronów z funkcją aktywacji ReLU oraz warstwę wyjściową
 o sześciu neuronach odpowiadających wszystkim akcjom.
 
@@ -25,18 +25,20 @@ rozkładu prawdopodobieństwa maskuję akcje niedozwolone w aktualnej
 fazie rozdania. Dla legalnych akcji prawdopodobieństwa wyznaczam
 za pomocą funkcji softmax.
 
-Podczas treningu agent losuje akcję zgodnie z otrzymanym rozkładem.
-Pozwala to na naturalną eksplorację bez stosowania osobnego
-mechanizmu epsilon-greedy. Podczas ewaluacji wykorzystuję natomiast
-politykę deterministyczną i wybieram legalną akcję o największym
-prawdopodobieństwie.
+Podczas treningu klasa \texttt{PolicyGradientAgent} losuje akcję
+zgodnie z otrzymanym rozkładem. Pozwala to na naturalną eksplorację
+bez stosowania osobnego mechanizmu epsilon-greedy. Podczas ewaluacji
+wykorzystuję natomiast politykę deterministyczną i wybieram legalną
+akcję o największym prawdopodobieństwie.
 
 \subsection{Uczenie metodą REINFORCE}
 
 Jedno rozdanie Ultimate Texas Hold'em traktuję jako jeden epizod.
 Dla każdej decyzji zapisuję zakodowany stan, wybraną akcję,
-maskę akcji legalnych oraz otrzymaną nagrodę. Po zakończeniu
-epizodu wyznaczam zwrot dla każdego kroku
+maskę akcji legalnych oraz otrzymaną nagrodę w obiekcie
+\texttt{PolicyStep}, z których po zakończeniu epizodu składam
+kompletną \texttt{Trajectory}. Dla każdego kroku wyznaczam wtedy
+zwrot
 
 \begin{equation}
     G_t =
@@ -48,7 +50,8 @@ W eksperymentach przyjąłem $\gamma = 1$, ponieważ optymalizowanym
 celem jest wynik finansowy całego rozdania, bez preferowania nagrody
 otrzymanej we wcześniejszym punkcie decyzji.
 
-Parametry polityki aktualizuję zgodnie z klasycznym estymatorem
+Parametry polityki aktualizuję za pomocą klasy
+\texttt{ReinforceOptimizer}, zgodnie z klasycznym estymatorem
 REINFORCE. Dla batcha zawierającego $B$ kompletnych epizodów
 minimalizowana funkcja straty ma postać
 
@@ -63,18 +66,33 @@ minimalizowana funkcja straty ma postać
     \pi_\theta(a_{i,t} \mid s_{i,t}).
 \end{equation}
 
+Intuicyjnie ta aktualizacja zwiększa prawdopodobieństwo akcji, które
+doprowadziły do wysokiego zwrotu $G_t$, oraz zmniejsza
+prawdopodobieństwo akcji, po których zwrot był niski lub ujemny.
+Logarytm prawdopodobieństwa wyznacza kierunek zmiany parametrów,
+natomiast wartość i znak $G_t$ decydują o sile tej zmiany. Takie
+podejście jest poprawnym estymatorem gradientu oczekiwanego zwrotu
+względem parametrów polityki \cite{sutton_barto_rl}, mimo że nigdy
+nie szacuję wartości $Q$ ani $V$ bezpośrednio, w przeciwieństwie do
+DQN.
+
 Zwroty obliczam niezależnie dla każdego epizodu, a parametry sieci
 pozostają niezmienione podczas zbierania całego batcha. Dopiero po
 zebraniu 32 rozdań wykonuję jeden krok optymalizatora Adam.
 Takie podejście ogranicza wariancję aktualizacji w porównaniu
 z wykonywaniem osobnego kroku optymalizacji po każdym rozdaniu.
 
-Domyślna konfiguracja wykorzystuje learning rate równy
-$0{,}001$, batch size równy 32 oraz warstwy ukryte
-$(256,256)$. Nie stosuję sieci wartości, baseline'u, regularyzacji
-entropii ani normalizacji zwrotów. Pozostawiam w ten sposób
-REINFORCE jako względnie prostą metodę Policy Gradient, którą
-mogę bezpośrednio porównać z DQN.
+Domyślna konfiguracja \texttt{PolicyGradientConfig} wykorzystuje
+learning rate równy $0{,}001$, batch size równy 32 oraz warstwy
+ukryte $(256,256)$. Nie stosuję sieci wartości, baseline'u,
+regularyzacji entropii ani normalizacji zwrotów. Pozostawiam w ten
+sposób REINFORCE jako względnie prostą metodę Policy Gradient, którą
+mogę bezpośrednio porównać z DQN. Jest to konfiguracja pilotażowa,
+służąca do zweryfikowania poprawności działania całego procesu
+treningu, a nie wynik finalnego strojenia hiperparametrów. Trening w
+tej konfiguracji obsługuje zarówno State A, jak i State B, oraz oba
+warianty funkcji nagrody opisane w
+podrozdziale~\ref{sec:reward-functions}.
 
 \subsection{Reprodukowalność i diagnostyka}
 

@@ -1,21 +1,45 @@
 \chapter{Metody uczenia przez wzmacnianie}
 \label{chap:metody-rl}
 
-W niniejszym rozdziale przedstawiono elementy warstwy uczenia przez
-wzmacnianie budowanej nad środowiskiem Ultimate Texas Hold'em.
-Obejmują one sposób przekształcania obserwacji do stałowymiarowej
-reprezentacji numerycznej oraz definicję sygnału nagrody
-wykorzystywanego później przez algorytmy uczące się.
+W tym rozdiale przedstawiam elementy uczenia przez 
+wzmacnianie, które bezpośrednio wykorzystuję w eksperymentach.
+Opisuję w nim w jaki sposób przekształcam obserwacje do reprezentacji numerycznej 
+oraz definiuję sygnał nagrody.
 
-Środowisko udostępnia agentowi obiekt \texttt{UTHObservation}.
-Zawiera on wyłącznie informacje dostępne graczowi, w szczególności
-jego dwie karty prywatne, odkryte karty wspólne, aktualną fazę
-rozdania oraz zbiór legalnych akcji. Reprezentacja numeryczna jest
-budowana wyłącznie na podstawie tego obiektu, dzięki czemu proces
-uczenia nie uzyskuje dostępu do kart krupiera ani innych informacji
-ukrytych w pełnym stanie środowiska.
+Dalej w rozdziale opisuję najpierw dwa elementy wspólne dla
+obu zastosowanych algorytmów, czyli sposób kodowania stanu oraz
+funkcję nagrody, a następnie same algorytmy, mianowicie Deep Q-Network oraz
+Policy Gradient oparty na metodzie REINFORCE. Rozdział kończę krótkim
+zestawieniem różnic pomiędzy tymi dwoma podejściami.
 
 \input{chapters/05_metody_rl/reprezentacja_stanu}
 \input{chapters/05_metody_rl/funkcja_nagrody}
 \input{chapters/05_metody_rl/dqn}
 \input{chapters/05_metody_rl/policy_gradient}
+
+\section{Porównanie podejść}
+\label{sec:porownanie-dqn-pg}
+
+Oba zastosowane algorytmy rozwiązują ten sam problem decyzyjny, ale
+w odmienny sposób, co warto podsumować przed przejściem do wyników.
+
+DQN uczy się przybliżonej wartości $Q$ dla każdej pary stanu i akcji,
+a decyzję podejmuje pośrednio, wybierając akcję o najwyższej ocenionej
+wartości. Policy Gradient nie szacuje wartości poszczególnych akcji,
+tylko uczy się wprost rozkładu prawdopodobieństwa ich wyboru, więc
+decyzja wynika bezpośrednio z wyjścia sieci polityki.
+
+Różnica ta wpływa również na sposób wykorzystania zebranych danych.
+Ocena wartości akcji w DQN nie zależy od tego, jaka polityka
+aktualnie tę akcję wybiera, dlatego mogę wielokrotnie uczyć sieć na
+tych samych, wcześniej zebranych przejściach przechowywanych w
+buforze doświadczeń. Estymator REINFORCE zakłada natomiast, że dany
+epizod pochodzi z polityki właśnie aktualizowanej, dlatego każdy
+zebrany batch epizodów wykorzystuję tylko do jednej aktualizacji,
+a potem odrzucam.
+
+Odmiennie wygląda też eksploracja. DQN wymaga osobnego mechanizmu
+epsilon-greedy, ponieważ sama sieć $Q$ zwraca deterministyczną ocenę
+wartości. W Policy Gradient eksploracja wynika naturalnie ze
+stochastycznego charakteru wyuczonej polityki, bez potrzeby
+dodatkowego, niezależnego losowania.

@@ -1,14 +1,37 @@
 \section{Deep Q-Network}
 \label{sec:dqn}
 
-Pierwszym zastosowanym algorytmem jest Deep Q-Network
-\cite{mnih_dqn_2015,sutton_barto_rl}. Sieć neuronowa aproksymuje
-funkcję wartości akcji $Q(s,a)$ i dla otrzymanego stanu zwraca
-wartość dla każdej z sześciu możliwych decyzji.
+Pierwszym algorytmem uczenia przez wzmacnianie, który zaimplementowałem,
+jest Deep Q-Network, w skrócie DQN. Jest to jeden
+z najbardziej znanych algorytmów tego typu, więc zanim przejdę do
+szczegółów mojej implementacji, chciałbym krótko wyjaśnić, na czym
+w ogóle polega.
 
-Model przyjmuje reprezentację State A lub State B. Zastosowano dwie
-warstwy ukryte po 256 neuronów z funkcją aktywacji ReLU oraz warstwę
-wyjściową o sześciu neuronach:
+DQN uczy się oceniać, jak dobra jest dana akcja w danym stanie gry,
+przypisując jej liczbę zwaną wartością $Q$. Im wyższa wartość $Q$ danej
+akcji, tym lepszej decyzji ona według agenta odpowiada. W klasycznym
+podejściu tablicowym taką wartość przechowuje się osobno dla każdej
+możliwej pary stanu i akcji, w osobnej komórce tabeli. W Ultimate Texas
+Hold'em samych kombinacji kart widocznych graczowi jest dziesiątki
+milionów już po flopie, a po odkryciu kolejnych kart wspólnych jeszcze
+więcej, więc liczba możliwych stanów jest ogromna i taka tabela byłaby
+niewykonalna. Zamiast niej DQN wykorzystuje sieć
+neuronową (ang. \emph{neural network}), która
+nie zapamiętuje wartości $Q$ dla każdego stanu z osobna, lecz uczy się
+je szacować na podstawie widocznych regularności, zgodnie z tym, co
+napisałem w
+rozdziale~\ref{chap:podstawy-teoretyczne}.
+
+\subsection{Sieć Q i maskowanie akcji}
+
+Do przybliżania wartości $Q$ zaimplementowałem sieć \texttt{QNetwork}.
+Przyjmuje ona na wejściu jeden z dwóch wariantów reprezentacji stanu,
+State A albo State B, opisanych w podrozdziale~\ref{sec:reprezentacja-stanu},
+a na wyjściu zwraca sześć liczb, po jednej dla każdej z sześciu możliwych
+akcji naraz. Dzięki temu, żeby ocenić wszystkie dostępne w danym momencie
+decyzje, wystarczy mi jedno przejście sieci, a nie sześć osobnych.
+W środku umieściłem dwie warstwy ukryte po 256 neuronów z funkcją
+aktywacji ReLU:
 
 \begin{equation}
     d_{\mathrm{state}}
@@ -19,25 +42,104 @@ wyjściową o sześciu neuronach:
     d_{\mathrm{state}} \in \{373,393\}.
 \end{equation}
 
-Nie wszystkie akcje są legalne w każdej fazie rozdania. Przed
-wyborem decyzji wartości odpowiadające akcjom niedozwolonym są
-maskowane. To samo ograniczenie stosowane jest podczas wyznaczania
-celu dla następnego stanu.
+Nie każda z tych sześciu akcji jest jednak legalna w każdej fazie
+rozdania, na przykład spasowanie jest dostępne dopiero po odkryciu
+wszystkich kart wspólnych. Zanim agent podejmie decyzję, maskuję więc
+wartości $Q$ odpowiadające akcjom niedozwolonym w bieżącej fazie, dzięki
+czemu nigdy nie może on wybrać nielegalnej akcji. To samo maskowanie
+stosuję również przy wyznaczaniu celu dla następnego stanu, co opisuję
+w podrozdziale o sieci docelowej i celu Bellmana.
 
-Podczas treningu wykorzystano strategię epsilon-greedy. Agent
-początkowo często wybiera losowe legalne akcje, a wraz z kolejnymi
-krokami prawdopodobieństwo eksploracji jest liniowo zmniejszane
-z $1{,}0$ do $0{,}05$. Podczas ewaluacji eksploracja jest wyłączona
-i wybierana jest akcja o największej przewidywanej wartości.
+\subsection{Eksploracja epsilon-greedy}
 
-\subsection{Uczenie sieci Q}
+Sieć $Q$ uczy się wyłącznie na podstawie akcji, które agent faktycznie
+wykonał, więc żeby poznać wartość jakiejś akcji, musi ją najpierw
+wypróbować. Gdybym pozwolił agentowi zawsze wybierać akcję, którą
+aktualnie ocenia jako najlepszą, mógłby on utknąć przy pierwszej,
+niekoniecznie najlepszej ocenie i nigdy nie sprawdzić alternatywy, która
+mogłaby dać lepszy wynik. Z tego powodu podczas treningu
+zastosowałem powszechnie stosowaną w uczeniu przez wzmacnianie strategię
+epsilon-greedy \cite{epsilon_greedy}.
 
-Przejścia pomiędzy stanami zapisywane są w buforze experience replay.
-Do aktualizacji sieci losowany jest minibatch wcześniejszych
-doświadczeń. Oprócz aktualizowanej sieci Q utrzymywana jest osobna
-sieć docelowa, której parametry są okresowo synchronizowane.
+Strategia ta polega na tym, że z pewnym prawdopodobieństwem, oznaczanym
+grecką literą epsilon, agent wybiera zupełnie losową legalną akcję,
+a w pozostałych przypadkach wybiera akcję, którą aktualnie ocenia jako
+najlepszą. Na początku treningu ustawiam epsilon na $1{,}0$, więc agent
+na starcie eksploruje w zasadzie losowo, a w miarę postępu treningu
+wartość epsilon liniowo maleje, aż do $0{,}05$ po 10000 kroków, tak jak
+przedstawiłem na rysunku~\ref{fig:epsilon-decay}. Agent z czasem więc
+coraz częściej korzysta z tego, czego się już nauczył, a coraz rzadziej
+próbuje czegoś nowego.
 
-Dla przejścia nieterminalnego cel Bellmana ma postać
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[every node/.style={font=\small}]
+        \draw[-{Latex}] (0,0) -- (70mm,0) node[right] {krok treningowy};
+        \draw[-{Latex}] (0,0) -- (0,35mm) node[above] {$\epsilon$};
+
+        \draw[very thick] (0,32mm) -- (60mm,2mm) -- (70mm,2mm);
+
+        \node[left] at (0,32mm) {$1{,}0$};
+        \node[left] at (0,2mm) {$0{,}05$};
+        \node[below] at (60mm,0mm) {10000};
+    \end{tikzpicture}
+    \caption{Liniowy spadek wartości epsilon w trakcie treningu. Agent
+    przechodzi od prawie wyłącznie losowych decyzji do prawie wyłącznie
+    zachłannych}
+    \label{fig:epsilon-decay}
+\end{figure}
+
+\subsection{Bufor doświadczeń}
+
+Kolejnych przejść pomiędzy stanami nie wykorzystuję do aktualizacji
+sieci od razu, tylko zapisuję je w buforze doświadczeń, (ang. \emph{experience replay}), zaimplementowanym
+jako klasa \texttt{ReplayBuffer} przechowująca obiekty \texttt{Transition} \cite{experience_replay}.
+
+Gdybym uczył sieć bezpośrednio na kolejnych przejściach z jednego
+rozdania, tak jak są rozgrywane, kilka aktualizacji z rzędu dotyczyłoby
+wciąż tych samych dwóch kart gracza i tego samego, stopniowo
+odkrywanego układu kart wspólnych. Sieć zaczęłaby więc dopasowywać się
+do wąskiego wycinka gry, zamiast uczyć się
+zależności ogólnej dla wszystkich możliwych rozdań. Bufor doświadczeń rozwiązuje ten problem. 
+Po pierwsze, przejście trafia najpierw do bufora,
+a nie od razu do sieci. Po drugie, do każdej aktualizacji losuję
+minibatch przejść pochodzących z wielu różnych, niepowiązanych ze sobą
+rozdań, dzięki czemu pojedyncza aktualizacja opiera się na
+zróżnicowanej próbce, a nie na fragmencie jednego rozdania.
+
+\subsection{Sieć docelowa i cel Bellmana}
+
+Oprócz sieci $Q$, którą aktualizuję na bieżąco, utrzymuję drugą, osobną
+sieć o identycznej architekturze, zwaną siecią docelową (ang. \emph{target network}). Jej parametry
+synchronizuję z siecią aktualizowaną tylko okresowo, a nie na bieżąco.
+Zrobiłem to, ponieważ bez tego rozróżnienia cel, do którego dąży trening,
+zmieniałby się przy każdej pojedynczej aktualizacji razem z samą siecią,
+tak jakbym próbował trafić do celu, który sam co chwilę się przesuwa,
+co utrudniałoby zbieżność metody. Zależność między tymi dwiema sieciami
+przedstawiłem na rysunku~\ref{fig:target-network}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={font=\small},
+        box/.style={draw, rounded corners, align=center, minimum width=45mm, minimum height=14mm}
+    ]
+        \node[box, very thick] (q) {sieć $Q$\\(aktualizowana co krok)};
+        \node[box, right=22mm of q] (target) {sieć docelowa\\(zmienia się rzadziej)};
+
+        \draw[-{Latex}, thick] (q.north) -- ++(0,6mm) -| (target.north)
+            node[midway, above, align=center] {kopiowanie parametrów\\co 1000 kroków};
+    \end{tikzpicture}
+    \caption{Sieć Q i sieć docelowa.}
+    \label{fig:target-network}
+\end{figure}
+
+Cel dla aktualizacji wyznaczam zgodnie z równaniem Bellmana
+\cite{bellman_equation_pykes}, jednym z najbardziej podstawowych równań
+w uczeniu przez wzmacnianie. Mówi ono, że wartość podjęcia danej akcji
+w danym stanie to suma nagrody otrzymanej natychmiast oraz zdyskontowanej
+wartości najlepszej możliwej akcji w stanie następnym. Dla przejścia
+nieterminalnego cel Bellmana ma więc postać
 
 \begin{equation}
     y_t =
@@ -46,25 +148,78 @@ Dla przejścia nieterminalnego cel Bellmana ma postać
     \max_{a' \in A(s_{t+1})}
     Q_{\theta^-}(s_{t+1},a'),
 \end{equation}
+gdzie $A(s_{t+1})$ to zbiór akcji dozwolonych w stanie $s_{t+1}$, a $\theta^-$ to parametry sieci docelowej.
 
-natomiast dla przejścia terminalnego
+natomiast dla przejścia terminalnego, czyli takiego, po którym rozdanie
+się kończy, nie istnieje już żaden stan następny, więc cel ogranicza się
+do samej otrzymanej nagrody
 
 \begin{equation}
     y_t = r_t.
 \end{equation}
 
-Sieć uczona jest poprzez minimalizację funkcji Smooth L1 pomiędzy
-$Q_\theta(s_t,a_t)$ a wartością docelową $y_t$. Do aktualizacji
-parametrów zastosowano optymalizator Adam.
+Współczynnik $\gamma$ w tym równaniu, zwany współczynnikiem dyskontowania,
+określa, jak bardzo agent ma cenić nagrody odległe w czasie względem
+nagrody otrzymanej natychmiast \cite{discount_factor_gamma,gamma_factor}. Wartość
+bliska zeru sprawiłaby, że agent liczyłby się właściwie tylko z najbliższą
+nagrodą, natomiast wartość bliska jedynce sprawia, że nagrody z dalszej
+przyszłości mają dla niego niemal taką samą wagę jak nagroda natychmiastowa.
+W moich eksperymentach przyjąłem $\gamma = 0{,}99$, czyli wartość bliską
+jedynce, ponieważ samo rozdanie może obejmować kilka decyzji, a zależy
+mi na tym, żeby agent brał pod uwagę cały jego przebieg, a nie tylko
+najbliższy krok.
 
-Podstawowa konfiguracja wykorzystuje learning rate $0{,}001$,
-$\gamma=0{,}99$, minibatch 64 przejść, bufor 10000 przejść oraz
-synchronizację sieci docelowej co 1000 kroków. Przez pierwsze
-1000 kroków bufor jest jedynie wypełniany.
+Funkcję \texttt{compute\_bellman\_targets()} implementuję zgodnie
+z powyższymi równaniami, maskując przy tym akcje niedozwolone w stanie
+$s_{t+1}$ w dokładnie taki sam sposób jak przy wyborze akcji przez
+agenta.
 
-Źródła losowości związane z inicjalizacją sieci, środowiskiem,
-strategią eksploracji i próbkowaniem bufora wykorzystują osobne
-generatory wyprowadzone z głównego seeda eksperymentu. Wyuczone
-parametry sieci wraz z konfiguracją, reprezentacją stanu i wariantem
-nagrody mogą zostać zapisane do checkpointu i później wykorzystane
-do deterministycznej ewaluacji.
+\subsection{Strata i optymalizacja}
+
+Sieć $Q$ uczę poprzez minimalizację funkcji straty (ang. \emph{loss
+function}), czyli funkcji, która mierzy,
+jak bardzo bieżąca ocena sieci różni się od wartości oczekiwanej,
+i którą podczas treningu staram się zminimalizować \cite{loss_function_datacamp}. W moim przypadku
+jest to funkcja Smooth L1, liczona pomiędzy $Q_\theta(s_t,a_t)$
+a wyznaczoną wcześniej wartością docelową $y_t$, za pomocą klasy
+\texttt{DQNOptimizer}. W porównaniu ze zwykłym błędem
+średniokwadratowym Smooth L1 karze duże odchylenia łagodniej, co w moim przypadku ma  uzasadnienie, poniewaz jak pokazuje
+tabela~\ref{tab:blind_payouts}, pojedyncze rozdanie może zakończyć się
+wypłatą zakładu Blind w stosunku aż 500:1, a taki rzadki, skrajnie
+wysoki wynik nie powinien jednorazowo zdominować całej aktualizacji
+sieci.
+
+Do aktualizacji parametrów na podstawie wyznaczonej straty wykorzystuję
+optymalizator Adam. Jest to popularny optymalizator, który dla każdego
+parametru sieci osobno dostosowuje wielkość kroku aktualizacji na
+podstawie historii jego poprzednich gradientów, dzięki czemu zwykle
+zbiega szybciej i stabilniej niż podstawowy spadek gradientu ze stałym
+krokiem \cite{adam_optimizer}.
+
+Sieć $Q$ i sieć docelowa uczestniczą więc w każdej aktualizacji razem,
+ale w różny sposób. Obie wyznaczają wartości potrzebne do policzenia
+straty, jednak parametry aktualizuje wyłącznie propagacja gradientu
+przez sieć $Q$. Parametry sieci docelowej, tak jak opisałem wcześniej,
+zmienia jedynie okresowe kopiowanie z rysunku~\ref{fig:target-network},
+nigdy propagacja gradientu. Tę różnicę w celu wizualizacji przedstawiłem na
+rysunku~\ref{fig:loss-backprop}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={font=\small},
+        box/.style={draw, rounded corners, align=center, minimum width=34mm, minimum height=12mm}
+    ]
+        \node[box, very thick] (q) at (0,24mm) {sieć $Q$};
+        \node[box] (target) at (0,0) {sieć docelowa};
+        \node[box] (loss) at (50mm,12mm) {strata\\Smooth L1};
+
+        \draw[-{Latex}] (q.east) -- (loss.north west);
+        \draw[-{Latex}] (target.east) -- (loss.south west);
+        \draw[-{Latex}, dashed, thick] (loss.north) -- (50mm,28mm) -| (q.east);
+        \node[above] at (35mm,28mm) {propagacja gradientu};
+    \end{tikzpicture}
+    \caption{Obie sieci wyznaczają wartości potrzebne do policzenia
+    straty, ale gradient wraca wyłącznie do sieci $Q$.}
+    \label{fig:loss-backprop}
+\end{figure}
