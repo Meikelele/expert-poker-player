@@ -1,3 +1,4 @@
+% !TeX program = xelatex
 \documentclass[12pt,a4paper,twoside,openright]{report}
 
 \input{settings}
@@ -6,7 +7,12 @@
 
 \input{chapters/00_title_page}
 
+\singlespacing
 \tableofcontents
+\onehalfspacing
+
+\cleardoublepage
+\input{chapters/00_wykaz_oznaczen}
 
 \cleardoublepage
 \input{chapters/01_wstep}
@@ -26,20 +32,21 @@
 \cleardoublepage
 \input{chapters/06_eksperymenty}
 
-% \cleardoublepage
-% \input{chapters/07_wyniki}
+\cleardoublepage
+\input{chapters/07_wyniki}
 
-% \cleardoublepage
-% wnioski i podsumowanie
-% \input{chapters/08_wnioski}
+\cleardoublepage
+\input{chapters/08_wnioski}
+
+\clearpage
+\singlespacing
+\printbibliography
+\onehalfspacing
 
 \clearpage
 \listoffigures
 
 \clearpage
 \listoftables
-
-\clearpage
-\printbibliography
 
 \end{document}

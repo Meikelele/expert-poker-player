@@ -15,7 +15,12 @@ ewaluacji są wspólne dla wszystkich eksperymentów, a poszczególne
 warianty eksperymentów różnią się wyłącznie badanymi elementami.
 Cały przebieg jednego eksperymentu, od treningu pojedynczego modelu do
 porównania wszystkich wariantów, przedstawiłem na
-rysunku~\ref{fig:experiment-pipeline}.
+rysunku~\ref{fig:experiment-pipeline}. Trening trwa do 50\,000 epizodów
+i w jego trakcie co 4\,000 epizodów wykonywana jest walidacja na
+2\,000 rozdaniach, ta część przebiegu ma więc charakter cykliczny.
+Po zakończeniu treningu wytrenowany model przechodzi jednorazowo do
+ewaluacji końcowej na 100\,000 rozdaniach, a jej wyniki wykorzystuję
+następnie w porównaniach sparowanych.
 
 \begin{figure}[htbp]
     \centering
@@ -37,9 +42,7 @@ rysunku~\ref{fig:experiment-pipeline}.
         \draw[-{Latex}, thick] (train.south) -- (validation.north)
             node[midway, right] {co 4\,000 epizodów};
     \end{tikzpicture}
-    \caption{Przebieg jednego eksperymentu. Walidacja powtarza się
-    cyklicznie w trakcie treningu, natomiast ewaluacja końcowa
-    i porównania sparowane wykonuję już na wytrenowanym modelu.}
+    \caption{Przebieg jednego eksperymentu}
     \label{fig:experiment-pipeline}
 \end{figure}
 
@@ -50,8 +53,7 @@ wzmacnianie, dwie reprezentacje stanu oraz dwie funkcje nagrody, co
 łącznie daje $2 \times 2 \times 2 = 8$ konfiguracji.
 
 Dla każdego algorytmu analizuję reprezentacje RAW oraz FEATURES,
-odpowiadające State A i State B z podrozdziału~\ref{subsec:state-a}
-i~\ref{subsec:state-b}.
+opisane w podrozdziale~\ref{subsec:state-a} i~\ref{subsec:state-b}.
 
 W przypadku funkcji nagrody porównuję bezpośrednią wartość zysku
 netto z rozdania oraz jej wersję przeskalowaną przez maksymalną
@@ -165,7 +167,7 @@ ocenianej strategii. Na tym samym zbiorze oceniam również
 wymagają procesu treningowego, dlatego liczba 100\,000 dotyczy w ich
 przypadku wyłącznie liczby rozegranych rund ewaluacyjnych.
 
-Dla przypomnienia, za podstawową miarą jakości strategii przyjmuję średni zysk netto na jedno
+Dla przypomnienia, za podstawową miarę jakości strategii przyjmuję średni zysk netto na jedno
 rozdanie
 
 \begin{equation}
@@ -184,10 +186,6 @@ poszczególnych akcji.
 
 \section{Porównania sparowane}
 
-Wszystkie strategie podczas ewaluacji końcowej rozgrywają ten sam
-uporządkowany zestaw rozdań, co umożliwia wykorzystanie porównań
-sparowanych.
-
 Dla dwóch porównywanych strategii $A$ oraz $B$ dla każdego rozdania
 wyznaczam różnicę
 
@@ -202,9 +200,4 @@ d_i = p_{A,i} - p_{B,i}.
 \frac{1}{N}
 \sum_{i=1}^{N} d_i.
 \end{equation}
-
-Na podstawie rozkładu różnic wyznaczam również odchylenie standardowe,
-błąd standardowy oraz 95-procentowy przedział ufności. Podejście
-sparowane ogranicza wpływ zmienności wynikającej z różnych układów
-kart, ponieważ obie strategie oceniam w tych samych sytuacjach.
 

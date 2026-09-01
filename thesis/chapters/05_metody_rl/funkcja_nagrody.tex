@@ -1,8 +1,8 @@
 \section{Funkcja nagrody}
 \label{sec:reward-functions}
-Zgodnie z opracowaniem \emph{Google Developers}, funkcja nagrody to
-liczbowa ocena jakości decyzji, zwracana agentowi przez środowisko po
-wykonaniu przez niego działania w danym stanie \cite{reward_representation}.
+Funkcję nagrody rozumiem jako liczbową ocenę jakości decyzji, zwracaną
+agentowi przez środowisko po wykonaniu przez niego działania w danym stanie
+\cite{reward_representation}.
 
 W obu wariantach zastosowałem nagrodę terminalną, przyznawaną dopiero na końcu rozdania. Kroki
 niekończące rozdania zwracają wartość zero, natomiast po zakończeniu
@@ -16,7 +16,8 @@ decyzja przyczyniła się do ostatecznego wyniku \cite{credit_assignment_problem
 Ważną rolę pełni tu współczynnik dyskontowania $\gamma$, który omawiam przy
 opisie obu zastosowanych algorytmów.
 
-Pierwszy wariant, który nazwałem \emph{Reward A}, wykorzystuje zysk netto gracza wyrażony
+Pierwszy wariant to nagroda oparta na zysku netto, oznaczana dalej jako
+$R_A$. Wykorzystuje ona zysk netto gracza wyrażony
 w jednostkach stawki Ante:
 
 \begin{equation}
@@ -30,7 +31,7 @@ w jednostkach stawki Ante:
 gdzie $P_{\mathrm{net}}$ oznacza zysk netto gracza, czyli sumę wypłat
 z zakładów Ante, Blind i Play pomniejszoną o wniesione stawki.
 
-Drugi wariant, \emph{Reward B}, to liniowe przeskalowanie wariantu \emph{Reward A} tak, aby standardowa maksymalna nagroda wynosiła jeden:
+Drugi wariant, nagroda skalowana ($R_B$), to liniowe przeskalowanie nagrody opartej na zysku netto tak, aby standardowa maksymalna nagroda wynosiła jeden:
 
 \begin{equation}
     R_B = \frac{R_A}{6}.
@@ -42,5 +43,9 @@ Warto podkreślić, że zastosowane przeskalowanie nie jest obcinaniem nagród (
 W przeciwieństwie do clippingu, który sztywno ogranicza wartości nagród do stałego przedziału (np. $[-1, 1]$), 
 liniowe skalowanie zachowuje pełne proporcje sygnału. Dzięki temu przy bardzo wysokich wypłatach z zakładu 
 Blind nagroda $R_B$ nadal może przekroczyć wartość jeden, nie tracąc informacji o skali wygranej \cite{mnih_dqn_2015}.
+
+Dodatnie liniowe przeskalowanie nagrody zachowuje optymalną politykę,
+choć może zmieniać właściwości numeryczne samego procesu optymalizacji
+\cite{ng_harada_russell_1999,miller_reward_shaping_notes}.
 
 Porównanie obu podejść pozwala mi na zbadanie wpływu samej skali nagrody na stabilność i szybkość procesu uczenia.

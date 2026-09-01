@@ -1,23 +1,23 @@
 \section{Reprezentacja stanu}
 \label{sec:reprezentacja-stanu}
-Według Macieja Lewczuka, autora artykułu o uczeniu przez wzmacnianie, stan to
+Stan definiuję zgodnie z przyjętą w uczeniu przez wzmacnianie konwencją, jako
 opis aktualnej sytuacji agenta w środowisku \cite{state_representation}.
 
 W moich rozważaniach zastosowałem dwa warianty funkcji stanu, które nazwałem
-State A i State B. Obie funkcje powstają wyłącznie na podstawie obiektu
+RAW i FEATURES. Obie funkcje powstają wyłącznie na podstawie obiektu
 \texttt{UTHObservation}, a więc informacji dostępnych graczowi.
 
-\subsection{State A: reprezentacja surowa}
+\subsection{RAW: reprezentacja surowa}
 \label{subsec:state-a}
 
-Pierwszy wariant, który określiłem jako State A, stanowi surowy wektor
+Pierwszy wariant, który określiłem jako RAW, stanowi surowy wektor
 reprezentujący karty. Każda karta jest reprezentowana jako wektor one-hot
 o długości 52.
 
 Kodowanie jednej karty jako one-hot, a nie jako pojedynczej wartości
 porządkowej, wynika z tego, co właściwie koduję. Sama ranga karty ma
 charakter porządkowy i w tej postaci wykorzystuję ją w cechach domenowych
-State B opisanych w podrozdziale~\ref{subsec:state-b}. Tutaj jednak koduję
+FEATURES opisanych w podrozdziale~\ref{subsec:state-b}. Tutaj jednak koduję
 całą kartę, czyli konkretną kombinację rangi i koloru, a kolor nie ma w
 pokerze żadnej naturalnej hierarchii. Przypisanie 52 kartom pojedynczych,
 kolejnych numerów mogłoby sugerować sieci nieistniejącą zależność, na przykład
@@ -53,9 +53,7 @@ o obecności karty. Nieodkryte karty to wektory zerowe.
         \node[above=6mm of d1, xshift=8mm] {52 elementy (jedna karta)};
         \node[below=6mm of hi, align=center] {jedynka na pozycji\\konkretnej karty (np.\ As pik)};
     \end{tikzpicture}
-    \caption{Kodowanie one-hot pojedynczej karty. Wektor ma 52 elementy,
-    z których 51 to zera, a jedynka stoi na pozycji przypisanej konkretnej
-    karcie}
+    \caption{Kodowanie one-hot pojedynczej karty}
     \label{fig:one-hot-karta}
 \end{figure}
 
@@ -63,21 +61,21 @@ Do reprezentacji stanu dołączyłem zakodowaną aktualną fazę rozdania oraz
 maskę sześciu możliwych akcji, dzięki której sieć neuronowa ma
 bezpośredni dostęp do informacji o tym, które akcje są w danym
 momencie możliwe do wykonania.
-Łączny wymiar State A wynosi
+Łączny wymiar RAW wynosi
 
 \begin{equation}
     d_A = 7 \cdot 52 + 3 + 6 = 373.
     \label{eq:state-a-dim}
 \end{equation}
 
-Chciałem, aby State A nie zawierał informacji o sile układu
+Chciałem, aby RAW nie zawierał informacji o sile układu
 pokerowego. Model musi więc samodzielnie nauczyć się korelacji pomiędzy
 kartami a ich wartością w pokerze.
 
-\subsection{State B: reprezentacja z cechami domenowymi}
+\subsection{FEATURES: reprezentacja z cechami domenowymi}
 \label{subsec:state-b}
 
-Drugi wariant, który nazwałem State B, jest rozszerzeniem surowego wariantu
+Drugi wariant, który nazwałem FEATURES, jest rozszerzeniem surowego wariantu
 opisanego w podrozdziale~\ref{subsec:state-a} o 20 dodatkowych cech
 domenowych, tak jak przedstawiłem na rysunku~\ref{fig:state-b-rozszerzenie}.
 
@@ -87,11 +85,11 @@ domenowych, tak jak przedstawiłem na rysunku~\ref{fig:state-b-rozszerzenie}.
         every node/.style={font=\small},
         box/.style={draw, rounded corners, align=center, minimum height=12mm}
     ]
-        \node[box, minimum width=55mm] (a) {State A\\373 elementy};
+        \node[box, minimum width=55mm] (a) {RAW\\373 elementy};
         \node[box, minimum width=22mm, very thick, right=2mm of a] (extra)
             {+ cechy\\domenowe\\(20 elementów)};
     \end{tikzpicture}
-    \caption{State B jako State A rozszerzone o 20 cech domenowych}
+    \caption{FEATURES jako RAW rozszerzone o 20 cech domenowych}
     \label{fig:state-b-rozszerzenie}
 \end{figure}
 

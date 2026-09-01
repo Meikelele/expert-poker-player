@@ -8,7 +8,10 @@ losowego rozdania kart, jak i od decyzji podejmowanych przez graczy. W
 przeciwieństwie do gier z pełną informacją (np. szachy) uczestnicy
 rozgrywki nie znają wszystkich elementów stanu gry. Ukryte pozostają przede
 wszystkim karty przeciwników, co sprawia, że decyzje podejmowane są w
-warunkach niepełnej informacji.
+warunkach niepełnej informacji. Poker z niepełną informacją jest przy tym
+uznanym benchmarkiem badawczym w sztucznej inteligencji, czego przykładem
+jest rozwiązanie uproszczonego wariantu heads-up limit Texas Hold'em
+\cite{bowling_heads_up_2015}.
 
 Właśnie z uwagi na tę niepełną informację uznałem pokera za ciekawy
 problem badawczy. W pokerze pojedyncza decyzja gracza nie powinna być
@@ -37,7 +40,6 @@ wspólnych dokonuje się palenia kart (ang. \emph{burning}), czyli
 odkładania wierzchniej karty z talii na bok. Każdy z tych etapów
 poprzedza runda licytacji, w której gracze mogą stawiać zakłady, podbijać
 je lub spasować.
-% TODO: jakies zródło co to ev ??
 
 \section{Ranking układów pokerowych}
 
@@ -87,7 +89,7 @@ cechą Ultimate Texas Hold’em jest również ograniczona liczba momentów
 decyzyjnych: gracz może wykonać zakład Play (ang. \emph{Play bet}) tylko
 raz w trakcie rozdania, a im wcześniej podejmie tę decyzję, tym wyższy
 zakład może postawić, kosztem mniejszej liczby dostępnych informacji
-\cite{wizard_uth,tulalip_uth_rules}. Szczegółowe wysokości zakładu Play na
+\cite{wizard_uth,tulalip_uth_rules,nevada_uth_rules}. Szczegółowe wysokości zakładu Play na
 poszczególnych etapach przedstawia tabela~\ref{tab:uth_decisions}.
 
 \subsection{Przebieg rozdania}
@@ -194,11 +196,11 @@ nie uwzględniać w modelu środowiska.
 \section{Wartość oczekiwana i przewaga kasyna}
 
 Wartość oczekiwana (ang. \emph{expected value}, EV) określa średni wynik
-finansowy decyzji lub strategii przy założeniu dużej liczby powtórzeń gry. W
+finansowy decyzji lub strategii przy założeniu dużej liczby powtórzeń gry
+\cite{packel_games_gambling_2006}. W
 kontekście Ultimate Texas Hold’em pojedyncze rozdanie może zakończyć się
 zarówno zyskiem, jak i stratą, jednak skuteczność strategii należy oceniać na
 podstawie średniego wyniku uzyskiwanego w wielu rozdaniach.
-% TODO: cytat do EV ???
 
 Przewaga kasyna (ang. \emph{house edge}) jest matematyczną miarą określającą
 oczekiwany zysk kasyna względem zakładu gracza. Bynajmniej nie oznacza ona, że kasyno
@@ -312,10 +314,9 @@ Przestrzeń stanów Ultimate Texas Hold’em jest zbyt duża na podejście
 tablicowe, dlatego funkcję wartości akcji aproksymuję
 siecią neuronową, co opisuję szczegółowo w rozdziale dotyczącym
 zastosowanej metody uczenia \cite{sutton_barto_rl}.
-% TODO: ja to robie siecia neuronowa ??
 
 Dwa elementy konfiguracji
-procesu uczenia mają dla mnie niebagatelne znaczenie są to: sposób reprezentacji obserwacji, decydujący o tym, jakie
+procesu uczenia mają dla mnie niebagatelne znaczenie: sposób reprezentacji obserwacji, decydujący o tym, jakie
 informacje trafiają na wejście agenta, oraz konstrukcja funkcji nagrody,
 przekształcająca finansowy wynik rozdania w sygnał uczący. To na analizie tych dwóch elementów
 skupiam się w niniejszej pracy.
@@ -326,7 +327,9 @@ Kończąc niniejszy rozdział, chciałbym podkreślić, że w Ultimate Texas
 Hold’em agent nie zna pełnego stanu środowiska, a jedynie jego
 obserwację. Agent nie wie, jakie karty ma krupier, ani jakie karty są
 następne w talii. Problem niniejszej pracy można więc traktować jako
-częściowo obserwowalny proces decyzyjny. To rozróżnienie obserwacji od
+częściowo obserwowalny proces decyzyjny Markowa (ang. \emph{partially
+observable Markov decision process}, POMDP) \cite{russell_norvig_aima_2020}.
+To rozróżnienie obserwacji od
 pełnego stanu jest istotne dla zachowania niepełnej informacji, która
 jest charakterystyczna dla pokera. Odwzorowałem to w projekcie środowiska
 opisanym w kolejnym rozdziale \cite{sutton_barto_rl}.

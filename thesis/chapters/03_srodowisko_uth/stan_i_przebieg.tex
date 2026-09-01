@@ -39,13 +39,12 @@ terminalnego.
 Dla przykładu liczba kart wspólnych i spalonych jest zależna od aktualnej fazy.
 Tę zależność przedstawiam w tabeli~\ref{tab:karty-w-fazach}.
 
-%TODO: dla komorek w kolumnach karty wspolne, karty spalone i faze - niech beda wysrodkwoane w pionie i poziomie
 \begin{table}[htbp]
     \centering
     \caption{Liczba kart przechowywanych w stanie w poszczególnych fazach}
     \label{tab:karty-w-fazach}
     \begin{tabular}{
-        |m{0.24\textwidth}
+        |>{\centering\arraybackslash}m{0.24\textwidth}
         |>{\centering\arraybackslash}m{0.13\textwidth}
         |>{\centering\arraybackslash}m{0.13\textwidth}
         |m{0.32\textwidth}|
@@ -170,15 +169,10 @@ Dla warunków mojego środowiska funkcja projekcji ma postać
     \right),
 \end{equation}
 
-gdzie:
-
-\begin{itemize}
-    \item \(p_t\) oznacza aktualną fazę gry,
-    \item \(C_t^{player}\) oznacza karty własne gracza,
-    \item \(C_t^{community}\) oznacza odkryte karty wspólne,
-    \item \(A_t^{legal}\) oznacza zbiór legalnych akcji,
-    \item \(m_t\) oznacza mnożnik zakładu Play, jeżeli został już wykonany.
-\end{itemize}
+gdzie \(p_t\) oznacza aktualną fazę gry, \(C_t^{player}\) karty własne
+gracza, \(C_t^{community}\) odkryte karty wspólne, \(A_t^{legal}\) zbiór
+legalnych akcji, a \(m_t\) mnożnik zakładu Play, jeżeli został już
+wykonany.
 
 Karty krupiera i karty spalone należą do \(S_t\), natomiast kolejność
 kart w talii jest przechowywana przez wewnętrzne źródło kart. Żadna
