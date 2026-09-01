@@ -268,3 +268,226 @@ REINFORCE punktowo najlepszy wynik uzyskała konfiguracja FEATURES ze
 skalowaną nagrodą, ale wynik ten był jednocześnie silnie zależny od
 seedu treningowego.
 
+\section{Przebieg procesu uczenia}
+\label{sec:wyniki-przebieg-uczenia}
+
+Końcowa ewaluacja pozwala porównać jakość wytrenowanych polityk,
+ale nie pokazuje, w jaki sposób wynik ten kształtował się podczas
+treningu. W tym celu wykorzystuję okresowe pomiary walidacyjne
+wykonywane zgodnie z procedurą opisaną w
+rozdziale~\ref{chap:eksperymenty}. Każdy punkt krzywej odpowiada
+ewaluacji aktualnej polityki na 2\,000 wspólnych rozdań
+walidacyjnych.
+
+Wyniki walidacyjne traktuję jako opis dynamiki procesu uczenia,
+a nie jako zamiennik końcowej ewaluacji na 100\,000 niezależnych
+rozdań. Mniejsza liczba rozdań w pojedynczym punkcie powoduje większą
+zmienność oszacowanego EV, jednak wspólny harmonogram walidacyjny
+umożliwia bezpośrednie porównywanie kolejnych checkpointów.
+
+Na rysunku~\ref{fig:dqn-learning-curves} przedstawiam przebieg
+treningu czterech konfiguracji DQN.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=\textwidth
+    ]{../experiments/results/final_analysis/04_dqn_learning_curves.pdf}
+    \caption{Przebieg uczenia czterech konfiguracji DQN.
+    Linie przedstawiają średnie walidacyjne EV z pięciu seedów,
+    natomiast pasma odpowiadają jednemu odchyleniu standardowemu
+    między przebiegami treningowymi.}
+    \label{fig:dqn-learning-curves}
+\end{figure}
+
+Już w trakcie treningu widoczna jest różnica pomiędzy
+reprezentacjami RAW i FEATURES. Oba warianty wykorzystujące FEATURES
+utrzymują przeciętnie wyższe EV niż odpowiadające im warianty RAW.
+Jest to zgodne z wynikami końcowej ewaluacji przedstawionymi
+w sekcji~\ref{sec:wyniki-reprezentacja-stanu}.
+
+Jednocześnie krzywe nie wykazują monotonicznego wzrostu jakości
+polityki. Po okresach poprawy występują lokalne spadki wartości
+walidacyjnego EV. Oznacza to, że dalsze wykonywanie aktualizacji sieci
+nie gwarantuje poprawy strategii na każdym kolejnym checkpointcie.
+Zjawisko to występuje również dla konfiguracji FEATURES, które
+ostatecznie uzyskały najwyższe wyniki spośród wariantów DQN.
+
+Analogiczne wyniki dla REINFORCE przedstawiam na
+rysunku~\ref{fig:reinforce-learning-curves}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=\textwidth
+    ]{../experiments/results/final_analysis/05_reinforce_learning_curves.pdf}
+    \caption{Przebieg uczenia czterech konfiguracji REINFORCE.
+    Linie przedstawiają średnie walidacyjne EV z pięciu seedów,
+    a pasma jedno odchylenie standardowe między przebiegami
+    treningowymi.}
+    \label{fig:reinforce-learning-curves}
+\end{figure}
+
+W przypadku REINFORCE zależności pomiędzy konfiguracjami są mniej
+regularne niż dla DQN. Szczególnie widoczne są okresy zwiększonego
+rozrzutu pomiędzy seedami, podczas których poszczególne przebiegi tej
+samej konfiguracji prowadzą do polityk o wyraźnie różnej jakości.
+
+Najbardziej widoczne jest to dla konfiguracji FEATURES ze skalowaną
+funkcją nagrody. Wariant ten osiągnął najwyższe średnie EV spośród
+konfiguracji REINFORCE w końcowej ewaluacji, ale jednocześnie
+charakteryzował się największym odchyleniem standardowym między
+seedami. Krzywe walidacyjne pokazują, że zróżnicowanie to powstaje już
+podczas procesu uczenia i nie jest wyłącznie efektem końcowej
+ewaluacji.
+
+
+\section{Wpływ zwiększenia budżetu treningowego}
+\label{sec:wyniki-budzet-treningowy}
+
+Po zakończeniu podstawowych eksperymentów rozszerzyłem trening dwóch
+konfiguracji wybranych na podstawie wyników walidacyjnych. Dla DQN
+była to konfiguracja FEATURES z nagrodą opartą na zysku netto,
+natomiast dla REINFORCE konfiguracja FEATURES ze skalowaną funkcją
+nagrody. Wszystkie pięć seedów obu konfiguracji kontynuowałem do
+100\,000 epizodów.
+
+Trajektorie poszczególnych seedów przedstawiam na
+rysunku~\ref{fig:extended-training-per-seed}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=\textwidth
+    ]{../experiments/results/final_analysis/10_extended_training_per_seed.pdf}
+    \caption{Trajektorie walidacyjnego EV dla pięciu seedów
+    wybranych konfiguracji DQN i REINFORCE podczas treningu do
+    100\,000 epizodów. Linia pionowa oznacza podstawowy budżet
+    50\,000 epizodów.}
+    \label{fig:extended-training-per-seed}
+\end{figure}
+
+Dla DQN wydłużenie treningu prowadziło do stosunkowo spójnej poprawy.
+W końcowej ewaluacji na wspólnych 100\,000 rozdaniach średnie EV
+pięciu modeli wzrosło z $-0{,}4076$ po 50\,000 epizodów do
+$-0{,}3859$ po 100\,000 epizodów. Średnia sparowana poprawa wyniosła
+
+\begin{equation}
+    \Delta EV_{\mathrm{100k-50k}}
+    =
+    0{,}0217,
+\end{equation}
+
+a 95-procentowy przedział ufności po pięciu seedach był równy
+$[0{,}0022,\ 0{,}0412]$.
+
+Co istotne, poprawę końcowego EV zaobserwowałem dla wszystkich pięciu
+seedów DQN. Nie oznacza to monotonicznej poprawy na każdym etapie
+treningu, co widać na krzywych walidacyjnych, ale rezultat po
+100\,000 epizodów był dla każdego seedu lepszy niż wynik odpowiadającego
+mu modelu po 50\,000 epizodów.
+
+Dla REINFORCE średnie EV wzrosło z $-0{,}3211$ do $-0{,}2943$.
+Średnia różnica wyniosła $0{,}0268$, a więc punktowo była nawet
+większa niż dla DQN. Jej 95-procentowy przedział ufności był jednak
+równy $[-0{,}0362,\ 0{,}0898]$ i obejmował zero.
+
+Wynik ten był konsekwencją dużego zróżnicowania zmian pomiędzy
+poszczególnymi seedami. Niektóre przebiegi REINFORCE poprawiły się
+znacznie, podczas gdy inne praktycznie nie zmieniły zachowania lub
+uzyskały nieznacznie gorszy wynik. Wydłużenie treningu poprawiło więc
+średni rezultat tej konfiguracji, ale nie usunęło problemu
+niestabilności procesu uczenia.
+
+Wyniki rozszerzenia budżetu podsumowuję w
+tabeli~\ref{tab:extended-training-results}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Wpływ zwiększenia budżetu treningowego z 50\,000 do
+    100\,000 epizodów}
+    \label{tab:extended-training-results}
+    \begin{tabular}{lrrrr}
+        \toprule
+        Algorytm & EV 50k & EV 100k & Różnica & 95\% CI \\
+        \midrule
+        DQN
+            & -0{,}4076
+            & -0{,}3859
+            & 0{,}0217
+            & [0{,}0022,\ 0{,}0412] \\
+        REINFORCE
+            & -0{,}3211
+            & -0{,}2943
+            & 0{,}0268
+            & [-0{,}0362,\ 0{,}0898] \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Rozszerzony eksperyment należy traktować jako analizę uzupełniającą.
+Podstawowe porównania reprezentacji stanu i funkcji nagrody pozostają
+oparte na pełnej macierzy eksperymentalnej przy wspólnym budżecie
+50\,000 epizodów.
+
+
+\section{Stabilność procesu uczenia}
+\label{sec:wyniki-stabilnosc}
+
+Różnice między DQN i REINFORCE są widoczne nie tylko w średnim EV,
+ale również w powtarzalności procesu treningowego. W celu
+przedstawienia tego zjawiska obliczyłem dla kolejnych checkpointów
+odchylenie standardowe walidacyjnego EV pomiędzy pięcioma seedami
+wybranych konfiguracji.
+
+Wyniki przedstawiam na
+rysunku~\ref{fig:seed-variability-over-training}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=0.9\textwidth
+    ]{../experiments/results/final_analysis/08_seed_variability_over_training.pdf}
+    \caption{Zmienność walidacyjnego EV pomiędzy pięcioma seedami
+    podczas treningu wybranych konfiguracji DQN i REINFORCE.
+    Oś pionowa przedstawia odchylenie standardowe wartości EV między
+    przebiegami treningowymi.}
+    \label{fig:seed-variability-over-training}
+\end{figure}
+
+DQN utrzymywał relatywnie niewielki rozrzut pomiędzy niezależnymi
+przebiegami. REINFORCE wykazywał natomiast okresy znacznie większej
+zmienności, co jest zgodne zarówno z krzywymi uczenia, jak i wynikami
+końcowej ewaluacji. Oznacza to, że w badanym ustawieniu REINFORCE
+częściej prowadził do jakościowo różnych polityk pomimo wykorzystania
+tej samej konfiguracji hiperparametrów.
+
+Dodatkową informację o przebiegu optymalizacji daje analiza normy
+gradientu. Na rysunku~\ref{fig:gradient-norm-reward-scale}
+porównuję jej przebieg dla obu wariantów funkcji nagrody.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=\textwidth
+    ]{../experiments/results/final_analysis/19_training_stability_by_reward_scale.pdf}
+    \caption{Norma gradientu w zależności od skali funkcji nagrody
+    dla konfiguracji wykorzystujących reprezentację FEATURES.
+    Dla DQN przedstawiono średnią z pięciu seedów wygładzoną oknem
+    500 epizodów, natomiast dla REINFORCE średnią z pięciu seedów
+    bez dodatkowego wygładzania. Oś pionowa ma skalę logarytmiczną.}
+    \label{fig:gradient-norm-reward-scale}
+\end{figure}
+
+Skalowanie nagrody wyraźnie zmieniało skalę gradientów powstających
+podczas optymalizacji. Nie oznacza to jednak automatycznie poprawy
+końcowej jakości polityki. Jak pokazały wyniki z
+sekcji~\ref{sec:wyniki-funkcja-nagrody}, mniejsza skala sygnału
+optymalizacyjnego nie przekładała się na uniwersalną przewagę
+skalowanej funkcji nagrody.
+
+Analiza gradientów stanowi zatem uzupełnienie wyników EV. Pokazuje,
+że zmiana funkcji nagrody wpływa na przebieg aktualizacji parametrów,
+ale sama kontrola skali gradientu nie rozwiązuje problemów związanych
+ze stabilnością uczenia ani nie gwarantuje uzyskania lepszej
+strategii.
