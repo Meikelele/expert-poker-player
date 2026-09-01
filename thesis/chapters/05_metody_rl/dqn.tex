@@ -83,9 +83,7 @@ próbuje czegoś nowego.
         \node[left] at (0,2mm) {$0{,}05$};
         \node[below] at (60mm,0mm) {10000};
     \end{tikzpicture}
-    \caption{Liniowy spadek wartości epsilon w trakcie treningu. Agent
-    przechodzi od prawie wyłącznie losowych decyzji do prawie wyłącznie
-    zachłannych}
+    \caption{Liniowy spadek wartości epsilon w trakcie treningu.}
     \label{fig:epsilon-decay}
 \end{figure}
 
@@ -220,7 +218,6 @@ rysunku~\ref{fig:loss-backprop}.
             (loss.north) -- (50mm,28mm) -- (23mm,28mm) -- (23mm,24mm) -- (q.east);
         \node[above] at (35mm,28mm) {propagacja gradientu};
     \end{tikzpicture}
-    \caption{Obie sieci wyznaczają wartości potrzebne do policzenia
-    straty, ale gradient wraca wyłącznie do sieci $Q$.}
+    \caption{Przepływ gradientu podczas aktualizacji sieci $Q$.}
     \label{fig:loss-backprop}
 \end{figure}

@@ -1,0 +1,74 @@
+\section{Dyskusja wyników}
+\label{sec:dyskusja-wynikow}
+
+Dotychczasowe eksperymenty pokazują, że na jakość strategii
+w Ultimate Texas Hold'em wpływa nie tylko wybór algorytmu uczenia,
+ale również sposób przedstawienia stanu i właściwości procesu
+optymalizacji.
+
+Najbardziej jednoznaczny efekt zaobserwowałem dla reprezentacji stanu
+w DQN. Rozszerzenie RAW o cechy pokerowe w reprezentacji FEATURES
+poprawiło wynik dla obu funkcji nagrody i efekt ten wystąpił
+konsekwentnie dla pięciu sparowanych seedów treningowych. Wynik ten
+wskazuje, że w badanym budżecie treningowym jawne dostarczenie
+informacji o strukturze sytuacji pokerowej ułatwia DQN wykorzystanie
+dostępnej obserwacji.
+
+Dla REINFORCE analogicznego, stabilnego efektu reprezentacji stanu
+nie zaobserwowałem. Najwyższe średnie EV uzyskało połączenie FEATURES
+ze skalowaną nagrodą, jednak było ono jednocześnie konfiguracją
+o największej zmienności pomiędzy seedami. Wynik średni nie
+odzwierciedla więc w tym przypadku typowego rezultatu pojedynczego
+treningu równie dobrze jak dla DQN.
+
+Wpływ skalowania nagrody również nie był jednoznaczny. Dla DQN
+korzystającego z reprezentacji RAW nagroda skalowana prowadziła do
+wyższego EV, natomiast po zastosowaniu FEATURES różnica pomiędzy
+funkcjami nagrody była niewielka. Diagnostyka norm gradientu
+pokazała, że zmiana skali nagrody wyraźnie wpływała na obserwowaną
+wielkość sygnału optymalizacyjnego, ale samo ograniczenie tej skali nie
+gwarantuje poprawy końcowej polityki.
+
+Porównując oba algorytmy przy podstawowym budżecie 50\,000 epizodów,
+REINFORCE osiągnął wyższe średnie EV od DQN dla każdego
+odpowiadającego sobie połączenia reprezentacji stanu i funkcji
+nagrody. Nie oznacza to jednak jednoznacznej przewagi REINFORCE.
+Wyniki tego algorytmu były bardziej zależne od seedu treningowego,
+a większość przebiegów, osiemnaście z dwudziestu, prowadziła do
+degeneracji polityki do jednej akcji niezależnej od stanu gry.
+
+DQN osiągał niższe średnie EV, lecz proces treningowy był bardziej
+powtarzalny. Również eksperyment z większym budżetem treningowym
+wskazał na różnicę pomiędzy algorytmami. Wszystkie pięć modeli DQN
+poprawiło wynik po zwiększeniu budżetu do 100\,000 epizodów,
+natomiast dla REINFORCE poprawa była silnie zależna od konkretnego
+seedu.
+
+Żadna z badanych konfiguracji RL nie osiągnęła jakości strategii
+RuleBased. Agent regułowy uzyskał w końcowej ewaluacji EV równe
+$-0{,}0106$, podczas gdy najlepsze średnie wyniki podstawowych
+konfiguracji RL pozostawały wyraźnie ujemne. Pokazuje to, że przy
+zastosowanych architekturach i budżecie treningowym
+prosta strategia wykorzystująca wiedzę dziedzinową pozostaje
+znacznie skuteczniejsza.
+
+Niemniej jednak nie oznacza to, że modele RL nie nauczyły się użytecznej
+struktury problemu. Większość konfiguracji osiągnęła wynik wyższy od
+agenta losowego, a analiza decyzji pokazała zależności pomiędzy
+obserwowanym stanem i podejmowanymi akcjami. Wyniki sugerują więc,
+że badane metody były zdolne do uczenia się strategii, lecz jakość
+tej strategii pozostawała ograniczona.
+
+REINFORCE
+pozostał metodą bez funkcji bazowej, krytyki i dodatkowej regularyzacji
+entropii. Reprezentacja FEATURES zawiera natomiast ręcznie
+zaprojektowane cechy pokerowe, dlatego jej przewaga nad RAW pokazuje
+wartość tej konkretnej informacji dziedzinowej, a nie uniwersalną
+przewagę każdej reprezentacji o większej liczbie cech.
+
+Z tego względu wyników nie traktuję jako rozstrzygnięcia o ogólnej
+wyższości jednego algorytmu nad drugim. Pokazują one natomiast
+wyraźnie, że w badanym środowisku DQN i REINFORCE reagują inaczej na
+reprezentację stanu, skalę nagrody i zwiększenie budżetu treningowego.
+Różnica pomiędzy średnią jakością polityki a stabilnością jej
+uzyskiwania stanowi dość istotny rezultat przeprowadzonych eksperymentów.

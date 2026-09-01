@@ -64,9 +64,7 @@ rysunku~\ref{fig:policy-action-selection}.
         \draw[-{Latex}, thick] (dist.south) -- ++(0,-5mm) -| (train.north);
         \draw[-{Latex}, thick] (dist.south) -- ++(0,-5mm) -| (eval.north);
     \end{tikzpicture}
-    \caption{Wybór akcji w Policy Gradient. Nielegalne akcje otrzymują
-    zerowe prawdopodobieństwo jeszcze przed rozgałęzieniem na tryb
-    treningu i ewaluacji.}
+    \caption{Wybór akcji w Policy Gradient.}
     \label{fig:policy-action-selection}
 \end{figure}
 
@@ -152,9 +150,7 @@ natomiast wartość i znak $G_t$ decydują o sile tej zmiany.
         \node[below=5mm of g2, xshift=20mm, align=center]
             {$G_1=G_2=\dots=G_T=r_T$\\(bo $\gamma=1$, a $r_t=0$ dla $t<T$)};
     \end{tikzpicture}
-    \caption{Nagroda pośrednia wynosi zawsze zero, a $\gamma=1$,
-    dlatego zwrot $G_t$ wychodzi taki sam dla każdego kroku epizodu
-    i równy końcowej wypłacie rozdania.}
+    \caption{Zwrot $G_t$ w epizodzie REINFORCE.}
     \label{fig:reinforce-return}
 \end{figure}
 

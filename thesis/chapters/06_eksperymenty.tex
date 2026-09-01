@@ -15,7 +15,12 @@ ewaluacji są wspólne dla wszystkich eksperymentów, a poszczególne
 warianty eksperymentów różnią się wyłącznie badanymi elementami.
 Cały przebieg jednego eksperymentu, od treningu pojedynczego modelu do
 porównania wszystkich wariantów, przedstawiłem na
-rysunku~\ref{fig:experiment-pipeline}.
+rysunku~\ref{fig:experiment-pipeline}. Trening trwa do 50\,000 epizodów
+i w jego trakcie co 4\,000 epizodów wykonywana jest walidacja na
+2\,000 rozdaniach, ta część przebiegu ma więc charakter cykliczny.
+Po zakończeniu treningu wytrenowany model przechodzi jednorazowo do
+ewaluacji końcowej na 100\,000 rozdaniach, a jej wyniki wykorzystuję
+następnie w porównaniach sparowanych.
 
 \begin{figure}[htbp]
     \centering
@@ -37,9 +42,7 @@ rysunku~\ref{fig:experiment-pipeline}.
         \draw[-{Latex}, thick] (train.south) -- (validation.north)
             node[midway, right] {co 4\,000 epizodów};
     \end{tikzpicture}
-    \caption{Przebieg jednego eksperymentu. Walidacja powtarza się
-    cyklicznie w trakcie treningu, natomiast ewaluacja końcowa
-    i porównania sparowane wykonuję już na wytrenowanym modelu.}
+    \caption{Przebieg jednego eksperymentu.}
     \label{fig:experiment-pipeline}
 \end{figure}
 
