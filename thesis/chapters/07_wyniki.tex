@@ -112,3 +112,159 @@ reprezentacji stanu. W przypadku REINFORCE największą różnicę pomiędzy
 wariantami obserwuję dla połączenia reprezentacji FEATURES ze
 skalowaną funkcją nagrody. W kolejnych sekcjach analizuję oba czynniki
 oddzielnie, wykorzystując sparowanie tych samych seedów treningowych.
+
+\section{Wpływ reprezentacji stanu}
+\label{sec:wyniki-reprezentacja-stanu}
+
+W celu oceny wpływu sposobu reprezentacji stanu porównałem warianty
+RAW i FEATURES przy zachowaniu tego samego algorytmu, funkcji nagrody
+oraz seedu treningowego. Dla każdej pary wyznaczyłem różnicę
+
+\begin{equation}
+    \Delta EV_{\mathrm{state}}
+    =
+    EV_{\mathrm{FEATURES}}
+    -
+    EV_{\mathrm{RAW}}.
+\end{equation}
+
+Dodatnia wartość różnicy oznacza zatem przewagę reprezentacji
+FEATURES. Porównanie wykonałem osobno dla obu algorytmów i obu funkcji
+nagrody. Jednostką porównania jest w tym przypadku seed treningowy,
+dlatego każda wartość średnia oraz odpowiadający jej przedział ufności
+wynikają z pięciu sparowanych różnic.
+
+W przypadku DQN zastosowanie reprezentacji FEATURES doprowadziło do
+wyraźnej poprawy końcowego EV dla obu funkcji nagrody. Przy nagrodzie
+opartej bezpośrednio na zysku netto średnia różnica wyniosła
+
+\begin{equation}
+    \Delta EV_{\mathrm{state}}
+    =
+    0{,}2374,
+\end{equation}
+
+a 95-procentowy przedział ufności był równy
+
+\begin{equation}
+    [0{,}2066,\ 0{,}2682].
+\end{equation}
+
+Dla skalowanej funkcji nagrody średnia różnica wyniosła
+$0{,}1517$, przy 95-procentowym przedziale ufności
+$[0{,}0863,\ 0{,}2170]$.
+
+W obu przypadkach cały przedział znajduje się powyżej zera.
+Wyniki wskazują więc, że w badanej konfiguracji DQN rozszerzenie
+wektora stanu o cechy opisujące sytuację pokerową poprawiało jakość
+uzyskiwanej strategii w sposób powtarzalny pomiędzy pięcioma
+przebiegami treningowymi.
+
+Dla REINFORCE wpływ reprezentacji stanu był znacznie mniej
+jednoznaczny. Przy funkcji nagrody opartej na zysku netto średnia
+różnica FEATURES względem RAW wyniosła $-0{,}0037$, a jej
+95-procentowy przedział ufności
+$[-0{,}0144,\ 0{,}0069]$ obejmował zero. Oznacza to, że w tym
+wariancie obie reprezentacje prowadziły do bardzo podobnych wyników
+końcowych.
+
+Przy skalowanej funkcji nagrody średnia różnica wyniosła
+$0{,}0593$, jednak przedział ufności był znacznie szerszy
+i wyniósł $[-0{,}0225,\ 0{,}1411]$. Punktowe oszacowanie wskazuje
+na wyższe EV reprezentacji FEATURES, ale duże zróżnicowanie wyników
+między seedami nie pozwala uznać tego efektu za równie stabilny jak
+w przypadku DQN.
+
+Zestawienie wszystkich czterech porównań przedstawiam na
+rysunku~\ref{fig:state-representation-effect}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=0.9\textwidth
+    ]{../experiments/results/final_analysis/02_state_representation_effect.pdf}
+    \caption{Wpływ reprezentacji stanu na końcowe EV. Punkty
+    przedstawiają średnią różnicę $EV_{\mathrm{FEATURES}} -
+    EV_{\mathrm{RAW}}$ dla pięciu sparowanych seedów treningowych,
+    a wąsy odpowiadają 95-procentowym przedziałom ufności.
+    Wartości dodatnie oznaczają przewagę reprezentacji FEATURES.}
+    \label{fig:state-representation-effect}
+\end{figure}
+
+Rezultaty wskazują zatem na istotną różnicę pomiędzy badanymi
+algorytmami. DQN korzystał wyraźnie z informacji zawartych
+w rozszerzonej reprezentacji FEATURES, natomiast dla REINFORCE
+nie zaobserwowałem równie stabilnego efektu zmiany reprezentacji.
+
+
+\section{Wpływ funkcji nagrody}
+\label{sec:wyniki-funkcja-nagrody}
+
+Drugim badanym elementem była funkcja nagrody. Porównałem bezpośredni
+zysk netto z jego wersją przeskalowaną przy zachowaniu tego samego
+algorytmu, reprezentacji stanu oraz seedu treningowego. Różnicę
+zdefiniowałem jako
+
+\begin{equation}
+    \Delta EV_{\mathrm{reward}}
+    =
+    EV_{\mathrm{net}}
+    -
+    EV_{\mathrm{scaled}}.
+\end{equation}
+
+Wartość dodatnia oznacza zatem przewagę bezpośredniego zysku netto,
+natomiast ujemna przewagę nagrody skalowanej.
+
+Dla DQN wykorzystującego reprezentację RAW średnia różnica wyniosła
+$-0{,}0769$, a jej 95-procentowy przedział ufności był równy
+$[-0{,}1314,\ -0{,}0224]$. W tym wariancie skalowanie nagrody
+prowadziło więc do lepszych wyników końcowych w porównaniu
+z bezpośrednim wykorzystaniem zysku netto.
+
+Sytuacja wyglądała inaczej po zastosowaniu reprezentacji FEATURES.
+Średnia różnica wyniosła jedynie $0{,}0089$, przy przedziale
+$[-0{,}0057,\ 0{,}0234]$. Różnica jest niewielka, a przedział
+obejmuje zero, dlatego na podstawie tych wyników nie można wskazać
+wyraźnej przewagi jednej z funkcji nagrody dla DQN korzystającego
+z reprezentacji FEATURES.
+
+Podobny brak jednoznacznej przewagi wystąpił dla REINFORCE z
+reprezentacją RAW. Średnia różnica wyniosła $0{,}0018$, natomiast
+95-procentowy przedział ufności
+$[-0{,}0087,\ 0{,}0124]$ obejmował zero.
+
+Największą różnicę punktową dla REINFORCE zaobserwowałem przy
+reprezentacji FEATURES. W tym przypadku wartość
+$EV_{\mathrm{net}} - EV_{\mathrm{scaled}}$ wyniosła
+$-0{,}0612$, czyli wyższy średni wynik osiągnęła funkcja skalowana.
+Jednocześnie przedział ufności był bardzo szeroki i wyniósł
+$[-0{,}1437,\ 0{,}0213]$. Wynik ten jest zgodny z dużym
+zróżnicowaniem końcowej jakości polityk REINFORCE obserwowanym
+pomiędzy seedami.
+
+Porównania przedstawiam na
+rysunku~\ref{fig:reward-effect}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[
+        width=0.9\textwidth
+    ]{../experiments/results/final_analysis/03_reward_effect.pdf}
+    \caption{Wpływ funkcji nagrody na końcowe EV. Punkty
+    przedstawiają średnią różnicę $EV_{\mathrm{net}} -
+    EV_{\mathrm{scaled}}$ dla pięciu sparowanych seedów
+    treningowych, a wąsy odpowiadają 95-procentowym przedziałom
+    ufności.}
+    \label{fig:reward-effect}
+\end{figure}
+
+W przeciwieństwie do reprezentacji stanu nie obserwuję więc
+uniwersalnego efektu skalowania funkcji nagrody. Jego wpływ zależy od
+połączenia z algorytmem oraz sposobem reprezentacji stanu. Skalowanie
+poprawiło wyniki DQN korzystającego z reprezentacji RAW, lecz dla DQN
+z reprezentacją FEATURES różnica była niewielka. W przypadku
+REINFORCE punktowo najlepszy wynik uzyskała konfiguracja FEATURES ze
+skalowaną nagrodą, ale wynik ten był jednocześnie silnie zależny od
+seedu treningowego.
+
