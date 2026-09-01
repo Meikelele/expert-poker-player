@@ -1,7 +1,7 @@
 \chapter{Podsumowanie i wnioski}
 \label{chap:wnioski}
 
-W tej pracy sprawdziłem, jak wybrane metody uczenia przez wzmacnianie
+Przechodząc do podsumowania w niniejszej pracy sprawdziłem, jak wybrane metody uczenia przez wzmacnianie
 radzą sobie z podejmowaniem decyzji w Ultimate Texas Hold'em oraz jak
 na jakość uzyskiwanej strategii wpływa sposób reprezentacji stanu
 i konstrukcja funkcji nagrody.
@@ -23,7 +23,7 @@ pełnego rozdania, ocenę układów pokerowych, zasady wykonywania zakładów
 oraz ich końcowe rozliczenie.
 
 Na bazie środowiska przygotowałem wspólną infrastrukturę dla agentów.
-Pozwala ona uruchamiać te same rozdania dla różnych strategii,
+Pozwoliła mi ona uruchamiać te same rozdania dla różnych strategii,
 zapisywać wyniki i wykonywane akcje oraz porównywać agentów na
 wspólnych harmonogramach talii. Jako punkty odniesienia wykorzystałem
 agenta losowego i agenta regułowego.
@@ -42,10 +42,9 @@ ewaluacji. Wszystkie modele w końcowym porównaniu oceniłem na tym
 samym harmonogramie rozdań. Pozwoliło mi to ograniczyć wpływ
 przypadkowej kolejności kart na porównania pomiędzy strategiami.
 
-W rezultacie powstał kompletny proces obejmujący implementację
+W rezultacie zaprojektowałem kompletny proces obejmujący implementację
 środowiska, trening agentów, zapis modeli, okresową walidację,
 końcową ewaluację oraz analizę wyników.
-
 
 \section{Wnioski z przeprowadzonych eksperymentów}
 \label{sec:wnioski-eksperymenty}
@@ -64,7 +63,7 @@ punktowy, ale jednocześnie charakteryzowała się dużą zmiennością
 pomiędzy seedami. Wpływ reprezentacji na REINFORCE okazał się więc
 znacznie mniej powtarzalny niż dla DQN.
 
-Drugim analizowanym elementem była funkcja nagrody. Skalowanie wyniku
+Przeanalizowałem wpływ funkcji nagrody. Skalowanie wyniku
 netto poprawiło rezultat DQN korzystającego z reprezentacji RAW,
 jednak przy reprezentacji FEATURES różnica pomiędzy funkcjami nagrody
 była niewielka. Dla REINFORCE również nie uzyskałem wyników
@@ -73,27 +72,28 @@ od drugiej. Skalowanie zmieniało przebieg optymalizacji i skalę
 gradientów, ale nie dawało uniwersalnej poprawy jakości końcowej
 polityki.
 
-Porównanie samych algorytmów również nie daje jednej odpowiedzi na
+Przez porównanie samych algorytmów również nie uzyskałem jednej odpowiedzi na
 pytanie o lepszą metodę. Przy podstawowym budżecie 50\,000 epizodów
 REINFORCE osiągał wyższe średnie EV niż DQN dla odpowiadających sobie
 konfiguracji. Jednocześnie jego trening był znacznie bardziej zależny
 od seedu i w wielu przebiegach prowadził do przedwczesnej zbieżności
 decyzji do bardzo prostej polityki.
 
-DQN osiągał niższe średnie wyniki, ale jego zachowanie było bardziej
-powtarzalne pomiędzy niezależnymi treningami. Różnica ta była również
-widoczna po zwiększeniu budżetu treningowego do 100\,000 epizodów.
-Wszystkie pięć seedów wybranej konfiguracji DQN poprawiło końcowy
-wynik, podczas gdy dla REINFORCE zmiana była znacznie mniej
-regularna.
+DQN osiągał niższe średnie wyniki. Wybrana walidacyjnie konfiguracja
+DQN dawała jednak bardziej powtarzalne wyniki między seedami niż
+odpowiadająca jej konfiguracja REINFORCE, co było widoczne również po
+zwiększeniu budżetu treningowego do 100\,000 epizodów, wszystkie pięć
+seedów DQN poprawiło końcowy wynik, podczas gdy dla REINFORCE zmiana
+była znacznie mniej regularna.
 
-Ważnym punktem odniesienia pozostają agenci bazowi. Większość
-konfiguracji uczenia przez wzmacnianie osiągnęła wynik lepszy od
-agenta losowego, co pokazuje, że modele były w stanie nauczyć się
-zależności pomiędzy obserwowanym stanem gry i podejmowanymi akcjami.
-Żadna z badanych konfiguracji nie zbliżyła się jednak do wyniku
-agenta RuleBased, którego EV w końcowej ewaluacji wyniosło
-$-0{,}0106$.
+Większość konfiguracji uczenia przez wzmacnianie osiągnęła wynik lepszy od
+agenta losowego, co sugeruje, że wyuczone zachowanie było skuteczniejsze
+od losowego wyboru legalnej akcji. Dopiero po przeanalizowaniu samych decyzji,
+utwierdziłem się w przekonaniu, że
+część wytrenowanych modeli faktycznie uzależniała wybieraną akcję od
+obserwowanego stanu gry. Żadna z badanych konfiguracji nie zbliżyła
+się jednak do wyniku agenta RuleBased, którego EV w końcowej ewaluacji
+wyniosło $-0{,}0106$.
 
 Odpowiadając na postawiony we wstępie problem badawczy, wybór
 algorytmu, sposobu reprezentacji stanu oraz funkcji nagrody faktycznie
@@ -105,8 +105,113 @@ okazała się stabilność procesu uczenia.
 
 Uzyskane wyniki pokazują również, że ocena metody wyłącznie na
 podstawie średniego EV może być niewystarczająca. REINFORCE uzyskiwał
-wyższe wyniki średnie, ale DQN dawał bardziej powtarzalny rezultat.
-W przypadku zastosowania uczenia przez wzmacnianie w problemie
-o dużej losowości ważna jest więc nie tylko jakość najlepszej
-uzyskanej polityki, ale również to, jak często podobną politykę można
-otrzymać po ponownym przeprowadzeniu treningu.
+wyższe wyniki średnie, ale jednocześnie często zbiegał do bardzo
+prostych, zdeterminowanych polityk. Takiego zjawiska nie
+zaobserwowałem dla DQN, którego wybrana walidacyjnie konfiguracja
+dawała też bardziej powtarzalne wyniki między seedami. W przypadku
+zastosowania uczenia przez wzmacnianie w problemie o dużej losowości
+ważna jest więc nie tylko jakość najlepszej uzyskanej polityki, ale
+również to, jak często podobną politykę można otrzymać po ponownym
+przeprowadzeniu treningu.
+
+\section{Ograniczenia pracy}
+\label{sec:ograniczenia-pracy}
+
+Zakres tej pracy ograniczyłem pod kilku względami, które teraz krótko podsumuję.
+
+Pierwszym ograniczeniem na jakie się zdecydowałem w mojej pracy jest liczba niezależnych przebiegów
+treningowych. Każdą konfigurację wytrenowałem dla pięciu seedów, co
+pozwoliło mi porównywać treningi parami, ale przy tak małej próbie
+przedziały ufności dla efektów zależnych od seedu pozostają dość
+szerokie.
+
+Dla obu algorytmów przyjąłem jedną architekturę sieci. Celem eksperymentu było porównanie
+algorytmów, reprezentacji stanu i funkcji nagrody w tych samych
+warunkach, a nie wyszukanie najlepszej możliwej konfiguracji dla
+każdego z nich. Nie oznacza to więc, że DQN albo REINFORCE nie
+mogłyby osiągnąć lepszego wyniku po innym doborze konfiguracji.
+
+Dotyczy to zwłaszcza REINFORCE. Zastosowałem jego podstawową wersję,
+bez sieci wartości i bez regularyzacji entropii. W szczególności brak
+regularyzacji entropii oznacza, że metoda nie miała mechanizmu
+ograniczającego przedwczesną zbieżność do jednej, zdeterminowanej
+akcji, co w moich eksperymentach często prowadziło do degeneracji
+decyzji przed flopem. Ten wynik opisuje więc zachowanie konkretnej,
+wykorzystanej przez mnie implementacji, a nie ogólną cechę metod
+policy gradient.
+
+Ograniczyłem się również do dwóch wariantów funkcji nagrody, opartych
+na tym samym wyniku finansowym rozdania i różniących się tylko skalą.
+Pozwoliło mi to sprawdzić wpływ skali sygnału nagrody bez zmiany celu
+agenta, ale nie obejmuje innych sposobów kształtowania nagrody.
+
+Reprezentacja FEATURES zawiera ręcznie dobrane cechy pokerowe. Jej
+przewaga nad RAW pokazuje więc wartość tej konkretnej wiedzy
+dziedzinowej, a nie to, że każda bardziej rozbudowana reprezentacja
+stanu byłaby lepsza.
+
+Ograniczenia samego środowiska, w tym brak zakładów pobocznych Trips
+i Progressive, opisałem już w podrozdziale~\ref{sec:ograniczenia-srodowiska}.
+Dla mojej pracy oznaczają one, że badany problem decyzyjny obejmuje
+wyłącznie zakład Play wobec krupiera działającego według stałych
+reguł, bez adaptacji do zmieniającego się przeciwnika.
+
+Ostatnim ograniczeniem jest zakres eksperymentu z budżetem
+100\,000 epizodów. Do rozszerzonego treningu wybrałem po jednej
+konfiguracji dla każdego algorytmu na podstawie wyników
+walidacyjnych, więc traktuję tę część jako analizę uzupełniającą, a
+nie bezpośrednie porównanie wszystkich ośmiu podstawowych
+konfiguracji.
+
+\section{Możliwe kierunki dalszego rozwoju}
+\label{sec:dalszy-rozwoj}
+
+Najbardziej oczywistym kierunkiem dalszych prac jest rozwinięcie
+metody policy gradient. Skoro REINFORCE tak często degenerował się do
+prostej polityki, naturalnym posunięciem byłoby dodanie regularyzacji
+entropii oraz baseline'u ograniczającego wariancję gradientu, a dalej
+sprawdzenie metod actor-critic albo PPO, które łączą optymalizację
+polityki z estymacją wartości stanu i dodatkowymi mechanizmami
+stabilizującymi trening.
+
+Dla DQN warto byłoby szerzej przetestować hiperparametry oraz dłuższy
+trening. W rozszerzonym eksperymencie wszystkie pięć seedów poprawiło
+wynik między 50\,000 a 100\,000 epizodów, więc interesujące byłoby
+sprawdzenie, czy ten trend utrzymuje się przy jeszcze większym
+budżecie.
+
+Kolejnym kierunkiem jest sama reprezentacja obserwacji. Tutaj
+porównałem surowe kodowanie kart z wersją rozszerzoną o ręcznie
+zaprojektowane cechy pokerowe. Alternatywą byłaby chociażby reprezentacja
+uczona przez samą sieć.
+
+Warto też byłoby zwiększyć liczbę seedów treningowych. Pozwoliłoby to
+dokładniej opisać rozkład wyników każdej konfiguracji i lepiej
+ocenić, jak często REINFORCE faktycznie prowadzi do zdegenerowanej
+polityki.
+
+Środowisko można też rozszerzyć o dodatkowe warianty gry i zakłady
+poboczne. Nie zmieniłoby to głównego problemu decyzyjnego z tej
+pracy, ale pozwoliłoby wykorzystać przygotowany silnik do szerszych
+eksperymentów.
+
+\section{Podsumowanie}
+\label{sec:podsumowanie-koncowe}
+
+Żadna z ośmiu badanych konfiguracji nie okazała się najlepsza pod
+każdym względem. REINFORCE osiągał wyższe średnie EV, ale był podatny
+na degenerację polityki. DQN uzyskiwał niższe wyniki, natomiast
+reprezentacja FEATURES dawała mu wyraźną i powtarzalną poprawę
+względem RAW, a wydłużenie treningu do 100\,000 epizodów poprawiło
+wynik wszystkich pięciu sprawdzonych seedów.
+
+Żadna z metod uczenia przez wzmacnianie nie dorównała agentowi
+regułowemu. Udało mi się jednak wskazać konkretne zależności między
+reprezentacją stanu, skalą nagrody, algorytmem i stabilnością
+treningu. Najwyższe EV nie było więc jedynym wynikiem tej pracy,
+równie ważne okazało się to, jak poszczególne elementy konfiguracji
+wpływają na sam proces uczenia i na zachowanie wytrenowanej polityki.
+
+Przygotowałem środowisko i cały proces eksperymentalny w taki sposób, że może być
+punktem wyjścia do dalszych badań nad uczeniem przez wzmacnianie
+w Ultimate Texas Hold'em.

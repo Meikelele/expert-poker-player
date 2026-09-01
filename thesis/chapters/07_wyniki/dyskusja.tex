@@ -37,8 +37,14 @@ Wyniki tego algorytmu były bardziej zależne od seedu treningowego,
 a większość przebiegów, piętnaście z dwudziestu, prowadziła do
 degeneracji polityki do jednej akcji niezależnej od stanu gry.
 
-DQN osiągał niższe średnie EV, lecz proces treningowy był bardziej
-powtarzalny. Również eksperyment z większym budżetem treningowym
+DQN osiągał niższe średnie EV. Dla konfiguracji wybranej do
+rozszerzonego treningu jego wyniki były jednak bardziej powtarzalne
+między seedami niż dla odpowiadającej jej konfiguracji REINFORCE. Dla
+części pozostałych wariantów REINFORCE niski rozrzut końcowego EV
+wynikał natomiast z tego, że wiele seedów zbiegało do podobnej,
+zdegenerowanej polityki. Sama niska wartość odchylenia standardowego
+nie oznacza więc w tym przypadku stabilnego i poprawnego procesu
+uczenia. Również eksperyment z większym budżetem treningowym
 wskazał na różnicę pomiędzy algorytmami. Wszystkie pięć modeli DQN
 poprawiło wynik po zwiększeniu budżetu do 100\,000 epizodów,
 natomiast dla REINFORCE poprawa była silnie zależna od konkretnego
@@ -71,4 +77,5 @@ wyższości jednego algorytmu nad drugim. Pokazują one natomiast
 wyraźnie, że w badanym środowisku DQN i REINFORCE reagują inaczej na
 reprezentację stanu, skalę nagrody i zwiększenie budżetu treningowego.
 Różnica pomiędzy średnią jakością polityki a stabilnością jej
-uzyskiwania stanowi dość istotny rezultat przeprowadzonych eksperymentów.
+uzyskiwania stanowi jeden z ważniejszych rezultatów przeprowadzonych
+eksperymentów.

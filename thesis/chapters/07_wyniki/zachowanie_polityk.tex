@@ -14,8 +14,9 @@ przedwczesnej zbieżności do suboptymalnych, deterministycznych
 polityk \cite{mnih_a3c_2016}.
 Jak opisałem w podrozdziale~\ref{sec:policy-gradient-reinforce},
 zastosowana w tej pracy konfiguracja REINFORCE nie wykorzystuje ani
-regularyzacji entropii, ani baseline'u, co zwiększa podatność tej
-metody na opisywane zjawisko.
+regularyzacji entropii, ani baseline'u. W szczególności brak
+regularyzacji entropii oznacza, że metoda nie ma mechanizmu
+ograniczającego przedwczesną zbieżność do polityki deterministycznej.
 
 Aby ocenić skalę tego zjawiska, dla każdej z ośmiu podstawowych
 konfiguracji sprawdziłem, dla ilu z pięciu seedów wybierana akcja
@@ -48,10 +49,10 @@ przedstawiam w tabeli~\ref{tab:reinforce-collapse-counts}.
     \end{tabular}
 \end{table}
 
-Na piętnaście spośród dwudziestu przebiegów REINFORCE degeneracja
-do jednej, niezależnej od stanu akcji nie jest więc wyjątkiem
-dotyczącym pojedynczej konfiguracji, lecz najczęstszym wynikiem
-całego eksperymentu. Co istotne, konfiguracja REINFORCE FEATURES ze
+W piętnastu spośród dwudziestu przebiegów REINFORCE zaobserwowałem
+degenerację decyzji przed flopem do jednej akcji. Nie jest to więc
+wyjątek dotyczący jednej konfiguracji, lecz częsty wynik w całym
+zbiorze przebiegów REINFORCE. Co istotne, konfiguracja REINFORCE FEATURES ze
 skalowaną funkcją nagrody, która osiągnęła najwyższe średnie EV
 spośród wariantów REINFORCE, jest jednocześnie tą, w której
 degeneracja wystąpiła najrzadziej. Dalszą analizę zachowania
@@ -65,8 +66,8 @@ akcji pięciu modeli tej konfiguracji po rozszerzeniu treningu do
 100\,000 epizodów. Na osi poziomej znajduje się udział poszczególnych
 akcji w końcowej ewaluacji, a na osi pionowej pięć seedów, każdy pasek
 przedstawia pełny rozkład akcji jednego modelu. Trzy z pięciu pasków
-składają się z wielu kolorów i faz rozdania, natomiast dwa są
-jednokolorowe na całej długości.
+składają się z wielu kolorów odpowiadających różnym akcjom, natomiast
+dwa są jednokolorowe na całej długości.
 
 \begin{figure}[htbp]
     \centering
@@ -108,8 +109,9 @@ podałem, jaki odsetek wszystkich rozdań do nich dotarł. Dla DQN
 i REINFORCE rozdania pochodzą ze wszystkich pięciu seedów danej
 konfiguracji, a nie z jednego wybranego przebiegu. REINFORCE
 dociera do riveru w zaledwie 9\% rozdań, podczas gdy dla DQN odsetek
-ten wynosi 54\%, co jest bezpośrednią konsekwencją częstego wyboru
-najwyższego zakładu już przed flopem.
+ten wynosi 54\%. Jedną z głównych przyczyn tej różnicy jest częste
+wykonywanie zakładu już przed flopem, po którym dalsze decyzje gracza
+nie są wymagane.
 
 \begin{figure}[htbp]
     \centering

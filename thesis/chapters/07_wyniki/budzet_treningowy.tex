@@ -12,10 +12,10 @@ Przebieg walidacyjnego EV uśredniony po pięciu seedach przedstawiam
 na rysunku~\ref{fig:extended-learning-curves}. Na osi poziomej
 znajduje się liczba epizodów treningowych do 100\,000, a na osi
 pionowej walidacyjne EV, linia pionowa oznacza podstawowy budżet
-50\,000 epizodów. Dla DQN krzywa po przekroczeniu tej granicy
-kontynuuje trend wzrostowy,
-natomiast dla REINFORCE wzrost średniej jest wyraźniejszy dopiero po
-50\,000 epizodach.
+50\,000 epizodów. Dla DQN wartość końcowa po 100\,000 epizodach jest wyższa niż po
+50\,000, mimo lokalnych wahań w trakcie dalszego treningu. Dla
+REINFORCE średnia też rośnie, ale trajektorie poszczególnych seedów
+różnią się od siebie znacznie bardziej.
 
 \begin{figure}[htbp]
     \centering
@@ -32,10 +32,12 @@ seedów w podobnym stopniu. Trajektorie poszczególnych przebiegów
 przedstawiam na rysunku~\ref{fig:extended-training-per-seed}, z tymi
 samymi osiami co powyżej, dodatkowo z rozbiciem na pięć kolorów
 odpowiadających poszczególnym seedom oraz naniesioną krzywą średnią.
-Dla REINFORCE widoczny jest seed o trajektorii całkowicie płaskiej
-przez cały trening, co jest zgodne ze zjawiskiem degeneracji polityki
-do jednej, niezależnej od stanu akcji, które opisuję szerzej
-w sekcji~\ref{sec:wyniki-zachowanie-polityk}.
+Dla REINFORCE widoczna jest też płaska trajektoria odpowiadająca
+zdegenerowanym przebiegom. Część linii może się przy tym nakładać,
+ponieważ identyczna, zdeterminowana polityka oceniana na tym samym
+harmonogramie daje identyczny wynik. Jest to zgodne ze zjawiskiem
+degeneracji polityki do jednej, niezależnej od stanu akcji, które
+opisuję szerzej w sekcji~\ref{sec:wyniki-zachowanie-polityk}.
 
 \begin{figure}[htbp]
     \centering
