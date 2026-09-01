@@ -1,7 +1,8 @@
-\chapter{Podsumowanie i wnioski}
+\chapter*{Podsumowanie i dalszy rozwój pracy}
+\addcontentsline{toc}{chapter}{Podsumowanie i dalszy rozwój pracy}
 \label{chap:wnioski}
 
-Przechodząc do podsumowania w niniejszej pracy sprawdziłem, jak wybrane metody uczenia przez wzmacnianie
+W tej pracy sprawdziłem, jak wybrane metody uczenia przez wzmacnianie
 radzą sobie z podejmowaniem decyzji w Ultimate Texas Hold'em oraz jak
 na jakość uzyskiwanej strategii wpływa sposób reprezentacji stanu
 i konstrukcja funkcji nagrody.
@@ -13,7 +14,7 @@ eksperyment obejmujący osiem podstawowych konfiguracji, z których każdą
 wytrenowałem dla pięciu seedów. Końcową ocenę modeli wykonałem na
 wspólnym harmonogramie 100\,000 rozdań.
 
-\section{Realizacja celu pracy}
+\section*{Realizacja celu pracy}
 \label{sec:realizacja-celu-pracy}
 
 Pierwszym celem pracy było przygotowanie środowiska pozwalającego na
@@ -46,7 +47,7 @@ W rezultacie zaprojektowałem kompletny proces obejmujący implementację
 środowiska, trening agentów, zapis modeli, okresową walidację,
 końcową ewaluację oraz analizę wyników.
 
-\section{Wnioski z przeprowadzonych eksperymentów}
+\section*{Wnioski z przeprowadzonych eksperymentów}
 \label{sec:wnioski-eksperymenty}
 
 Najbardziej jednoznaczny wynik uzyskałem dla wpływu reprezentacji
@@ -72,7 +73,7 @@ od drugiej. Skalowanie zmieniało przebieg optymalizacji i skalę
 gradientów, ale nie dawało uniwersalnej poprawy jakości końcowej
 polityki.
 
-Przez porównanie samych algorytmów również nie uzyskałem jednej odpowiedzi na
+Porównanie samych algorytmów również nie daje jednej odpowiedzi na
 pytanie o lepszą metodę. Przy podstawowym budżecie 50\,000 epizodów
 REINFORCE osiągał wyższe średnie EV niż DQN dla odpowiadających sobie
 konfiguracji. Jednocześnie jego trening był znacznie bardziej zależny
@@ -106,7 +107,7 @@ okazała się stabilność procesu uczenia.
 Uzyskane wyniki pokazują również, że ocena metody wyłącznie na
 podstawie średniego EV może być niewystarczająca. REINFORCE uzyskiwał
 wyższe wyniki średnie, ale jednocześnie często zbiegał do bardzo
-prostych, zdeterminowanych polityk. Takiego zjawiska nie
+prostych, deterministycznych polityk. Takiego zjawiska nie
 zaobserwowałem dla DQN, którego wybrana walidacyjnie konfiguracja
 dawała też bardziej powtarzalne wyniki między seedami. W przypadku
 zastosowania uczenia przez wzmacnianie w problemie o dużej losowości
@@ -114,12 +115,12 @@ ważna jest więc nie tylko jakość najlepszej uzyskanej polityki, ale
 również to, jak często podobną politykę można otrzymać po ponownym
 przeprowadzeniu treningu.
 
-\section{Ograniczenia pracy}
+\section*{Ograniczenia pracy}
 \label{sec:ograniczenia-pracy}
 
 Zakres tej pracy ograniczyłem pod kilku względami, które teraz krótko podsumuję.
 
-Pierwszym ograniczeniem na jakie się zdecydowałem w mojej pracy jest liczba niezależnych przebiegów
+Pierwszym ograniczeniem jest liczba niezależnych przebiegów
 treningowych. Każdą konfigurację wytrenowałem dla pięciu seedów, co
 pozwoliło mi porównywać treningi parami, ale przy tak małej próbie
 przedziały ufności dla efektów zależnych od seedu pozostają dość
@@ -134,7 +135,7 @@ mogłyby osiągnąć lepszego wyniku po innym doborze konfiguracji.
 Dotyczy to zwłaszcza REINFORCE. Zastosowałem jego podstawową wersję,
 bez sieci wartości i bez regularyzacji entropii. W szczególności brak
 regularyzacji entropii oznacza, że metoda nie miała mechanizmu
-ograniczającego przedwczesną zbieżność do jednej, zdeterminowanej
+ograniczającego przedwczesną zbieżność do jednej, deterministycznej
 akcji, co w moich eksperymentach często prowadziło do degeneracji
 decyzji przed flopem. Ten wynik opisuje więc zachowanie konkretnej,
 wykorzystanej przez mnie implementacji, a nie ogólną cechę metod
@@ -163,16 +164,17 @@ walidacyjnych, więc traktuję tę część jako analizę uzupełniającą, a
 nie bezpośrednie porównanie wszystkich ośmiu podstawowych
 konfiguracji.
 
-\section{Możliwe kierunki dalszego rozwoju}
+\section*{Możliwe kierunki dalszego rozwoju}
 \label{sec:dalszy-rozwoj}
 
 Najbardziej oczywistym kierunkiem dalszych prac jest rozwinięcie
 metody policy gradient. Skoro REINFORCE tak często degenerował się do
 prostej polityki, naturalnym posunięciem byłoby dodanie regularyzacji
 entropii oraz baseline'u ograniczającego wariancję gradientu, a dalej
-sprawdzenie metod actor-critic albo PPO, które łączą optymalizację
+sprawdzenie metod actor-critic albo PPO, które
+łączą optymalizację
 polityki z estymacją wartości stanu i dodatkowymi mechanizmami
-stabilizującymi trening.
+stabilizującymi trening \cite{schulman_ppo_2017}.
 
 Dla DQN warto byłoby szerzej przetestować hiperparametry oraz dłuższy
 trening. W rozszerzonym eksperymencie wszystkie pięć seedów poprawiło
@@ -195,7 +197,7 @@ poboczne. Nie zmieniłoby to głównego problemu decyzyjnego z tej
 pracy, ale pozwoliłoby wykorzystać przygotowany silnik do szerszych
 eksperymentów.
 
-\section{Podsumowanie}
+\section*{Wnioski końcowe}
 \label{sec:podsumowanie-koncowe}
 
 Żadna z ośmiu badanych konfiguracji nie okazała się najlepsza pod

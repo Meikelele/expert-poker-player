@@ -15,16 +15,23 @@
 % Obsługa grafik.
 \usepackage{graphicx}
 
-% Kodowanie fontów i pliku źródłowego — potrzebne przy kompilacji pdfLaTeX-em.
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-
 % Język polski: dzielenie wyrazów, podpisy, nazwy elementów dokumentu.
 \usepackage[polish]{babel}
 
-% CZCIONKA GLOBALNA: Nowoczesna czcionka bezszeryfowa (Sans-Serif) z pełnymi polskimi znakami
-\usepackage{lmodern}
-\renewcommand{\familydefault}{\sfdefault} % Ustawia czcionkę bezszeryfową jako domyślną dla całego tekstu
+% CZCIONKA GLOBALNA: Times New Roman (wymóg wydziału), ładowana jako prawdziwy
+% font systemowy przez fontspec — dokument kompilujemy XeLaTeX-em lub LuaLaTeX-em,
+% nie pdfLaTeX-em (fontenc/inputenc nie są tu potrzebne).
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+
+% Mikrotypografia (protrusion/expansion) — bez tego zmiana fontu na Times New
+% Roman zostawia sporo linii lekko wychodzących za margines.
+\usepackage{microtype}
+
+% Zapasowa elastyczność łamania wierszy — priorytet ma niewychodzenie tekstu
+% za margines (nawet kosztem odstępów) nad idealnie równym prawym marginesem.
+\tolerance=1500
+\emergencystretch=3em
 
 \usepackage[indentafter]{titlesec}
 
@@ -91,6 +98,10 @@
 % Podstawowe środowiska i symbole matematyczne.
 \usepackage{amsmath}
 \usepackage{amssymb}
+
+% Punktor list jako pik — czysto kosmetyczny akcent pokerowy (pełny czarny
+% glif z amssymb, nie emoji).
+\renewcommand{\labelitemi}{$\spadesuit$}
 
 % Nagłówki i stopki.
 \usepackage{fancyhdr}

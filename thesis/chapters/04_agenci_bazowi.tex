@@ -143,9 +143,9 @@ W celu implementacji agenta regułowego zdefiniowałem klasę \texttt{RuleBasedA
 która implementuje interfejs agenta pokerowego. Oddzieliłem reguły decyzyjne od klasy agenta,
 co pozwala mi na ich łatwe modyfikowanie w razie potrzeby.
 
-Funkcje \texttt{should\_raise\_preflop()},
-\texttt{should\_raise\_flop()} oraz \texttt{should\_raise\_river()}
-odpowiadają za ocenę obserwacji w poszczególnych fazach rozdania.
+Za ocenę obserwacji w poszczególnych fazach rozdania odpowiadają funkcje
+\texttt{should\_raise\_preflop()}, \texttt{should\_raise\_flop()} oraz
+\texttt{should\_raise\_river()}.
 
 Do podjęcia decyzji na riverze zaimplementowałem funkcję
 \texttt{count\_dealer\_outs()}. Tworzy ona zbiór kart niewidocznych
@@ -231,7 +231,7 @@ Na podstawie odchylenia standardowego próby wyznaczyłem błąd standardowy śr
 
 Poza tymi miarami, do oceny jakości strategii dołączam również
 końcowe wyniki rozdań oraz częstotliwość
-wykonywania poszczególnych akcji.
+wykonywania poszczególnych akcji \cite{montgomery_runger_2018}.
 
 \section{Porównanie agentów bazowych}
 \label{sec:porownanie-agentow-bazowych}

@@ -2,7 +2,8 @@
 \label{sec:policy-gradient-reinforce}
 
 Drugim algorytmem uczenia przez wzmacnianie, który zaimplementowałem,
-jest Policy Gradient oparty na metodzie REINFORCE \cite{sutton_barto_rl}.
+jest Policy Gradient oparty na metodzie REINFORCE
+\cite{williams_reinforce_1992,sutton_barto_rl}.
 W przeciwieństwie do DQN model nie estymuje wartości poszczególnych
 akcji. Sieć neuronowa bezpośrednio definiuje politykę, czyli rozkład
 prawdopodobieństwa akcji dla otrzymanego stanu.
@@ -12,7 +13,7 @@ prawdopodobieństwa akcji dla otrzymanego stanu.
 
 Sieć polityki \texttt{PolicyNetwork} przyjmuje wektor utworzony przez
 wybrany enkoder stanu. Zatem liczba wejść wynosi albo 373 dla
-State A, albo 393 dla State B. Zastosowałem dwie warstwy ukryte po
+RAW, albo 393 dla FEATURES. Zastosowałem dwie warstwy ukryte po
 256 neuronów z funkcją aktywacji ReLU oraz warstwę wyjściową
 o sześciu neuronach odpowiadających wszystkim akcjom.
 
@@ -64,7 +65,7 @@ rysunku~\ref{fig:policy-action-selection}.
         \draw[-{Latex}, thick] (dist.south) -- ++(0,-5mm) -| (train.north);
         \draw[-{Latex}, thick] (dist.south) -- ++(0,-5mm) -| (eval.north);
     \end{tikzpicture}
-    \caption{Wybór akcji w Policy Gradient.}
+    \caption{Wybór akcji w Policy Gradient}
     \label{fig:policy-action-selection}
 \end{figure}
 
@@ -150,7 +151,7 @@ natomiast wartość i znak $G_t$ decydują o sile tej zmiany.
         \node[below=5mm of g2, xshift=20mm, align=center]
             {$G_1=G_2=\dots=G_T=r_T$\\(bo $\gamma=1$, a $r_t=0$ dla $t<T$)};
     \end{tikzpicture}
-    \caption{Zwrot $G_t$ w epizodzie REINFORCE.}
+    \caption{Zwrot $G_t$ w epizodzie REINFORCE}
     \label{fig:reinforce-return}
 \end{figure}
 

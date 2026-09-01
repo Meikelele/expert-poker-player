@@ -5,8 +5,11 @@ Po zakończeniu podstawowych eksperymentów rozszerzyłem trening dwóch
 konfiguracji wybranych na podstawie wyników walidacyjnych. Dla DQN
 była to konfiguracja FEATURES z nagrodą opartą na zysku netto,
 natomiast dla REINFORCE konfiguracja FEATURES ze skalowaną funkcją
-nagrody. Wszystkie pięć seedów obu konfiguracji kontynuowałem do
-100\,000 epizodów.
+nagrody. Dla obu konfiguracji uruchomiłem te same seedy z budżetem
+100\,000 epizodów. Pierwsze 50\,000 epizodów odtworzyło się przy tym
+deterministycznie, co sprawdziłem, porównując punkty walidacyjne
+z podstawowego przebiegu, więc wynik do 100\,000 epizodów można
+traktować jako przedłużenie tej samej trajektorii treningowej.
 
 Przebieg walidacyjnego EV uśredniony po pięciu seedach przedstawiam
 na rysunku~\ref{fig:extended-learning-curves}. Na osi poziomej
@@ -23,7 +26,7 @@ różnią się od siebie znacznie bardziej.
         width=\textwidth
     ]{../experiments/results/final_analysis/06_extended_learning_curves.pdf}
     \caption{Przebieg walidacyjnego EV wybranych konfiguracji DQN
-    i REINFORCE do 100\,000 epizodów.}
+    i REINFORCE do 100\,000 epizodów}
     \label{fig:extended-learning-curves}
 \end{figure}
 
@@ -34,7 +37,7 @@ samymi osiami co powyżej, dodatkowo z rozbiciem na pięć kolorów
 odpowiadających poszczególnym seedom oraz naniesioną krzywą średnią.
 Dla REINFORCE widoczna jest też płaska trajektoria odpowiadająca
 zdegenerowanym przebiegom. Część linii może się przy tym nakładać,
-ponieważ identyczna, zdeterminowana polityka oceniana na tym samym
+ponieważ identyczna, deterministyczna polityka oceniana na tym samym
 harmonogramie daje identyczny wynik. Jest to zgodne ze zjawiskiem
 degeneracji polityki do jednej, niezależnej od stanu akcji, które
 opisuję szerzej w sekcji~\ref{sec:wyniki-zachowanie-polityk}.
@@ -45,7 +48,7 @@ opisuję szerzej w sekcji~\ref{sec:wyniki-zachowanie-polityk}.
         width=0.75\textwidth
     ]{../experiments/results/final_analysis/10_extended_training_per_seed.pdf}
     \caption{Trajektorie walidacyjnego EV dla pięciu seedów
-    wybranych konfiguracji DQN i REINFORCE.}
+    wybranych konfiguracji DQN i REINFORCE}
     \label{fig:extended-training-per-seed}
 \end{figure}
 
