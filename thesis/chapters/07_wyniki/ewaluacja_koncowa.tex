@@ -85,13 +85,11 @@ poziomej znajduje się wartość EV, a na osi pionowej osiem konfiguracji algory
 Małe punkty przedstawiają
 wyniki poszczególnych seedów, większe znaczniki średnie wartości
 konfiguracji wraz z 95-procentowymi przedziałami ufności, a linie
-pionowe oznaczają wyniki agentów Random i RuleBased. Widać na nim, że
-rozrzut punktów wokół średniej jest podobny dla większości
-konfiguracji obu algorytmów, z wyjątkiem konfiguracji REINFORCE
-FEATURES ze skalowaną nagrodą, dla której jest on zauważalnie większy
-niż dla pozostałych siedmiu konfiguracji, co świadczy o różnicy
-w powtarzalności obu algorytmów, którą analizuję w dalszej części
-rozdziału.
+pionowe oznaczają wyniki agentów Random i RuleBased. Największy
+rozrzut widoczny jest dla konfiguracji REINFORCE FEATURES ze skalowaną
+nagrodą. Sama końcowa ewaluacja nie wystarcza jednak do oceny
+stabilności całego procesu uczenia, dlatego wracam do tego problemu
+w dalszej części rozdziału.
 
 \begin{figure}[htbp]
     \centering
@@ -117,9 +115,10 @@ rysunku~\ref{fig:bankroll-curve} przedstawiam ten proces dla agentów
 Random i RuleBased oraz najlepszych walidacyjnie konfiguracji DQN
 i REINFORCE. Na osi poziomej, w skali logarytmicznej, znajduje się
 liczba rozegranych rozdań, a na osi pionowej średni wynik narastająco.
-Krzywe wszystkich czterech strategii stabilizują się jeszcze przed
-końcem harmonogramu, co potwierdza, że przyjęta liczba 100\,000
-rozdań jest wystarczająca do rzetelnego oszacowania EV.
+Pod koniec harmonogramu zmiany średniego wyniku narastającego są już
+niewielkie. Dlatego zdecydowałem się przyjąć 100\,000 rozdań jako budżetu
+końcowej ewaluacji i pokazać to, że oszacowanie EV nie jest oparte
+wyłącznie na krótkim fragmencie symulacji.
 
 \begin{figure}[htbp]
     \centering

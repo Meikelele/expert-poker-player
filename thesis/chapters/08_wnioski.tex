@@ -1,0 +1,112 @@
+\chapter{Podsumowanie i wnioski}
+\label{chap:wnioski}
+
+W tej pracy sprawdziłem, jak wybrane metody uczenia przez wzmacnianie
+radzą sobie z podejmowaniem decyzji w Ultimate Texas Hold'em oraz jak
+na jakość uzyskiwanej strategii wpływa sposób reprezentacji stanu
+i konstrukcja funkcji nagrody.
+
+W tym celu przygotowałem kompletne środowisko symulacyjne gry,
+mechanizm prowadzenia treningu i ewaluacji, agentów bazowych oraz
+agentów wykorzystujących DQN i REINFORCE. Następnie przeprowadziłem
+eksperyment obejmujący osiem podstawowych konfiguracji, z których każdą
+wytrenowałem dla pięciu seedów. Końcową ocenę modeli wykonałem na
+wspólnym harmonogramie 100\,000 rozdań.
+
+\section{Realizacja celu pracy}
+\label{sec:realizacja-celu-pracy}
+
+Pierwszym celem pracy było przygotowanie środowiska pozwalającego na
+prowadzenie powtarzalnych eksperymentów z wykorzystaniem Ultimate
+Texas Hold'em. W ramach realizacji tego celu zaimplementowałem przebieg
+pełnego rozdania, ocenę układów pokerowych, zasady wykonywania zakładów
+oraz ich końcowe rozliczenie.
+
+Na bazie środowiska przygotowałem wspólną infrastrukturę dla agentów.
+Pozwala ona uruchamiać te same rozdania dla różnych strategii,
+zapisywać wyniki i wykonywane akcje oraz porównywać agentów na
+wspólnych harmonogramach talii. Jako punkty odniesienia wykorzystałem
+agenta losowego i agenta regułowego.
+
+Kolejnym etapem była implementacja dwóch metod uczenia przez
+wzmacnianie. DQN reprezentuje podejście oparte na aproksymacji funkcji
+wartości akcji, natomiast REINFORCE bezpośrednio optymalizuje politykę.
+Dla obu metod wykorzystałem te same dwa warianty reprezentacji stanu
+oraz te same dwa warianty funkcji nagrody, dzięki czemu mogłem
+porównywać wpływ poszczególnych elementów konfiguracji.
+
+Za istotną część praktycznego celu pracy uważam również przygotowanie
+powtarzalnego procesu eksperymentalnego. Oddzieliłem dane
+wykorzystywane podczas treningu, okresowej walidacji oraz końcowej
+ewaluacji. Wszystkie modele w końcowym porównaniu oceniłem na tym
+samym harmonogramie rozdań. Pozwoliło mi to ograniczyć wpływ
+przypadkowej kolejności kart na porównania pomiędzy strategiami.
+
+W rezultacie powstał kompletny proces obejmujący implementację
+środowiska, trening agentów, zapis modeli, okresową walidację,
+końcową ewaluację oraz analizę wyników.
+
+
+\section{Wnioski z przeprowadzonych eksperymentów}
+\label{sec:wnioski-eksperymenty}
+
+Najbardziej jednoznaczny wynik uzyskałem dla wpływu reprezentacji
+stanu na DQN. W obu wariantach funkcji nagrody reprezentacja FEATURES
+prowadziła do wyższego końcowego EV niż RAW. Oznacza to, że przy
+zastosowanym budżecie treningowym jawne przekazanie agentowi
+dodatkowych cech opisujących sytuację pokerową ułatwiało DQN uczenie
+lepszej strategii.
+
+Dla REINFORCE nie zaobserwowałem równie wyraźnego efektu reprezentacji
+stanu. Przy zysku netto wyniki RAW i FEATURES były zbliżone, natomiast
+dla nagrody skalowanej konfiguracja FEATURES osiągnęła wyższy wynik
+punktowy, ale jednocześnie charakteryzowała się dużą zmiennością
+pomiędzy seedami. Wpływ reprezentacji na REINFORCE okazał się więc
+znacznie mniej powtarzalny niż dla DQN.
+
+Drugim analizowanym elementem była funkcja nagrody. Skalowanie wyniku
+netto poprawiło rezultat DQN korzystającego z reprezentacji RAW,
+jednak przy reprezentacji FEATURES różnica pomiędzy funkcjami nagrody
+była niewielka. Dla REINFORCE również nie uzyskałem wyników
+pozwalających stwierdzić, że jedna funkcja nagrody jest zawsze lepsza
+od drugiej. Skalowanie zmieniało przebieg optymalizacji i skalę
+gradientów, ale nie dawało uniwersalnej poprawy jakości końcowej
+polityki.
+
+Porównanie samych algorytmów również nie daje jednej odpowiedzi na
+pytanie o lepszą metodę. Przy podstawowym budżecie 50\,000 epizodów
+REINFORCE osiągał wyższe średnie EV niż DQN dla odpowiadających sobie
+konfiguracji. Jednocześnie jego trening był znacznie bardziej zależny
+od seedu i w wielu przebiegach prowadził do przedwczesnej zbieżności
+decyzji do bardzo prostej polityki.
+
+DQN osiągał niższe średnie wyniki, ale jego zachowanie było bardziej
+powtarzalne pomiędzy niezależnymi treningami. Różnica ta była również
+widoczna po zwiększeniu budżetu treningowego do 100\,000 epizodów.
+Wszystkie pięć seedów wybranej konfiguracji DQN poprawiło końcowy
+wynik, podczas gdy dla REINFORCE zmiana była znacznie mniej
+regularna.
+
+Ważnym punktem odniesienia pozostają agenci bazowi. Większość
+konfiguracji uczenia przez wzmacnianie osiągnęła wynik lepszy od
+agenta losowego, co pokazuje, że modele były w stanie nauczyć się
+zależności pomiędzy obserwowanym stanem gry i podejmowanymi akcjami.
+Żadna z badanych konfiguracji nie zbliżyła się jednak do wyniku
+agenta RuleBased, którego EV w końcowej ewaluacji wyniosło
+$-0{,}0106$.
+
+Odpowiadając na postawiony we wstępie problem badawczy, wybór
+algorytmu, sposobu reprezentacji stanu oraz funkcji nagrody faktycznie
+wpływał zarówno na przebieg uczenia, jak i jakość końcowej strategii.
+Wpływ tych elementów nie był jednak jednakowy dla obu algorytmów.
+Najbardziej powtarzalnym efektem była poprawa DQN po zastosowaniu
+reprezentacji FEATURES, natomiast największym problemem REINFORCE
+okazała się stabilność procesu uczenia.
+
+Uzyskane wyniki pokazują również, że ocena metody wyłącznie na
+podstawie średniego EV może być niewystarczająca. REINFORCE uzyskiwał
+wyższe wyniki średnie, ale DQN dawał bardziej powtarzalny rezultat.
+W przypadku zastosowania uczenia przez wzmacnianie w problemie
+o dużej losowości ważna jest więc nie tylko jakość najlepszej
+uzyskanej polityki, ale również to, jak często podobną politykę można
+otrzymać po ponownym przeprowadzeniu treningu.

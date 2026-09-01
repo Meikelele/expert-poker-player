@@ -8,9 +8,10 @@ zbieżnością do rozwiązania deterministycznego. Polega ono na tym, że
 polityka przestaje zależeć od obserwowanego stanu i niezależnie od
 niego wybiera zawsze tę samą akcję. 
 
-Według Volodymyra Mniha i współautorów, tego rodzaju przedwczesna zbieżność do suboptymalnych,
-deterministycznych rozwiązań jest częstym problemem metod policy gradient, a jednym ze sposobów jej ograniczenia jest dodanie
-regularyzacji entropii polityki do funkcji celu \cite{mnih_a3c_2016}.
+Według Volodymyra Mniha i współautorów, dodanie regularyzacji entropii
+polityki do funkcji celu poprawia eksplorację poprzez ograniczanie
+przedwczesnej zbieżności do suboptymalnych, deterministycznych
+polityk \cite{mnih_a3c_2016}.
 Jak opisałem w podrozdziale~\ref{sec:policy-gradient-reinforce},
 zastosowana w tej pracy konfiguracja REINFORCE nie wykorzystuje ani
 regularyzacji entropii, ani baseline'u, co zwiększa podatność tej
@@ -19,7 +20,13 @@ metody na opisywane zjawisko.
 Aby ocenić skalę tego zjawiska, dla każdej z ośmiu podstawowych
 konfiguracji sprawdziłem, dla ilu z pięciu seedów wybierana akcja
 przed flopem była identyczna we wszystkich 100\,000 rozdaniach
-końcowej ewaluacji, niezależnie od obserwowanego stanu. Dla żadnej
+końcowej ewaluacji, niezależnie od obserwowanego stanu. W praktyce
+mierzę więc degenerację decyzji przed flopem. Jeżeli zdegenerowaną
+akcją jest \texttt{BET\_4X}, rozdanie kończy się natychmiast
+rozstrzygnięciem, więc pozostała część polityki, dotycząca flopu
+i rivera, nie jest w takim rozdaniu w ogóle wykorzystywana, a
+zaobserwowany kolaps decyzji preflop jest równoważny kolapsowi całej
+ścieżki decyzyjnej. Dla żadnej
 z czterech konfiguracji DQN nie zaobserwowałem takiej degeneracji.
 Dla REINFORCE zjawisko to okazało się natomiast dominujące, co
 przedstawiam w tabeli~\ref{tab:reinforce-collapse-counts}.
@@ -41,7 +48,7 @@ przedstawiam w tabeli~\ref{tab:reinforce-collapse-counts}.
     \end{tabular}
 \end{table}
 
-Na osiemnaście spośród dwudziestu przebiegów REINFORCE degeneracja
+Na piętnaście spośród dwudziestu przebiegów REINFORCE degeneracja
 do jednej, niezależnej od stanu akcji nie jest więc wyjątkiem
 dotyczącym pojedynczej konfiguracji, lecz najczęstszym wynikiem
 całego eksperymentu. Co istotne, konfiguracja REINFORCE FEATURES ze
