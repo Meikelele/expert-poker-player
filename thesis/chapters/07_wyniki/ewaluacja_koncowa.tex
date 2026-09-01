@@ -86,8 +86,10 @@ Małe punkty przedstawiają
 wyniki poszczególnych seedów, większe znaczniki średnie wartości
 konfiguracji wraz z 95-procentowymi przedziałami ufności, a linie
 pionowe oznaczają wyniki agentów Random i RuleBased. Widać na nim, że
-rozrzut punktów wokół średniej jest dla większości konfiguracji
-REINFORCE zauważalnie mniejszy niż dla DQN, co świadczy o różnicy
+rozrzut punktów wokół średniej jest podobny dla większości
+konfiguracji obu algorytmów, z wyjątkiem konfiguracji REINFORCE
+FEATURES ze skalowaną nagrodą, dla której jest on zauważalnie większy
+niż dla pozostałych siedmiu konfiguracji, co świadczy o różnicy
 w powtarzalności obu algorytmów, którą analizuję w dalszej części
 rozdziału.
 
@@ -106,7 +108,7 @@ nie wystarcza do oceny jakości uzyskanej strategii.
 W przypadku DQN rezultat zmienia się znacznie wraz ze sposobem
 reprezentacji stanu. W przypadku REINFORCE największą różnicę pomiędzy
 wariantami obserwuję dla połączenia reprezentacji FEATURES ze
-skalowaną funkcją nagrody. Analizuje ten temat w dalszej części rozdziału.
+skalowaną funkcją nagrody. Analizuję ten temat w dalszej części rozdziału.
 
 Wszystkie wartości EV opierają się na tym samym,
 współdzielonym harmonogramie 100\,000 rozdań, co pozwala mi prześledzić,

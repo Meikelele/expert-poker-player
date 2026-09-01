@@ -1,7 +1,7 @@
 \section{Przebieg procesu uczenia}
 \label{sec:wyniki-przebieg-uczenia}
 
-W tej sekcji chciałbym pokazać jak kształtował się trening. 
+W tej sekcji przedstawiam, jak kształtował się przebieg treningu.
 W tym celu wykorzystuję okresowe pomiary walidacyjne
 wykonywane zgodnie z procedurą opisaną w
 rozdziale~\ref{chap:eksperymenty}. Każdy punkt krzywej odpowiada
@@ -32,20 +32,20 @@ znacząco w czasie trwania treningu.
     \label{fig:dqn-learning-curves}
 \end{figure}
 
-Z wykresu widać, że już w trakcie treningu widoczna jest różnica pomiędzy
+Już w trakcie treningu widoczna jest różnica pomiędzy
 reprezentacjami RAW i FEATURES. Oba warianty wykorzystujące FEATURES
 utrzymują przeciętnie wyższe EV niż odpowiadające im warianty RAW.
 Jest to zgodne z wynikami końcowej ewaluacji przedstawionymi
 w sekcji~\ref{sec:wyniki-reprezentacja-stanu}.
 
-Jednocześnie krzywe nie wykazują wzrostu jakości
-polityki. Po okresach poprawy występują lokalne spadki wartości EV. Oznacza to, że 
+Jednocześnie krzywe nie wykazują monotonicznego wzrostu jakości
+polityki. Po okresach poprawy występują lokalne spadki wartości EV. Oznacza to, że
 dalsze wykonywanie aktualizacji sieci
-nie gwarantuje poprawy strategii na każdym kolejnym checkpointcie.
+nie gwarantuje poprawy strategii na każdym kolejnym checkpoincie.
 Zjawisko to występuje również dla konfiguracji FEATURES.
 
-Analogiczne wyniki dla REINFORCE przedstawiam na rysunku
-~\ref{fig:reinforce-learning-curves}, z tymi samymi osiami i tym samym
+Analogiczne wyniki dla REINFORCE przedstawiam na
+rysunku~\ref{fig:reinforce-learning-curves}, z tymi samymi osiami i tym samym
 sposobem uśredniania. Krzywe REINFORCE są znacznie mniej gładkie niż
 dla DQN, a pasma odchylenia standardowego są szersze i w wielu
 punktach przecinają się nawzajem, co wskazuje, że w tym samym momencie

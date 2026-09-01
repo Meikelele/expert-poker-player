@@ -8,7 +8,7 @@ zbieżnością do rozwiązania deterministycznego. Polega ono na tym, że
 polityka przestaje zależeć od obserwowanego stanu i niezależnie od
 niego wybiera zawsze tę samą akcję. 
 
-Według Volodmyra Mnih'a i współautorów, tego rodzaju przedwczesna zbieżność do suboptymalnych,
+Według Volodymyra Mniha i współautorów, tego rodzaju przedwczesna zbieżność do suboptymalnych,
 deterministycznych rozwiązań jest częstym problemem metod policy gradient, a jednym ze sposobów jej ograniczenia jest dodanie
 regularyzacji entropii polityki do funkcji celu \cite{mnih_a3c_2016}.
 Jak opisałem w podrozdziale~\ref{sec:policy-gradient-reinforce},
@@ -84,8 +84,8 @@ seedami. Ta sama konfiguracja treningowa może prowadzić zarówno do
 polityki wykorzystującej informacje ze stanu, jak i do rozwiązania
 zdominowanego przez jedną akcję.
 
-Co istotne, zwiększenie budżetu treningowego do 100\,000 epizodów nie
-usunęło tego zjawiska. Dwa seedy pozostające w prostej polityce po
+Zwiększenie budżetu treningowego do 100\,000 epizodów nie
+usunęło jednak tego zjawiska. Dwa seedy pozostające w prostej polityce po
 50\,000 epizodów nie zmieniły jej również podczas dalszego treningu.
 Oznacza to, że sam wzrost liczby epizodów nie wystarczył do
 wyprowadzenia tych przebiegów z osiągniętego rozwiązania.
@@ -97,7 +97,9 @@ najlepszych walidacyjnie konfiguracji DQN i REINFORCE. Trzy panele
 odpowiadają preflopowi, flopowi i riverowi, oś pozioma w każdym z nich
 przedstawia udział poszczególnych akcji wśród rozdań, które faktycznie
 dotarły do danej fazy, a przy panelach flopu i riveru dodatkowo
-podałem, jaki odsetek wszystkich rozdań do nich dotarł. REINFORCE
+podałem, jaki odsetek wszystkich rozdań do nich dotarł. Dla DQN
+i REINFORCE rozdania pochodzą ze wszystkich pięciu seedów danej
+konfiguracji, a nie z jednego wybranego przebiegu. REINFORCE
 dociera do riveru w zaledwie 9\% rozdań, podczas gdy dla DQN odsetek
 ten wynosi 54\%, co jest bezpośrednią konsekwencją częstego wyboru
 najwyższego zakładu już przed flopem.
@@ -111,14 +113,16 @@ najwyższego zakładu już przed flopem.
     \label{fig:action-funnel}
 \end{figure}
 
-Pokusiłem się również o analizę zachowania agentów poprzez porównanie decyzji przed
+Przeanalizowałem również zachowanie agentów poprzez porównanie decyzji przed
 flopem dla poszczególnych układów początkowych. Na
 rysunku~\ref{fig:preflop-range-chart} przedstawiam dominujące decyzje
 agenta regułowego oraz wybranych walidacyjnie konfiguracji DQN
 i REINFORCE. Trzy panele odpowiadają trzem strategiom, a układ
 trzynastu na trzynaście pól w każdym z nich odpowiada wszystkim
 kombinacjom dwóch kart początkowych, uporządkowanym według rangi,
-kolor pola oznacza dominującą akcję wybraną dla danego układu.
+kolor pola oznacza dominującą akcję wybraną dla danego układu. Dla DQN
+i REINFORCE decyzje pochodzą ze wszystkich pięciu seedów danej
+konfiguracji, a nie z jednego wybranego przebiegu.
 Agent regułowy tworzy wyraźny, przekątny podział pól, natomiast
 u konfiguracji RL taki podział jest znacznie słabiej widoczny albo
 nie występuje wcale.
@@ -126,7 +130,7 @@ nie występuje wcale.
 \begin{figure}[htbp]
     \centering
     \includegraphics[
-        width=\textwidth
+        width=0.6\textwidth
     ]{../experiments/results/final_analysis/18_preflop_range_chart.pdf}
     \caption{Dominujące decyzje przed flopem w zależności od układu
     dwóch kart początkowych.}

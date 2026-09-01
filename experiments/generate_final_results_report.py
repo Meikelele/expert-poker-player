@@ -1600,7 +1600,7 @@ def plot_learning_curves(
 
     axis.set_title( # type: ignore
         f"{_algorithm_label(algorithm)} "
-        "— przebieg uczenia"
+        "- przebieg uczenia"
     )
 
     axis.grid( # type: ignore
@@ -1609,19 +1609,6 @@ def plot_learning_curves(
 
     axis.legend( # type: ignore
         ncols=2
-    )
-
-    figure.text( # type: ignore
-        0.5,
-        0.01,
-        "Linia: średnia z 5 seedów. "
-        "Pasmo: ±1 odchylenie standardowe.",
-        ha="center",
-        fontsize=9,
-    )
-
-    figure.subplots_adjust(
-        bottom=0.14
     )
 
     _save_figure(
@@ -1742,19 +1729,6 @@ def plot_extended_learning_curves(
 
     figure.suptitle( # type: ignore
         "Trening rozszerzony do 100 tys. epizodów"
-    )
-
-    figure.text( # type: ignore
-        0.5,
-        0.01,
-        "Linia: średnia z 5 seedów. "
-        "Pasmo: ±1 odchylenie standardowe.",
-        ha="center",
-        fontsize=9,
-    )
-
-    figure.subplots_adjust(
-        bottom=0.15
     )
 
     _save_figure(
@@ -1963,13 +1937,12 @@ def plot_extended_training_per_seed(
     specs = BEST_VARIANTS
 
     figure, axes = plt.subplots(
-        1,
         2,
+        1,
         figsize=(
-            12,
-            5,
+            9,
+            11,
         ),
-        sharey=True,
     )
 
     for axis, spec in zip(
@@ -2047,7 +2020,7 @@ def plot_extended_training_per_seed(
             axis.get_ylim()[1],
             "50 tys.",
             va="top",
-            fontsize=8,
+            fontsize=10,
         )
 
         axis.set_title(
@@ -2055,23 +2028,30 @@ def plot_extended_training_per_seed(
                 algorithm,
                 state_representation,
                 reward_type,
-            )
+            ),
+            fontsize=13,
         )
 
         axis.set_xlabel(
-            "Liczba epizodów treningowych"
+            "Liczba epizodów treningowych",
+            fontsize=12,
+        )
+
+        axis.set_ylabel(
+            "Walidacyjne EV",
+            fontsize=12,
+        )
+
+        axis.tick_params(
+            labelsize=11
         )
 
         axis.grid(
             alpha=0.25
         )
 
-    axes[0].set_ylabel(
-        "Walidacyjne EV"
-    )
-
     axes[1].legend(
-        fontsize=8,
+        fontsize=10,
         loc="best",
     )
 
@@ -2865,17 +2845,24 @@ def plot_bankroll_curve(
 
     axis.set_xlabel( # type: ignore
         "Liczba rozegranych rozdań "
-        "(skala logarytmiczna)"
+        "(skala logarytmiczna)",
+        fontsize=12,
     )
 
     axis.set_ylabel( # type: ignore
         "Średni wynik narastająco "
-        "[jednostki Ante]"
+        "[jednostki Ante]",
+        fontsize=12,
     )
 
     axis.set_title( # type: ignore
         "Zbieganie wyniku do EV na tym "
-        "samym rozkładzie rozdań"
+        "samym rozkładzie rozdań",
+        fontsize=13,
+    )
+
+    axis.tick_params( # type: ignore
+        labelsize=11
     )
 
     axis.grid( # type: ignore
@@ -2883,20 +2870,8 @@ def plot_bankroll_curve(
         which="both",
     )
 
-    axis.legend() # type: ignore
-
-    figure.text( # type: ignore
-        0.5,
-        0.005,
-        "DQN i REINFORCE: wynik uśredniony po pięciu seedach "
-        "konfiguracji w każdej pozycji rozdania, nie z jednego "
-        "wybranego przebiegu.",
-        ha="center",
-        fontsize=8,
-    )
-
-    figure.subplots_adjust(
-        bottom=0.14
+    axis.legend( # type: ignore
+        fontsize=10
     )
 
     _save_figure(
@@ -3843,11 +3818,11 @@ def plot_preflop_range_chart(
     )
 
     figure, axes = plt.subplots(
-        1,
         3,
+        1,
         figsize=(
-            15,
-            5.6,
+            7,
+            17,
         ),
     )
 
@@ -3940,7 +3915,7 @@ def plot_preflop_range_chart(
 
         axis.set_xticklabels( # type: ignore
             RANK_LABELS,
-            fontsize=8,
+            fontsize=12,
         )
 
         axis.set_yticks( # type: ignore
@@ -3949,11 +3924,12 @@ def plot_preflop_range_chart(
 
         axis.set_yticklabels( # type: ignore
             RANK_LABELS,
-            fontsize=8,
+            fontsize=12,
         )
 
         axis.set_title( # type: ignore
-            label
+            label,
+            fontsize=14,
         )
 
     legend_handles = [
@@ -3972,25 +3948,17 @@ def plot_preflop_range_chart(
             -0.04,
         ),
         ncols=3,
-        fontsize=9,
+        fontsize=11,
     )
 
     figure.suptitle( # type: ignore
         "Decyzja preflop w zależności od układu "
-        "startowego (dominująca akcja)"
-    )
-
-    figure.text( # type: ignore
-        0.5,
-        -0.12,
-        "DQN i REINFORCE: decyzje zebrane ze wszystkich pięciu "
-        "seedów konfiguracji, nie z jednego wybranego przebiegu.",
-        ha="center",
-        fontsize=8,
+        "startowego (dominująca akcja)",
+        fontsize=15,
     )
 
     figure.subplots_adjust(
-        bottom=0.32
+        hspace=0.4
     )
 
     _save_figure(
@@ -4130,17 +4098,24 @@ def plot_training_stability_by_reward_scale(
         )
 
         axis.set_xlabel( # type: ignore
-            "Epizody"
+            "Epizody",
+            fontsize=12,
         )
 
         axis.set_ylabel( # type: ignore
-            "Norma gradientu (log)"
+            "Norma gradientu (log)",
+            fontsize=12,
         )
 
         axis.set_title( # type: ignore
             _algorithm_label(
                 algorithm
-            )
+            ),
+            fontsize=13,
+        )
+
+        axis.tick_params( # type: ignore
+            labelsize=11
         )
 
         axis.grid( # type: ignore
@@ -4149,27 +4124,13 @@ def plot_training_stability_by_reward_scale(
         )
 
         axis.legend( # type: ignore
-            fontsize=8,
+            fontsize=10,
             framealpha=1.0,
         )
 
     figure.suptitle( # type: ignore
         "Norma gradientu w zależności "
         "od skali funkcji nagrody"
-    )
-
-    figure.text( # type: ignore
-        0.5,
-        0.01,
-        "DQN: średnia z 5 seedów, wygładzona oknem "
-        "500 epizodów. REINFORCE: średnia z 5 seedów, "
-        "bez wygładzania (co batch 32 epizodów).",
-        ha="center",
-        fontsize=9,
-    )
-
-    figure.subplots_adjust(
-        bottom=0.18
     )
 
     _save_figure(
@@ -4290,11 +4251,11 @@ def plot_action_funnel_by_street(
     )
 
     figure, axes = plt.subplots(
-        1,
         3,
+        1,
         figsize=(
-            14,
-            4.6,
+            10,
+            12,
         ),
     )
 
@@ -4372,7 +4333,7 @@ def plot_action_funnel_by_street(
                     f"{reach_fraction * 100:.0f}% "
                     "dotarło",
                     va="center",
-                    fontsize=7,
+                    fontsize=10,
                 )
 
         axis.set_yticks( # type: ignore
@@ -4385,7 +4346,8 @@ def plot_action_funnel_by_street(
             [
                 label
                 for label, _ in series_actions
-            ]
+            ],
+            fontsize=11,
         )
 
         axis.invert_yaxis()
@@ -4397,8 +4359,14 @@ def plot_action_funnel_by_street(
             else 1.0,
         )
 
+        axis.tick_params( # type: ignore
+            axis="x",
+            labelsize=10,
+        )
+
         axis.set_title( # type: ignore
-            street_label
+            street_label,
+            fontsize=13,
         )
 
         axis.grid( # type: ignore
@@ -4407,29 +4375,19 @@ def plot_action_funnel_by_street(
         )
 
         axis.legend( # type: ignore
-            fontsize=8,
+            fontsize=10,
             loc="lower left",
             framealpha=1.0,
         )
 
     figure.suptitle( # type: ignore
         "Rozkład akcji na kolejnych "
-        "ulicach rozdania"
-    )
-
-    figure.text( # type: ignore
-        0.5,
-        0.01,
-        "Udziały akcji liczone wyłącznie wśród rozdań, które "
-        "faktycznie dotarły do danej ulicy (preflop = 100% "
-        "rozdań z definicji). DQN i REINFORCE: rozdania "
-        "zebrane ze wszystkich pięciu seedów konfiguracji.",
-        ha="center",
-        fontsize=9,
+        "fazach rozdania",
+        fontsize=15,
     )
 
     figure.subplots_adjust(
-        bottom=0.16
+        hspace=0.45
     )
 
     _save_figure(

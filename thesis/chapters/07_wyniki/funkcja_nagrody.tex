@@ -1,7 +1,7 @@
 \section{Wpływ funkcji nagrody}
 \label{sec:wyniki-funkcja-nagrody}
 
-Drugim elementem konfiguracji który analizowałem była funkcja nagrody. Porównałem bezpośredni
+Drugim elementem konfiguracji, który analizowałem, była funkcja nagrody. Porównałem bezpośredni
 zysk netto z jego wersją przeskalowaną przy zachowaniu tego samego
 algorytmu, reprezentacji stanu oraz seedu treningowego. Różnicę
 zdefiniowałem jako
@@ -51,8 +51,8 @@ Podobny brak zauważalnej przewagi wystąpił dla REINFORCE
 z reprezentacją RAW, gdzie przedział ufności również obejmował zero.
 Największą różnicę punktową dla REINFORCE zaobserwowałem przy
 reprezentacji FEATURES, gdzie wyższy średni wynik osiągnęła funkcja
-skalowana. Jednocześnie przedział ufności był tu bardzo szeroki, co
-zgadzałoby się z dużym zróżnicowaniem końcowej jakości polityk REINFORCE
+skalowana. Jednocześnie przedział ufności był tu bardzo szeroki, co jest zgodne
+z dużym zróżnicowaniem końcowej jakości polityk REINFORCE
 obserwowanym pomiędzy seedami.
 
 Te same porównania przedstawiam także na rysunku~\ref{fig:reward-effect}. Na osi
@@ -73,7 +73,8 @@ RAW, leży całkowicie po jednej stronie zera.
     \label{fig:reward-effect}
 \end{figure}
 
-W przeciwieństwie do reprezentacji stanu nie obserwuję więc efektu skalowania funkcji nagrody. 
+W przeciwieństwie do reprezentacji stanu nie obserwuję więc
+uniwersalnego efektu skalowania funkcji nagrody.
 Jej wpływ zależy od
 połączenia z algorytmem oraz sposobem reprezentacji stanu. Skalowanie
 poprawiło wyniki DQN korzystającego z reprezentacji RAW, lecz dla DQN
