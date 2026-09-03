@@ -5,18 +5,18 @@ inteligencji, ponieważ łączą w sobie elementy losowości oraz podejmowania d
 W klasycznych problemach uczenia maszynowego model uczy się na podstawie gotowego zbioru danych,
 a w grach agent musi samodzielnie podejmować decyzje, obserwować ich konsekwencje i poprawiać swoją strategię.
 
-Szczególnie interesującym mnie przypadkiem są gry pokerowe, w których wynik
+Szczególnie interesującym przypadkiem są gry pokerowe, w których wynik
 pojedynczego rozdania nie zależy jedynie od posiadanych kart, ale również od decyzji
-podjętych w ramach kolejnych etapów gry. Chciałbym zwrócić uwagę na Ultimate Texas Hold’em, kasynową odmianę pokera bazującą na zasadach Texas Hold’em, w której gracz rywalizuje
-nie z innymi graczami, a z krupierem. Odmiana ta ma ograniczoną liczbę możliwych akcji,
-jasno określone reguły wypłat oraz sekwencyjny przebieg rozdania. Te cechy, w moim mniemaniu,
+podjętych w ramach kolejnych etapów gry. Warte uwagi jest tu Ultimate Texas Hold’em, kasynowa odmiana pokera bazująca na zasadach Texas Hold’em, w której gracz rywalizuje
+nie z innymi graczami, lecz z krupierem. Odmiana ta ma ograniczoną liczbę możliwych akcji,
+jasno określone reguły wypłat oraz sekwencyjny przebieg rozdania. Te cechy
 czynią ją odpowiednim problemem do rozważenia w ramach uczenia przez wzmacnianie.
 
 Uczenie przez wzmacnianie (ang. \emph{reinforcement learning}, RL) pozwala
 analizować sytuacje, w których agent uczy się strategii poprzez interakcję ze
 środowiskiem. W przypadku Ultimate Texas Hold’em środowiskiem może być symulator
-gry, obserwacją informacje dostępne graczowi w bieżącym etapie rozdania, akcją
-decyzja gracza, natomiast nagrodą końcowy wynik finansowy rozdania. Takie
+gry, obserwacją: informacje dostępne graczowi w bieżącym etapie rozdania, akcją:
+decyzja gracza, a nagrodą: końcowy wynik finansowy rozdania. Takie
 podejście umożliwia mi badanie, w jaki sposób różne reprezentacje stanu oraz różne definicje funkcji nagrody
 wpływają na jakość wyuczonej strategii.
 
@@ -51,7 +51,7 @@ gracza, kartach wspólnych, aktualnym etapie rozdania oraz dostępnych akcjach.
 Poddałem analizie również wpływ sposobu przekształcania finansowego
 wyniku rozdania w sygnał nagrody.
 
-Założenia niniejszej pracy są następujące:
+Zakres realizacji pracy obejmuje:
 
 \begin{enumerate}
     \item Implementacja środowiska odwzorowującego podstawowy wariant

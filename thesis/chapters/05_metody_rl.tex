@@ -3,7 +3,7 @@
 
 W tym rozdziale przedstawiam elementy uczenia przez
 wzmacnianie, które bezpośrednio wykorzystuję w eksperymentach.
-Opisuję w nim w jaki sposób przekształcam obserwacje do reprezentacji numerycznej 
+Opisuję w nim, w jaki sposób przekształcam obserwacje do reprezentacji numerycznej
 oraz definiuję sygnał nagrody.
 
 Dalej w rozdziale opisuję najpierw dwa elementy wspólne dla
@@ -32,9 +32,9 @@ wartości ocenionej przez sieć docelową dla następnego stanu. Taką
 technikę nazywa się bootstrappingiem (ang. \emph{bootstrapping}).
 Wartość jednego stanu wyznacza się w niej na podstawie oszacowanej
 wartości stanu następnego, a nie na podstawie faktycznego wyniku
-całego epizodu \cite{sutton_barto_rl}. REINFORCE działa odwrotnie
-czeka, aż rozdanie się zakończy, i aktualizuje politykę na podstawie
-faktycznie otrzymanej wypłaty, czyli zwrotu $G_t$ z
+całego epizodu \cite{sutton_barto_rl}. REINFORCE działa inaczej, czeka,
+aż rozdanie się zakończy, i aktualizuje politykę na podstawie
+faktycznie otrzymanego wyniku netto, czyli zwrotu $G_t$ z
 rysunku~\ref{fig:reinforce-return}.
 
 Ta różnica wpływa również na sposób wykorzystania zebranych danych.
@@ -91,3 +91,41 @@ stochastycznego charakteru wyuczonej polityki. Te różnice przedstawiłem na ry
     i wykorzystuje go tylko raz}
     \label{fig:training-rhythm}
 \end{figure}
+
+Zestawienie wszystkich hiperparametrów użytych do treningu obu algorytmów
+w podstawowym budżecie 50\,000 epizodów przedstawiam w
+tabeli~\ref{tab:hiperparametry-dqn-reinforce}.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Hiperparametry treningu DQN i REINFORCE}
+\label{tab:hiperparametry-dqn-reinforce}
+\begin{tabular}{
+    @{}>{\raggedright\arraybackslash}p{0.33\textwidth}
+    >{\raggedright\arraybackslash}p{0.31\textwidth}
+    >{\raggedright\arraybackslash}p{0.28\textwidth}@{}
+}
+\toprule
+Hiperparametr & DQN & REINFORCE \\
+\midrule
+Optymalizator & Adam & Adam \\
+Learning rate & 0,001 & 0,001 \\
+Współczynnik dyskontowania $\gamma$ & 0,99 & 1 \\
+Architektura sieci & 256, 256 & 256, 256 \\
+Rozmiar minibatcha & 64 & 32 (epizody) \\
+Bufor doświadczeń & 10\,000 przejść & -- \\
+Moment rozpoczęcia uczenia & po 1000 krokach & po 1. epizodzie \\
+Częstotliwość aktualizacji & co krok środowiska & co 32 epizody \\
+Synchronizacja sieci docelowej & co 1000 kroków & -- \\
+Eksploracja & $\varepsilon$: $1{,}0\to0{,}05$ liniowo/10\,000 kroków & stochastyczna polityka \\
+Liczba parametrów (RAW / FEATURES) & 163\,078 / 168\,198 & 163\,078 / 168\,198 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Obie sieci mają identyczną architekturę i liczbę parametrów, ponieważ
+korzystają z tego samego kształtu wejścia i wyjścia. Nie
+stosuję gradient clippingu w żadnym z algorytmów, a normę gradientu
+jedynie rejestruję do celów diagnostycznych, nie ograniczam jej podczas
+treningu.

@@ -22,7 +22,7 @@ Kontrakt ten udostępnia metodę \texttt{select\_action()},
 która przyjmuje obiekt \texttt{UTHObservation} i zwraca podjętą przez agenta decyzję typu \texttt{Action}.
 
 Wykorzystanie protokołu do konstrukcji kontraktu pozwala mi zdefiniować
-agenta w sposób elastyczny, klasa agenta nie musi dziedziczyć po wspólnej
+agenta w sposób elastyczny. Klasa agenta nie musi dziedziczyć po wspólnej
 klasie bazowej, lecz musi udostępniać metodę o wymaganej sygnaturze.
 Dzięki temu ten sam mechanizm prowadzenia rozgrywki mogę wykorzystać dla
 agenta losowego, regułowego i uczącego się przez wzmacnianie bez znajomości ich wewnętrznej
@@ -185,7 +185,7 @@ wynikają z ich strategii, a nie z losowego układu kart.
 \label{sec:metryki-agentow-bazowych}
 
 Aby móc porównywać skuteczność agentów między sobą, potrzebuję metryk
-umożliwiających ocenę jakości strategii. Miary, które zdefiniowałem poniżej nie są
+umożliwiających ocenę jakości strategii. Miary, które zdefiniowałem poniżej, nie są
 specyficzne dla agentów bazowych, ponieważ
 wykorzystuję je również do oceny agentów uczących się w kolejnych
 rozdziałach pracy.
@@ -318,7 +318,7 @@ W celu zobrazowania wyników końcowych agentów bazowych przedstawiam w tabeli~
     \end{tabular}
 \end{table}
 
-Agent regułowy częściej kończył rozdania foldem, lecz znacznie rzadziej
+Agent regułowy częściej kończył rozdania spasowaniem, lecz znacznie rzadziej
 doprowadzał do rozstrzygnięcia zakończonego wygraną krupiera.
 
 \section{Zapis wyników eksperymentu}

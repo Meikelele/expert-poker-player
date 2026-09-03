@@ -67,7 +67,7 @@ a 95-procentowy przedział ufności po pięciu seedach był równy
 $[0{,}0022,\ 0{,}0412]$.
 
 Co istotne, poprawę końcowego EV zaobserwowałem dla wszystkich pięciu
-seedów DQN. Nie oznacza to monotonicznej poprawy na każdym etapie
+seedów wybranej konfiguracji DQN. Nie oznacza to monotonicznej poprawy na każdym etapie
 treningu, co widać na krzywych walidacyjnych, ale rezultat po
 100\,000 epizodów był dla każdego seedu lepszy niż wynik odpowiadającego
 mu modelu po 50\,000 epizodów.
@@ -90,7 +90,8 @@ tabeli~\ref{tab:extended-training-results}.
 \begin{table}[htbp]
     \centering
     \caption{Wpływ zwiększenia budżetu treningowego z 50\,000 do
-    100\,000 epizodów}
+    100\,000 epizodów dla wybranej konfiguracji FEATURES każdego
+    algorytmu}
     \label{tab:extended-training-results}
     \begin{tabular}{lrrrr}
         \toprule

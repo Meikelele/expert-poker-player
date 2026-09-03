@@ -17,7 +17,7 @@ Cały przebieg jednego eksperymentu, od treningu pojedynczego modelu do
 porównania wszystkich wariantów, przedstawiłem na
 rysunku~\ref{fig:experiment-pipeline}. Trening trwa do 50\,000 epizodów
 i w jego trakcie co 4\,000 epizodów wykonywana jest walidacja na
-2\,000 rozdaniach, ta część przebiegu ma więc charakter cykliczny.
+2\,000 rozdaniach. Ta część przebiegu ma więc charakter cykliczny.
 Po zakończeniu treningu wytrenowany model przechodzi jednorazowo do
 ewaluacji końcowej na 100\,000 rozdaniach, a jej wyniki wykorzystuję
 następnie w porównaniach sparowanych.
@@ -114,8 +114,13 @@ a następnie ponownie zbliżała się do wcześniej obserwowanego
 rozwiązania.
 
 Z tego powodu przyjąłem wspólny budżet 50\,000 epizodów dla obu
-algorytmów. Pozwala to również zachować porównywalność kosztu uczenia
-pomiędzy DQN i REINFORCE.
+algorytmów. Zapewnia to jednakowy budżet interakcji ze środowiskiem, nie
+oznacza to jednak porównywalnego kosztu obliczeniowego treningu, DQN
+aktualizuje sieć co krok środowiska, podczas gdy
+REINFORCE aktualizuje politykę raz na 32 epizody, więc w tym samym
+budżecie epizodów wykonuje znacznie mniej aktualizacji parametrów.
+Dodatkowo oba algorytmy przyjmują nieco inny współczynnik dyskontowania
+($\gamma=0{,}99$ dla DQN, $\gamma=1$ dla REINFORCE.
 
 \section{Walidacja okresowa}
 
@@ -150,7 +155,7 @@ walidacyjnych wybrałem jeden wariant DQN oraz jeden wariant REINFORCE,
 oba z reprezentacją FEATURES, i wytrenowałem je ponownie do 100\,000
 epizodów.
 
-Celem tej części bynajmniej nie była próba zastąpienia podstawowego budżetu 50\,000
+Celem tej części nie było zastąpienie podstawowego budżetu 50\,000
 epizodów ani wyszukanie najlepszego chwilowego checkpointu, tylko
 sprawdzenie, czy dalszy trening prowadzi do trwałej poprawy strategii,
 jej stabilizacji, czy dalszych oscylacji. Traktuję te wyniki jako analizę uzupełniającą.
@@ -185,19 +190,57 @@ wyników, błąd standardowy średniej, średnią wartość postawionych
 poszczególnych akcji.
 
 \section{Porównania sparowane}
+\label{sec:porownania-sparowane}
 
-Dla dwóch porównywanych strategii $A$ oraz $B$ dla każdego rozdania
-wyznaczam różnicę
+Wpływ pojedynczego elementu konfiguracji, czyli reprezentacji stanu,
+funkcji nagrody albo algorytmu, oceniam metodą porównań sparowanych na
+poziomie seedów treningowych. Dla dwóch porównywanych konfiguracji $A$
+oraz $B$, wytrenowanych z tym samym zestawem pięciu seedów, dla
+każdego seedu $i$ wyznaczam różnicę końcowego EV
 
 \begin{equation}
-d_i = p_{A,i} - p_{B,i}.
+d_i = EV_{A,i} - EV_{B,i}, \qquad i=1,\dots,n,
 \end{equation}
 
-Średnia różnica wynosi
+gdzie $n=5$ to liczba sparowanych seedów. Średnia różnica wynosi
 
 \begin{equation}
 \bar{d} =
-\frac{1}{N}
-\sum_{i=1}^{N} d_i.
+\frac{1}{n}
+\sum_{i=1}^{n} d_i,
 \end{equation}
+
+a jej zmienność opisuję odchyleniem standardowym próby
+
+\begin{equation}
+s_d =
+\sqrt{
+\frac{\sum_{i=1}^{n} (d_i - \bar{d})^2}{n-1}
+}
+\end{equation}
+
+oraz błędem standardowym średniej różnicy $SE_d = s_d / \sqrt{n}$, zgodnie
+ze wzorami już wprowadzonymi w podrozdziale~\ref{sec:metryki-agentow-bazowych}.
+Ponieważ przy $n=5$ próba jest mała, 95-procentowy przedział ufności dla
+$\bar{d}$ wyznaczam z rozkładu $t$-Studenta z $n-1=4$ stopniami swobody,
+a nie z rozkładu normalnego:
+
+\begin{equation}
+\bar{d} \pm t_{0{,}975;\,4} \cdot SE_d,
+\qquad t_{0{,}975;\,4} = 2{,}776.
+\end{equation}
+
+Wartość dodatnia $\bar d$ oznacza przewagę konfiguracji $A$ nad $B$. Tej
+metody używam we wszystkich porównaniach sparowanych w
+rozdziale~\ref{chap:wyniki}, wpływu reprezentacji stanu, funkcji nagrody
+oraz algorytmu na końcowe EV, a także porównania budżetu 50\,000 i
+100\,000 epizodów.
+
+Osobnym przypadkiem jest ewaluacja końcowa pojedynczego agenta
+(\texttt{RandomAgent}, \texttt{RuleBasedAgent} oraz każdego z ośmiu
+wytrenowanych modeli), która nie jest porównaniem sparowanym, tylko
+punktowym oszacowaniem EV na $N=100\,000$ rozdaniach. Tutaj, ze względu na
+dużą wartość $N$, 95-procentowy przedział ufności wyznaczam z
+przybliżenia normalnego, $EV \pm 1{,}96 \cdot SE$, korzystając z SD i SE
+zdefiniowanych w podrozdziale~\ref{sec:metryki-agentow-bazowych}.
 

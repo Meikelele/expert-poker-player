@@ -58,18 +58,29 @@ w tabeli~\ref{tab:baseline-ev-50k}.
     \centering
     \caption{Wyniki końcowej ewaluacji agentów bazowych}
     \label{tab:baseline-ev-50k}
-    \begin{tabular}{lr}
+    \begin{tabular}{lrrrr}
         \toprule
-        Agent & Średnie EV \\
+        Agent & Średnie EV & SD & SE & 95\% CI \\
         \midrule
-        Random & -0{,}5173 \\
-        RuleBased & -0{,}0106 \\
+        Random & -0{,}5173 & 5{,}2944 & 0{,}0167 & [-0{,}5501,\ -0{,}4845] \\
+        RuleBased & -0{,}0106 & 5{,}2159 & 0{,}0165 & [-0{,}0429,\ 0{,}0217] \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 Wartość uzyskana przez agenta regułowego była znacznie bliżej zera niż
 wyniki wszystkich wytrenowanych modeli uczenia przez wzmacnianie.
+
+Warto dodać, że wynik agenta regułowego należy odnieść do teoretycznej przewagi kasyna
+wynikającej z zastosowanej przez niego strategii. Uproszczona strategia
+Wizard of Odds, na której oparłem reguły agenta regułowego, ma
+teoretyczną przewagę kasyna równą 2,43\% wartości zakładu Ante, czyli
+oczekiwane EV na poziomie około $-0{,}0243$ \cite{wizard_uth}. Uzyskane
+EV agenta regułowego, $-0{,}0106$, jest więc punktowo wyższe od tej
+teoretycznej wartości, jednak 95-procentowy przedział ufności,
+$[-0{,}0429,\ 0{,}0217]$, obejmuje $-0{,}0243$. Różnicę pomiędzy
+wynikiem empirycznym a teoretycznym można więc wyjaśnić wariancją
+próby 100\,000 rozdań, a nie błędem implementacji reguł.
 
 Niemniej jednak większość konfiguracji RL osiągnęła wyższe średnie EV niż
 agent losowy. Wyjątek stanowiły dwa warianty DQN wykorzystujące

@@ -48,7 +48,7 @@ zawierający:
     \item obserwację po wykonaniu akcji,
     \item wynik rozdania (jeśli osiągnięto stan terminalny),
     \item rozliczenie zakładów w stanie terminalnym,
-    \item szczegóły showdownu (jesli gracz nie spasowal).
+    \item szczegóły showdownu (jeśli gracz nie spasował).
 \end{itemize}
 
 Wynik metody \texttt{step()} kroku pośredniego zawiera jedynie kolejną obserwację. Pola dotyczące
@@ -201,7 +201,7 @@ obserwację, wykonuje walidację i przejście, a rekord dodaje dopiero po
 utworzeniu poprawnego kolejnego stanu. Jeżeli walidacja lub odkrywanie kart
 zakończy się wyjątkiem, rekord nie powstaje, więc historia nie zawiera akcji
 nielegalnych, decyzji po zakończeniu rozdania ani niedokończonych przejść.
-Podobny cel mi przyswiecał przy metodzie \texttt{reset()}, która zapisuje nowy stan
+Podobny cel mi przyświecał przy metodzie \texttt{reset()}, która zapisuje nowy stan
 dopiero po rozdaniu wszystkich czterech kart początkowych.
 
 \subsection{Poziomy testowania}
@@ -225,3 +225,6 @@ W przypadku realizacji testów postawiłem na bibliotekę \texttt{pytest}.
 Podczas prac nad silnikiem analizowałem na bieżąco zarówno pokrycie instrukcji, jak
 i pokrycie rozgałęzień. Pozwoliło mi to wykryć nieprzetestowane ścieżki
 walidacji oraz przypadki brzegowe ewaluatora.
+
+Kod źródłowy środowiska, agentów i skryptów eksperymentalnych udostępniam
+w repozytorium \url{https://github.com/Meikelele/expert-poker-player}.

@@ -16,7 +16,7 @@ jest rozwiązanie uproszczonego wariantu heads-up limit Texas Hold'em
 Właśnie z uwagi na tę niepełną informację uznałem pokera za ciekawy
 problem badawczy. W pokerze pojedyncza decyzja gracza nie powinna być
 oceniana wyłącznie na podstawie uzyskanego wyniku na koniec rozdania.
-Bardziej istotne jest, jak dana decyzja wpływa na wartość oczekiwaną
+Istotniejsze jest, jak dana decyzja wpływa na wartość oczekiwaną
 (ang. \emph{expected value}, EV) w dłuższym horyzoncie czasowym, przy
 wielu rozdaniach.
 
@@ -37,9 +37,9 @@ wspólnej, rivera (ang. \emph{river}), czyli odkrycia piątej i ostatniej
 karty wspólnej, oraz showdownu (ang. \emph{showdown}), czyli końcowego
 porównania układów. Warto dodać, że pomiędzy odkrywaniem kolejnych kart
 wspólnych dokonuje się palenia kart (ang. \emph{burning}), czyli
-odkładania wierzchniej karty z talii na bok. Każdy z tych etapów
-poprzedza runda licytacji, w której gracze mogą stawiać zakłady, podbijać
-je lub spasować.
+odkładania wierzchniej karty z talii na bok. Po rozdaniu kart własnych
+oraz po odkryciu flopa, turna i rivera odbywa się runda licytacji, w
+której gracze mogą stawiać zakłady, podbijać je lub spasować.
 
 \section{Ranking układów pokerowych}
 
@@ -203,7 +203,7 @@ zarówno zyskiem, jak i stratą, jednak skuteczność strategii należy oceniać
 podstawie średniego wyniku uzyskiwanego w wielu rozdaniach.
 
 Przewaga kasyna (ang. \emph{house edge}) jest matematyczną miarą określającą
-oczekiwany zysk kasyna względem zakładu gracza. Bynajmniej nie oznacza ona, że kasyno
+oczekiwany zysk kasyna względem zakładu gracza. Nie oznacza to jednak, że kasyno
 wygrywa każde pojedyncze rozdanie, lecz że przy dużej liczbie rozegranych
 rozdań średni wynik będzie przesuwał się na korzyść kasyna. Oczywiście, gracz może
 osiągać krótkoterminowe zyski, jednak w długim okresie wynik gry powinien
@@ -237,7 +237,8 @@ Automaty do gier & 2--15\% \\
 
 Tabela~\ref{tab:house_edge_examples} pokazuje, że przewaga kasyna jest cechą
 konstrukcyjną gier hazardowych, ale jej poziom istotnie różni się pomiędzy
-grami, a podane wartości zależą przy tym od wariantu zasad gry. 
+grami, a podane wartości zależą przy tym od wariantu zasad gry.
+
 Chciałbym zaznaczyć, że celem niniejszej pracy nie jest wykazanie, że agent
 może trwale uzyskać dodatnią wartość oczekiwaną w grze fundamentalnie zaprojektowanej na
 korzyść kasyna, lecz sprawdzenie, które metody uczenia przez wzmacnianie są
@@ -247,7 +248,7 @@ w stanie nauczyć się strategii minimalizującej tę przewagę.
 
 Zdecydowałem się wprowadzić dwie strategie bazowe: agenta losowego (ang.
 \emph{random agent}) i agenta regułowego (ang. \emph{rule-based agent}).
-Te dwa agenty są dla mnie punktami odniesienia, pozwalającymi ocenić
+Obaj agenci są dla mnie punktami odniesienia, pozwalającymi ocenić
 jakość strategii wyuczonej przez agenta uczącego się przez wzmacnianie.
 Ważne dla mnie jest porównanie agentów uczących się pomiędzy sobą, ale
 również względem strategii bazowych. Agent losowy wybiera jedną z
@@ -257,7 +258,7 @@ eksperymentalnej. Agent regułowy wykorzystuje z góry określone heurystyki
 i reprezentuje bardziej wymagający punkt odniesienia.
 
 Samo przewyższenie agenta losowego nie stanowi wystarczającego dowodu
-uzyskania jakościowej strategii, natomiast porównanie z agentem regułowym
+uzyskania strategii dobrej jakości, natomiast porównanie z agentem regułowym
 pozwoli mi ocenić, czy uczenie prowadzi do decyzji konkurencyjnych wobec
 jawnie zaprojektowanych zasad.
 

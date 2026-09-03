@@ -82,14 +82,15 @@ decyzji do bardzo prostej polityki.
 
 DQN osiągał niższe średnie wyniki. Wybrana walidacyjnie konfiguracja
 DQN dawała jednak bardziej powtarzalne wyniki między seedami niż
-odpowiadająca jej konfiguracja REINFORCE, co było widoczne również po
-zwiększeniu budżetu treningowego do 100\,000 epizodów, wszystkie pięć
-seedów DQN poprawiło końcowy wynik, podczas gdy dla REINFORCE zmiana
-była znacznie mniej regularna.
+odpowiadająca jej konfiguracja REINFORCE. Było to widoczne również po
+zwiększeniu budżetu treningowego do 100\,000 epizodów, dla wybranej
+konfiguracji DQN wszystkie pięć seedów poprawiło końcowy wynik, podczas
+gdy dla odpowiadającej konfiguracji REINFORCE zmiana była znacznie
+mniej regularna.
 
 Większość konfiguracji uczenia przez wzmacnianie osiągnęła wynik lepszy od
 agenta losowego, co sugeruje, że wyuczone zachowanie było skuteczniejsze
-od losowego wyboru legalnej akcji. Dopiero po przeanalizowaniu samych decyzji,
+od losowego wyboru legalnej akcji. Dopiero po przeanalizowaniu samych decyzji
 utwierdziłem się w przekonaniu, że
 część wytrenowanych modeli faktycznie uzależniała wybieraną akcję od
 obserwowanego stanu gry. Żadna z badanych konfiguracji nie zbliżyła
@@ -118,7 +119,7 @@ przeprowadzeniu treningu.
 \section*{Ograniczenia pracy}
 \label{sec:ograniczenia-pracy}
 
-Zakres tej pracy ograniczyłem pod kilku względami, które teraz krótko podsumuję.
+Zakres tej pracy ograniczyłem pod kilkoma względami, które teraz krótko podsumuję.
 
 Pierwszym ograniczeniem jest liczba niezależnych przebiegów
 treningowych. Każdą konfigurację wytrenowałem dla pięciu seedów, co
@@ -131,6 +132,14 @@ algorytmów, reprezentacji stanu i funkcji nagrody w tych samych
 warunkach, a nie wyszukanie najlepszej możliwej konfiguracji dla
 każdego z nich. Nie oznacza to więc, że DQN albo REINFORCE nie
 mogłyby osiągnąć lepszego wyniku po innym doborze konfiguracji.
+
+Kolejnym ograniczeniem jest różnica współczynnika dyskontowania między
+algorytmami. Dla DQN przyjąłem $\gamma=0{,}99$, natomiast dla REINFORCE
+$\gamma=1$. Przy nagrodzie wyłącznie terminalnej różnica ta jest niewielka,
+ponieważ DQN nieznacznie dyskontuje wynik rozdania w zależności od liczby
+wcześniejszych kroków oczekiwania, podczas gdy REINFORCE optymalizuje
+bezpośrednio rzeczywisty wynik finansowy. Oba algorytmy optymalizują więc
+lekko odmienny cel.
 
 Dotyczy to zwłaszcza REINFORCE. Zastosowałem jego podstawową wersję,
 bez sieci wartości i bez regularyzacji entropii. W szczególności brak
@@ -150,6 +159,14 @@ Reprezentacja FEATURES zawiera ręcznie dobrane cechy pokerowe. Jej
 przewaga nad RAW pokazuje więc wartość tej konkretnej wiedzy
 dziedzinowej, a nie to, że każda bardziej rozbudowana reprezentacja
 stanu byłaby lepsza.
+
+Reprezentacja RAW koduje karty własne gracza i karty wspólne w kolejności,
+w jakiej trafiają do obserwacji, a nie w kolejności kanonicznej, na przykład
+według rangi. Ta sama para kart własnych może więc zostać zakodowana na dwa
+różne sposoby w zależności od tego, która karta została rozdana jako
+pierwsza. Modele musiały nauczyć się tej symetrii samodzielnie, z danych
+treningowych, a nie miały jej zagwarantowanej przez konstrukcję
+reprezentacji.
 
 Ograniczenia samego środowiska, w tym brak zakładów pobocznych Trips
 i Progressive, opisałem już w podrozdziale~\ref{sec:ograniczenia-srodowiska}.
@@ -187,7 +204,7 @@ porównałem surowe kodowanie kart z wersją rozszerzoną o ręcznie
 zaprojektowane cechy pokerowe. Alternatywą byłaby chociażby reprezentacja
 uczona przez samą sieć.
 
-Warto też byłoby zwiększyć liczbę seedów treningowych. Pozwoliłoby to
+Warto byłoby także zwiększyć liczbę seedów treningowych. Pozwoliłoby to
 dokładniej opisać rozkład wyników każdej konfiguracji i lepiej
 ocenić, jak często REINFORCE faktycznie prowadzi do zdegenerowanej
 polityki.
@@ -205,7 +222,8 @@ każdym względem. REINFORCE osiągał wyższe średnie EV, ale był podatny
 na degenerację polityki. DQN uzyskiwał niższe wyniki, natomiast
 reprezentacja FEATURES dawała mu wyraźną i powtarzalną poprawę
 względem RAW, a wydłużenie treningu do 100\,000 epizodów poprawiło
-wynik wszystkich pięciu sprawdzonych seedów.
+wynik wszystkich pięciu seedów wybranej do tego eksperymentu
+konfiguracji DQN.
 
 Żadna z metod uczenia przez wzmacnianie nie dorównała agentowi
 regułowemu. Udało mi się jednak wskazać konkretne zależności między

@@ -325,6 +325,13 @@ class EffectSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class AlgorithmEffectSummary:
+    state_representation: str
+    reward_type: str
+    estimate: MeanEstimate
+
+
+@dataclass(frozen=True, slots=True)
 class TrainingBudgetSummary:
     algorithm: str
     state_representation: str
@@ -1030,6 +1037,73 @@ def build_reward_effects(
     )
 
 
+def build_algorithm_effects(
+    results: FinalResultsData,
+) -> tuple[
+    AlgorithmEffectSummary,
+    ...
+]:
+    """Główny efekt algorytmu: REINFORCE - DQN dla każdej pary
+    reprezentacja x nagroda, sparowany po seedzie treningowym."""
+
+    effects: list[
+        AlgorithmEffectSummary
+    ] = []
+
+    for state_representation in (
+        RAW,
+        FEATURES,
+    ):
+        for reward_type in (
+            NET_PROFIT,
+            SCALED_NET_PROFIT,
+        ):
+            reinforce_targets = (
+                find_model_targets(
+                    results,
+                    algorithm=REINFORCE,
+                    state_representation=(
+                        state_representation
+                    ),
+                    reward_type=reward_type,
+                    training_episodes=(
+                        FINAL_TRAINING_EPISODES
+                    ),
+                )
+            )
+
+            dqn_targets = find_model_targets(
+                results,
+                algorithm=DQN,
+                state_representation=(
+                    state_representation
+                ),
+                reward_type=reward_type,
+                training_episodes=(
+                    FINAL_TRAINING_EPISODES
+                ),
+            )
+
+            effects.append(
+                AlgorithmEffectSummary(
+                    state_representation=(
+                        state_representation
+                    ),
+                    reward_type=reward_type,
+                    estimate=(
+                        paired_seed_comparison(
+                            reinforce_targets,
+                            dqn_targets,
+                        )
+                    ),
+                )
+            )
+
+    return tuple(
+        effects
+    )
+
+
 def build_training_budget_summaries(
     results: FinalResultsData,
 ) -> tuple[
@@ -1503,6 +1577,95 @@ def plot_reward_effects(
             "Różnica EV: zysk netto − skalowana"
         ),
         context_is_reward=False,
+    )
+
+
+def plot_algorithm_effects(
+    results: FinalResultsData,
+    *,
+    output_dir: Path,
+) -> None:
+    effects = build_algorithm_effects(
+        results
+    )
+
+    figure, axis = plt.subplots(
+        figsize=(
+            8.5,
+            3.6,
+        )
+    )
+
+    positions = list(
+        range(
+            len(effects)
+        )
+    )
+
+    labels = [
+        f"{_state_label(effect.state_representation)} | "
+        f"{_reward_label(effect.reward_type)}"
+        for effect in effects
+    ]
+
+    for position, effect in zip(
+        positions,
+        effects,
+    ):
+        estimate = effect.estimate
+
+        axis.errorbar( # type: ignore
+            estimate.mean,
+            position,
+            xerr=[
+                [
+                    estimate.mean
+                    - estimate.ci95_low
+                ],
+                [
+                    estimate.ci95_high
+                    - estimate.mean
+                ],
+            ],
+            fmt="o",
+            markersize=7,
+            capsize=5,
+            color="C2",
+        )
+
+    axis.axvline( # type: ignore
+        0.0,
+        color="black",
+        linewidth=1.0,
+    )
+
+    axis.set_yticks( # type: ignore
+        positions
+    )
+
+    axis.set_yticklabels( # type: ignore
+        labels
+    )
+
+    axis.invert_yaxis()
+
+    axis.set_xlabel( # type: ignore
+        "Różnica EV: REINFORCE − DQN"
+    )
+
+    axis.set_title( # type: ignore
+        "Wpływ algorytmu na końcowe EV"
+    )
+
+    axis.grid( # type: ignore
+        axis="x",
+        alpha=0.25,
+    )
+
+    _save_figure(
+        figure,
+        output_dir=output_dir,
+        filename="24_algorithm_effect",
     )
 
 
@@ -2856,8 +3019,8 @@ def plot_bankroll_curve(
     )
 
     axis.set_title( # type: ignore
-        "Zbieganie wyniku do EV na tym "
-        "samym rozkładzie rozdań",
+        "Zbieganie wyniku do EV na wspólnym "
+        "harmonogramie 100 000 rozdań",
         fontsize=13,
     )
 
@@ -3955,10 +4118,12 @@ def plot_preflop_range_chart(
         "Decyzja preflop w zależności od układu "
         "startowego (dominująca akcja)",
         fontsize=15,
+        y=0.99,
     )
 
     figure.subplots_adjust(
-        hspace=0.4
+        hspace=0.4,
+        top=0.93,
     )
 
     _save_figure(
@@ -4328,12 +4493,15 @@ def plot_action_funnel_by_street(
                 reach_fractions
             ):
                 axis.text( # type: ignore
-                    1.03,
+                    1.02,
                     row_index,
                     f"{reach_fraction * 100:.0f}% "
                     "dotarło",
                     va="center",
                     fontsize=10,
+                    transform=(
+                        axis.get_yaxis_transform()
+                    ),
                 )
 
         axis.set_yticks( # type: ignore
@@ -4354,9 +4522,7 @@ def plot_action_funnel_by_street(
 
         axis.set_xlim(
             0,
-            1.28
-            if street_index > 0
-            else 1.0,
+            1.0,
         )
 
         axis.tick_params( # type: ignore
@@ -5413,6 +5579,60 @@ def write_tables(
         rows=reward_rows,
     )
 
+    algorithm_rows: list[
+        dict[str, object]
+    ] = []
+
+    for effect in build_algorithm_effects(
+        results
+    ):
+        estimate = effect.estimate
+
+        algorithm_rows.append(
+            {
+                "state_representation": (
+                    effect.state_representation
+                ),
+                "reward_type": (
+                    effect.reward_type
+                ),
+                "comparison": (
+                    "reinforce_minus_dqn"
+                ),
+                "mean_difference": (
+                    estimate.mean
+                ),
+                "standard_deviation": (
+                    estimate.standard_deviation
+                ),
+                "standard_error": (
+                    estimate.standard_error
+                ),
+                "ci95_low": (
+                    estimate.ci95_low
+                ),
+                "ci95_high": (
+                    estimate.ci95_high
+                ),
+            }
+        )
+
+    _write_csv(
+        output_dir
+        / "algorithm_effect.csv",
+        fieldnames=(
+            "state_representation",
+            "reward_type",
+            "comparison",
+            "mean_difference",
+            "standard_deviation",
+            "standard_error",
+            "ci95_low",
+            "ci95_high",
+        ),
+        rows=algorithm_rows,
+    )
+
     budget_rows: list[
         dict[str, object]
     ] = []
@@ -5580,6 +5800,11 @@ def generate_report(
     )
 
     plot_reward_effects(
+        results,
+        output_dir=output_dir,
+    )
+
+    plot_algorithm_effects(
         results,
         output_dir=output_dir,
     )

@@ -29,7 +29,7 @@ Kodowanie one-hot polega na tym, że każdą wartość ze zbioru możliwych
 wartości reprezentuję jako wektor samych zer z pojedynczą jedynką na
 pozycji odpowiadającej tej konkretnej wartości \cite{one_hot_encoding}.
 A zatem każda karta to 52 liczby, z czego 51 to zera. Jedynka stoi na
-pozycji przypisanej dokładnie tej karcie (np. As pik), jak przedstawiono
+pozycji przypisanej dokładnie tej karcie (np. as pik), jak przedstawiono
 na rysunku~\ref{fig:one-hot-karta}. Więc agentowi dostarczam informacje
 o obecności karty. Nieodkryte karty to wektory zerowe.
 
@@ -72,6 +72,12 @@ Chciałem, aby RAW nie zawierał informacji o sile układu
 pokerowego. Model musi więc samodzielnie nauczyć się korelacji pomiędzy
 kartami a ich wartością w pokerze.
 
+Kolejność kart w wektorze RAW odpowiada kolejności, w jakiej trafiają one do
+obiektu \texttt{UTHObservation}, a nie ich rangom. Nie
+kanonizuję tej kolejności, więc ta sama para kart własnych może zostać
+zakodowana na dwa różne sposoby w zależności od tego, która z kart została
+rozdana jako pierwsza.
+
 \subsection{FEATURES: reprezentacja z cechami domenowymi}
 \label{subsec:state-b}
 
@@ -97,7 +103,44 @@ Oprócz informacji o kartach, fazie rozdania i dostępnych akcjach, do
 reprezentacji tego wariantu dołączyłem informacje o właściwościach kart
 prywatnych, o kategorii najlepszego widocznego układu oraz o strukturze
 kart, między innymi o parach, zgodności kolorów i możliwości utworzenia
-strita.
+strita. Wszystkie 20 cech domenowych wraz ze sposobem ich wyznaczania,
+zakresem wartości i normalizacją przedstawiam w tabeli~\ref{tab:features-20}.
+
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\caption{20 cech domenowych reprezentacji FEATURES}
+\label{tab:features-20}
+\begin{tabular}{@{}p{0.55\textwidth}p{0.22\textwidth}p{0.10\textwidth}@{}}
+\toprule
+Cecha & Zakres & Norm. \\
+\midrule
+Ranga silniejszej karty własnej & $[0,1]$ & tak \\
+Ranga słabszej karty własnej & $[0,1]$ & tak \\
+Para kieszeniowa & $\{0,1\}$ & -- \\
+Zgodność kolorów kart własnych & $\{0,1\}$ & -- \\
+Odstęp rang kart własnych & $[0,1]$ & tak \\
+\addlinespace
+Kategoria układu: wysoka karta & $\{0,1\}$ & -- \\
+Kategoria układu: para & $\{0,1\}$ & -- \\
+Kategoria układu: dwie pary & $\{0,1\}$ & -- \\
+Kategoria układu: trójka & $\{0,1\}$ & -- \\
+Kategoria układu: strit & $\{0,1\}$ & -- \\
+Kategoria układu: kolor & $\{0,1\}$ & -- \\
+Kategoria układu: full & $\{0,1\}$ & -- \\
+Kategoria układu: kareta & $\{0,1\}$ & -- \\
+Kategoria układu: poker & $\{0,1\}$ & -- \\
+\addlinespace
+Liczba par wśród widocznych kart & $\{0,\tfrac13,\tfrac23,1\}$ & tak \\
+Liczba trójek wśród widocznych kart & $\{0,\tfrac12,1\}$ & tak \\
+Liczba karet wśród widocznych kart & $\{0,1\}$ & tak \\
+Postęp koloru & $[0,1]$ & tak \\
+Postęp strita & $[0,1]$ & tak \\
+Sparowany stół & $\{0,1\}$ & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 Wymiar drugiego wariantu wynosi
 

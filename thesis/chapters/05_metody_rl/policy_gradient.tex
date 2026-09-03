@@ -24,6 +24,7 @@ o sześciu neuronach odpowiadających wszystkim akcjom.
     \rightarrow 6,
     \qquad
     d_{\mathrm{state}} \in \{373,393\}.
+    \label{eq:pg-architecture}
 \end{equation}
 gdzie $d_{\mathrm{state}}$ to wymiar wektora stanu, a 6 to liczba akcji.
 
@@ -84,8 +85,8 @@ Dla każdego kroku wyznaczam wtedy zwrot
 \end{equation}
 gdzie $G_t$ to zwrot, czyli suma nagród liczona od kroku $t$ do końca
 epizodu, $T$ to liczba kroków w epizodzie, $r_k$ to nagroda otrzymana
-w kroku $k$, a $\gamma$ to współczynnik dyskontowania nagród, opisany
-już przy współczynniku dyskontowania w DQN. Wykładnik $k-t$ rośnie
+w kroku $k$, a $\gamma$ to współczynnik dyskontowania nagród, omówiony
+już w opisie DQN. Wykładnik $k-t$ rośnie
 wraz z odległością kroku $k$ od kroku $t$, więc nagrody odległe
 w czasie są dyskontowane silniej niż nagrody bliskie.
 
@@ -137,7 +138,7 @@ natomiast wartość i znak $G_t$ decydują o sile tej zmiany.
         \draw[-{Latex}] (dots) -- (sT)
             node[midway, above, align=center] {$a_{T-1}$\\$r_{T-1}{=}0$};
         \draw[-{Latex}] (sT) -- ++(20mm,0)
-            node[right, align=left] {$a_T$\\$r_T=$ wypłata};
+            node[right, align=left] {$a_T$\\$r_T=P_{\mathrm{net}}$};
 
         \node[ret] (g1) at (0,0) {$G_1$};
         \node[ret] (g2) at (28mm,0) {$G_2$};
@@ -158,7 +159,7 @@ natomiast wartość i znak $G_t$ decydują o sile tej zmiany.
 Na rysunku $s_t$ oznacza stan w kroku $t$, $a_t$ podjętą w nim akcję,
 a $r_t$ otrzymaną nagrodę. Ponieważ $r_t=0$ dla każdego kroku poza
 ostatnim, a $\gamma=1$, każdy zwrot $G_t$ sprowadza się do tej samej
-wartości, czyli końcowej wypłaty rozdania $r_T$.
+wartości, czyli końcowego wyniku netto rozdania $r_T=P_{\mathrm{net}}$.
 
 Zwroty obliczam niezależnie dla każdego epizodu, a parametry sieci
 pozostają niezmienione podczas zbierania całego batcha. Dopiero po
