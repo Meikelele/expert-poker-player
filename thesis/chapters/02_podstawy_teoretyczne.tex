@@ -1,58 +1,58 @@
 \chapter{Podstawy teoretyczne}
 \label{chap:podstawy-teoretyczne}
 
-\section{Poker jako gra z niepełną informacją}
+\section{Poker jako gra z~niepełną informacją}
 
-Poker jest zbiorem gier karcianych, w których wynik zależy zarówno od
-losowego rozdania kart, jak i od decyzji podejmowanych przez graczy. W
-przeciwieństwie do gier z pełną informacją (np. szachy) uczestnicy
+Poker jest zbiorem gier karcianych, w~których wynik zależy zarówno od
+losowego rozdania kart, jak i~od decyzji podejmowanych przez graczy. W~
+przeciwieństwie do gier z~pełną informacją (np. szachy) uczestnicy
 rozgrywki nie znają wszystkich elementów stanu gry. Ukryte pozostają przede
-wszystkim karty przeciwników, co sprawia, że decyzje podejmowane są w
-warunkach niepełnej informacji. Poker z niepełną informacją jest przy tym
-uznanym benchmarkiem badawczym w sztucznej inteligencji, czego przykładem
+wszystkim karty przeciwników, co sprawia, że decyzje podejmowane są w~
+warunkach niepełnej informacji. Poker z~niepełną informacją jest przy tym
+uznanym testem porównawczym (ang. \emph{benchmark}) w~sztucznej inteligencji, czego przykładem
 jest rozwiązanie uproszczonego wariantu heads-up limit Texas Hold'em
 \cite{bowling_heads_up_2015}.
 
-Właśnie z uwagi na tę niepełną informację uznałem pokera za ciekawy
-problem badawczy. W pokerze pojedyncza decyzja gracza nie powinna być
+Właśnie z~uwagi na tę niepełną informację poker stanowi ciekawy
+problem badawczy. W~pokerze pojedyncza decyzja gracza nie powinna być
 oceniana wyłącznie na podstawie uzyskanego wyniku na koniec rozdania.
 Istotniejsze jest, jak dana decyzja wpływa na wartość oczekiwaną
-(ang. \emph{expected value}, EV) w dłuższym horyzoncie czasowym, przy
+(ang. \emph{expected value}, EV) w~dłuższym horyzoncie czasowym, przy
 wielu rozdaniach.
 
 
 \section{Texas Hold’em}
 
-Odmiana pokera Texas Hold’em jest jedną z najpopularniejszych na świecie.
-W tej odmianie każdy z graczy otrzymuje po dwie zakryte karty własne (ang.
+Odmiana pokera Texas Hold’em jest jedną z~najpopularniejszych na świecie.
+W~tej odmianie każdy z~graczy otrzymuje po dwie zakryte karty własne (ang.
 \emph{hole cards}), znane tylko temu graczowi, natomiast na stole etapami
 pojawia się ostatecznie pięć kart wspólnych (ang. \emph{community cards}).
 Gracz, wykorzystując karty wspólne oraz swoje karty własne, musi utworzyć
 możliwie najlepszy układ pięciokartowy.
 
-Sama rozgrywka składa się z kilku etapów: etapu przed flopem (ang.
+Sama rozgrywka składa się z~kilku etapów: etapu przed flopem (ang.
 \emph{preflop}), flopa (ang. \emph{flop}), czyli odkrycia trzech
 pierwszych kart wspólnych, turna (ang. \emph{turn}), czyli czwartej karty
-wspólnej, rivera (ang. \emph{river}), czyli odkrycia piątej i ostatniej
+wspólnej, rivera (ang. \emph{river}), czyli odkrycia piątej i~ostatniej
 karty wspólnej, oraz showdownu (ang. \emph{showdown}), czyli końcowego
 porównania układów. Warto dodać, że pomiędzy odkrywaniem kolejnych kart
 wspólnych dokonuje się palenia kart (ang. \emph{burning}), czyli
-odkładania wierzchniej karty z talii na bok. Po rozdaniu kart własnych
-oraz po odkryciu flopa, turna i rivera odbywa się runda licytacji, w
+odkładania wierzchniej karty z~talii na bok. Po rozdaniu kart własnych
+oraz po odkryciu flopa, turna i~rivera odbywa się runda licytacji, w~
 której gracze mogą stawiać zakłady, podbijać je lub spasować.
 
 \section{Ranking układów pokerowych}
 
-Zarówno w Texas Hold’em, jak i w Ultimate Texas Hold’em końcowy wynik rozdania zależy od siły
-najlepszego układu pięciokartowego utworzonego z dostępnych kart (pięciu kart wspólnych oraz dwóch własnych). Układy
-pokerowe mają ustaloną hierarchię, która pozwala jednoznacznie porównać ręce graczy lub krupiera w odmianie UTH.
+Zarówno w~Texas Hold’em, jak i~w~Ultimate Texas Hold’em końcowy wynik rozdania zależy od siły
+najlepszego układu pięciokartowego utworzonego z~dostępnych kart (pięciu kart wspólnych oraz dwóch własnych). Układy
+pokerowe mają ustaloną hierarchię, która pozwala jednoznacznie porównać ręce graczy lub krupiera w~odmianie UTH.
 Przykładowy ranking układów od
-najsilniejszego do najsłabszego przedstawiam w
+najsilniejszego do najsłabszego przedstawiono w~
 tabeli~\ref{tab:poker_hand_ranking} \cite{tulalip_uth_rules}.
 
 Najsilniejszym układem jest poker królewski, natomiast najsłabszym układem
-jest wysoka karta. Jeśli gracz i krupier posiadają układ tej samej
-kategorii (np. obaj mają parę), o zwycięstwie decydują wartości kart
+jest wysoka karta. Jeśli gracz i~krupier posiadają układ tej samej
+kategorii (np. obaj mają parę), o~zwycięstwie decydują wartości kart
 składających się na dany układ oraz karty dodatkowe (ang. \emph{kickers}).
 
 \begin{table}[h]
@@ -63,11 +63,11 @@ składających się na dany układ oraz karty dodatkowe (ang. \emph{kickers}).
 \toprule
 Układ & Opis \\
 \midrule
-Poker królewski & A, K, Q, J, 10 w tym samym kolorze \\
-Poker & Pięć kolejnych kart w tym samym kolorze \\
+Poker królewski & A, K, Q, J, 10 w~tym samym kolorze \\
+Poker & Pięć kolejnych kart w~tym samym kolorze \\
 Kareta & Cztery karty tej samej wartości \\
 Full & Trójka oraz para \\
-Kolor & Pięć kart w tym samym kolorze \\
+Kolor & Pięć kart w~tym samym kolorze \\
 Strit & Pięć kolejnych kart \\
 Trójka & Trzy karty tej samej wartości \\
 Dwie pary & Dwa różne układy par \\
@@ -82,12 +82,12 @@ Wysoka karta & Brak silniejszego układu \\
 \subsection{Charakterystyka gry}
 
 Ultimate Texas Hold’em jest kasynową odmianą pokera opartą na zasadach
-Texas Hold’em. Różnica polega na tym, że gracz rywalizuje z krupierem,
-który reprezentuje kasyno, a nie z innymi graczami, co oznacza, że
+Texas Hold’em. Różnica polega na tym, że gracz rywalizuje z~krupierem,
+który reprezentuje kasyno, a~nie z~innymi graczami, co oznacza, że
 konieczność blefowania (ang. \emph{bluffing}) jest tu zbędna. Istotną
 cechą Ultimate Texas Hold’em jest również ograniczona liczba momentów
 decyzyjnych: gracz może wykonać zakład Play (ang. \emph{Play bet}) tylko
-raz w trakcie rozdania, a im wcześniej podejmie tę decyzję, tym wyższy
+raz w~trakcie rozdania, a~im wcześniej podejmie tę decyzję, tym wyższy
 zakład może postawić, kosztem mniejszej liczby dostępnych informacji
 \cite{wizard_uth,tulalip_uth_rules,nevada_uth_rules}. Szczegółowe wysokości zakładu Play na
 poszczególnych etapach przedstawia tabela~\ref{tab:uth_decisions}.
@@ -96,36 +96,36 @@ poszczególnych etapach przedstawia tabela~\ref{tab:uth_decisions}.
 
 Rozdanie rozpoczyna się od postawienia przez gracza obowiązkowych zakładów
 Ante (ang. \emph{Ante bet}) oraz Blind (ang. \emph{Blind bet}). Oba te
-zakłady stawia się w tej samej wysokości. Opcjonalnie gracz może również
-postawić zakład poboczny (ang. \emph{side bet}), na przykład Trips, który
-opisuję szerzej w dalszej części tego rozdziału \cite{tulalip_uth_rules}.
+zakłady stawia się w~tej samej wysokości. Opcjonalnie gracz może również
+postawić zakład poboczny (ang. \emph{side bet}), na przykład Trips, opisany
+szerzej w~dalszej części tego rozdziału \cite{tulalip_uth_rules}.
 
 Kiedy zakłady Blind oraz Ante zostaną postawione, krupier rozdaje graczowi
-i sobie po dwie karty własne. Karty krupiera pozostają przy tym dla gracza zakryte.
-Teraz, w fazie preflop, po ujrzeniu swoich dwóch kart, gracz stoi przed
+i~sobie po dwie karty własne. Karty krupiera pozostają przy tym dla gracza zakryte.
+Teraz, w~fazie preflop, po ujrzeniu swoich dwóch kart, gracz stoi przed
 pierwszą decyzją: może zaczekać (ang. \emph{check}) lub wykonać zakład
 Play. Czekanie powoduje przejście do kolejnego etapu gry, jakim jest flop:
-następuje wtedy palenie jednej karty z talii i odkrycie kolejnych trzech kart
-wspólnych, a gracz znów podejmuje decyzję, czy chce zaczekać, czy wykonać
-zakład Play. Jeżeli gracz czeka również po flopie, następuje palenie karty i
-odkrywane są dwie ostatnie karty wspólne (turn i river), a gracz musi
-wybrać pomiędzy spasowaniem a wykonaniem zakładu Play. Wysokości zakładu
-Play na każdym z tych etapów przedstawiono w
+następuje wtedy palenie jednej karty z~talii i~odkrycie kolejnych trzech kart
+wspólnych, a~gracz znów podejmuje decyzję, czy chce zaczekać, czy wykonać
+zakład Play. Jeżeli gracz czeka również po flopie, następuje palenie karty i~
+odkrywane są dwie ostatnie karty wspólne (turn i~river), a~gracz musi
+wybrać pomiędzy spasowaniem a~wykonaniem zakładu Play. Wysokości zakładu
+Play na każdym z~tych etapów przedstawiono w~
 tabeli~\ref{tab:uth_decisions} \cite{wizard_uth,tulalip_uth_rules}.
 
-\subsection{Zakłady i decyzje gracza}
+\subsection{Zakłady i~decyzje gracza}
 
-Zakłady Blind i Ante są obowiązkowe, natomiast zakład Play jest
-opcjonalny, zależny od decyzji gracza i możliwy do postawienia raz w
-trakcie rozdania. To właśnie zakład Play, z punktu widzenia modelowania
+Zakłady Blind i~Ante są obowiązkowe, natomiast zakład Play jest
+opcjonalny, zależny od decyzji gracza i~możliwy do postawienia raz w~
+trakcie rozdania. To właśnie zakład Play, z~punktu widzenia modelowania
 problemu jako środowiska uczenia przez wzmacnianie, jest najważniejszy,
-ponieważ jego wysokość i moment wykonania wynikają z decyzji agenta. Ante
-i Blind traktuję jako początkowy koszt udziału w rozdaniu, natomiast
-zakład Play odzwierciedla wybór strategii w aktualnym stanie gry.
+ponieważ jego wysokość i~moment wykonania wynikają z~decyzji agenta. Ante
+i~Blind są traktowane jako początkowy koszt udziału w~rozdaniu, natomiast
+zakład Play odzwierciedla wybór strategii w~aktualnym stanie gry.
 
 \begin{table}[h]
 \centering
-\caption{Dostępne decyzje gracza w Ultimate Texas Hold’em}
+\caption{Dostępne decyzje gracza w~Ultimate Texas Hold’em}
 \label{tab:uth_decisions}
 \begin{tabular}{lll}
 \toprule
@@ -140,29 +140,29 @@ Po odkryciu całego stołu & spasowanie lub zakład Play & 1x Ante \\
 
 \subsection{Rozstrzyganie rozdania}
 
-Po dokonaniu decyzji przez gracza o wykonaniu zakładu Play krupier odsłania
+Po dokonaniu decyzji przez gracza o~wykonaniu zakładu Play krupier odsłania
 swoje dwie karty własne. Gracz oraz krupier tworzą najlepszy
-możliwy układ pięciokartowy z siedmiu dostępnych kart. Następnie układy są porównywane zgodnie z
+możliwy układ pięciokartowy z~siedmiu dostępnych kart. Następnie układy są porównywane zgodnie z~
 hierarchią układów pokerowych.
 
-Krupier kwalifikuje się do gry, jeżeli posiada co najmniej parę. Jeżeli
+Krupier kwalifikuje się do gry (tj. do wypłaty zakładu Ante), jeżeli posiada co najmniej parę. Jeżeli
 krupier się nie kwalifikuje, zakład Ante jest zwracany graczowi. Zakład Play
-jest rozliczany na podstawie bezpośredniego porównania układu gracza i
-krupiera. W przypadku zwycięstwa gracza zakład Play wypłacany jest w
-stosunku 1:1, w przypadku przegranej gracz traci zakład Play, a w
+jest rozliczany na podstawie bezpośredniego porównania układu gracza i~
+krupiera. W~przypadku zwycięstwa gracza zakład Play wypłacany jest w~
+stosunku 1:1, w~przypadku przegranej gracz traci zakład Play, a~w~
 przypadku remisu zakład jest zwracany \cite{tulalip_uth_rules,wizard_uth}.
 
-Zakład Blind ma odrębną logikę rozliczania i nie jest wypłacany za każdy
-zwycięski układ gracza. Jeżeli gracz pokona krupiera układem o wartości co
-najmniej strita, Blind wypłacany jest zgodnie z tabelą wypłat przedstawioną
-w tabeli~\ref{tab:blind_payouts}. Jeżeli gracz wygra rozdanie układem
-słabszym niż strit, zakład Blind jest zwracany. W przypadku przegranej
-gracza zakład Blind jest tracony, a w przypadku remisu zwracany
+Zakład Blind ma odrębną logikę rozliczania i~nie jest wypłacany za każdy
+zwycięski układ gracza. Jeżeli gracz pokona krupiera układem o~wartości co
+najmniej strita, Blind wypłacany jest zgodnie z~tabelą wypłat przedstawioną
+w~tabeli~\ref{tab:blind_payouts}. Jeżeli gracz wygra rozdanie układem
+słabszym niż strit, zakład Blind jest zwracany. W~przypadku przegranej
+gracza zakład Blind jest tracony, a~w~przypadku remisu zwracany
 \cite{tulalip_uth_rules}.
 
 \begin{table}[h]
 \centering
-\caption{Tabela wypłat zakładu Blind przyjęta w modelu środowiska}
+\caption{Tabela wypłat zakładu Blind przyjęta w~modelu środowiska}
 \label{tab:blind_payouts}
 \begin{tabular}{ll}
 \toprule
@@ -181,43 +181,43 @@ Pozostałe układy & Zwrot \\
 
 \subsection{Zakłady poboczne}
 
-W wielu wariantach Ultimate Texas Hold’em dostępne są również zakłady
-poboczne, takie jak Trips i Progressive. Zakład Trips jest opcjonalny i
+W~wielu wariantach Ultimate Texas Hold’em dostępne są również zakłady
+poboczne, takie jak Trips i~Progressive. Zakład Trips jest opcjonalny i~
 wypłacany na podstawie końcowego układu gracza, niezależnie od tego, czy
 gracz pokonał krupiera. Najczęściej wygrywa wtedy, gdy końcowy układ
-gracza ma wartość co najmniej trójki. Zakłady poboczne mogą różnić się w
-zależności od kasyna i stosowanej tabeli wypłat \cite{tulalip_uth_rules}.
+gracza ma wartość co najmniej trójki. Zakłady poboczne mogą różnić się w~
+zależności od kasyna i~stosowanej tabeli wypłat \cite{tulalip_uth_rules}.
 
 Głównym celem pracy jest modelowanie sekwencyjnego procesu decyzyjnego
-dotyczącego zakładu Play. Ponieważ zakłady poboczne są opcjonalne, a
-wysokość ich wypłat zależy od konkretnego kasyna, zdecydowałem się ich
-nie uwzględniać w modelu środowiska.
+dotyczącego zakładu Play. Ponieważ zakłady poboczne są opcjonalne, a~
+wysokość ich wypłat zależy od konkretnego kasyna, postanowiono ich
+nie uwzględniać w~modelu środowiska.
 
-\section{Wartość oczekiwana i przewaga kasyna}
+\section{Wartość oczekiwana i~przewaga kasyna}
 
 Wartość oczekiwana (ang. \emph{expected value}, EV) określa średni wynik
 finansowy decyzji lub strategii przy założeniu dużej liczby powtórzeń gry
-\cite{packel_games_gambling_2006}. W
+\cite{packel_games_gambling_2006}. W~
 kontekście Ultimate Texas Hold’em pojedyncze rozdanie może zakończyć się
-zarówno zyskiem, jak i stratą, jednak skuteczność strategii należy oceniać na
-podstawie średniego wyniku uzyskiwanego w wielu rozdaniach.
+zarówno zyskiem, jak i~stratą, jednak skuteczność strategii należy oceniać na
+podstawie średniego wyniku uzyskiwanego w~wielu rozdaniach.
 
 Przewaga kasyna (ang. \emph{house edge}) jest matematyczną miarą określającą
 oczekiwany zysk kasyna względem zakładu gracza. Nie oznacza to jednak, że kasyno
 wygrywa każde pojedyncze rozdanie, lecz że przy dużej liczbie rozegranych
 rozdań średni wynik będzie przesuwał się na korzyść kasyna. Oczywiście, gracz może
-osiągać krótkoterminowe zyski, jednak w długim okresie wynik gry powinien
-zbliżać się do wartości oczekiwanej wynikającej z zasad gry
+osiągać krótkoterminowe zyski, jednak w~długim okresie wynik gry powinien
+zbliżać się do wartości oczekiwanej wynikającej z~zasad gry
 \cite{investopedia_house_edge}.
 
 
-W Ultimate Texas Hold’em przewaga kasyna podawana jest względem
-początkowego zakładu Ante. Metryki, które przyjąłem, opierają się na
+W~Ultimate Texas Hold’em przewaga kasyna podawana jest względem
+początkowego zakładu Ante. Metryki przyjęte w~pracy opierają się na
 wyniku netto względem Ante. Nawet niewielka procentowa przewaga kasyna
-prowadzi do istotnej oczekiwanej straty w długim horyzoncie czasowym.
+prowadzi do istotnej oczekiwanej straty w~długim horyzoncie czasowym.
 
-W tabeli~\ref{tab:house_edge_examples} przedstawiam przykładowe wartości przewagi kasyna dla wybranych gier kasynowych, 
-w tym Ultimate Texas Hold’em \cite{wizard_house_edge}.
+W~tabeli~\ref{tab:house_edge_examples} przedstawiono przykładowe wartości przewagi kasyna dla wybranych gier kasynowych,
+w~tym Ultimate Texas Hold’em \cite{wizard_house_edge}.
 \begin{table}[h]
 \centering
 \caption{Przykładowe wartości przewagi kasyna dla wybranych gier kasynowych}
@@ -237,41 +237,54 @@ Automaty do gier & 2--15\% \\
 
 Tabela~\ref{tab:house_edge_examples} pokazuje, że przewaga kasyna jest cechą
 konstrukcyjną gier hazardowych, ale jej poziom istotnie różni się pomiędzy
-grami, a podane wartości zależą przy tym od wariantu zasad gry.
+grami, a~podane wartości zależą przy tym od wariantu zasad gry.
 
-Chciałbym zaznaczyć, że celem niniejszej pracy nie jest wykazanie, że agent
-może trwale uzyskać dodatnią wartość oczekiwaną w grze fundamentalnie zaprojektowanej na
+Podane wartości nie są jednak w~pełni porównywalne między sobą, ponieważ
+różnią się bazą odniesienia. Dla Ultimate Texas Hold'em przewaga 2,19\%
+jest liczona względem samego zakładu Ante, podczas gdy średnia całkowita
+stawka gracza (Ante, Blind i~Play łącznie) wynosi ponad cztery jednostki
+Ante. Miarą lepiej porównywalną między grami różniącymi się liczbą i~
+wysokością zakładów jest element ryzyka (ang. \emph{element of risk}), czyli
+przewaga kasyna liczona względem średniej całkowitej stawki. Dla optymalnej
+strategii Ultimate Texas Hold'em element ryzyka wynosi 0,526\%, znacznie
+mniej niż przewaga 2,185\% liczona względem samego Ante \cite{wizard_uth}.
+Wyniki analizowane w~tej pracy wyrażono, jak już wspomniano, względem
+zakładu Ante, dlatego przy porównaniach z~innymi grami warto mieć na
+uwadze tę różnicę bazy odniesienia.
+
+Warto zaznaczyć, że celem niniejszej pracy nie jest wykazanie, że agent
+może trwale uzyskać dodatnią wartość oczekiwaną w~grze fundamentalnie zaprojektowanej na
 korzyść kasyna, lecz sprawdzenie, które metody uczenia przez wzmacnianie są
-w stanie nauczyć się strategii minimalizującej tę przewagę.
+w~stanie nauczyć się strategii minimalizującej tę przewagę.
 
-\section{Strategie bazowe i ocena jakości strategii}
+\section{Strategie bazowe i~ocena jakości strategii}
 
-Zdecydowałem się wprowadzić dwie strategie bazowe: agenta losowego (ang.
-\emph{random agent}) i agenta regułowego (ang. \emph{rule-based agent}).
-Obaj agenci są dla mnie punktami odniesienia, pozwalającymi ocenić
+Wprowadzono dwie strategie bazowe: agenta losowego (ang.
+\emph{random agent}) i~agenta regułowego (ang. \emph{rule-based agent}).
+Obaj agenci stanowią punkty odniesienia, pozwalające ocenić
 jakość strategii wyuczonej przez agenta uczącego się przez wzmacnianie.
-Ważne dla mnie jest porównanie agentów uczących się pomiędzy sobą, ale
-również względem strategii bazowych. Agent losowy wybiera jedną z
+Istotne jest porównanie agentów uczących się pomiędzy sobą, ale
+również względem strategii bazowych. Agent losowy wybiera jedną z~
 legalnych akcji bez uwzględniania siły kart, stanowi prosty punkt
-odniesienia i umożliwia wstępną kontrolę działania infrastruktury
-eksperymentalnej. Agent regułowy wykorzystuje z góry określone heurystyki
-i reprezentuje bardziej wymagający punkt odniesienia.
+odniesienia i~umożliwia wstępną kontrolę działania infrastruktury
+eksperymentalnej. Agent regułowy wykorzystuje z~góry określone heurystyki
+i~reprezentuje bardziej wymagający punkt odniesienia.
 
 Samo przewyższenie agenta losowego nie stanowi wystarczającego dowodu
-uzyskania strategii dobrej jakości, natomiast porównanie z agentem regułowym
-pozwoli mi ocenić, czy uczenie prowadzi do decyzji konkurencyjnych wobec
+uzyskania strategii dobrej jakości, natomiast porównanie z~agentem regułowym
+pozwala ocenić, czy uczenie prowadzi do decyzji konkurencyjnych wobec
 jawnie zaprojektowanych zasad.
 
 \section{Uczenie przez wzmacnianie}
 
 Uczenie przez wzmacnianie (ang. \emph{reinforcement learning}, RL) jest
-paradygmatem uczenia maszynowego, w którym agent uczy się podejmowania
-decyzji poprzez interakcję ze środowiskiem. W każdym kroku agent obserwuje
+paradygmatem uczenia maszynowego, w~którym agent uczy się podejmowania
+decyzji poprzez interakcję ze środowiskiem. W~każdym kroku agent obserwuje
 aktualny stan (ang. \emph{state}) środowiska, wybiera akcję (ang.
-\emph{action}), a następnie otrzymuje nagrodę (ang. \emph{reward}) oraz
+\emph{action}), a~następnie otrzymuje nagrodę (ang. \emph{reward}) oraz
 przechodzi do kolejnego stanu. Celem agenta jest wyuczenie strategii,
 określanej również jako polityka decyzyjna (ang. \emph{policy}), która
-maksymalizuje sumę nagród w długim horyzoncie czasowym
+maksymalizuje sumę nagród w~długim horyzoncie czasowym
 \cite{sutton_barto_rl}.
 
 Przed flopem gracz
@@ -285,7 +298,7 @@ kompromisu pomiędzy ryzykiem, ilością informacji oraz potencjalną wypłatą.
 
 Zachowanie agenta opisuje polityka, która może być deterministyczna,
 przypisując stanowi jedną akcję, albo stochastyczna, określając rozkład
-prawdopodobieństwa wyboru akcji. Jakość decyzji ocenia się na podstawie 
+prawdopodobieństwa wyboru akcji. Jakość decyzji ocenia się na podstawie
 zwrotu epizodycznego, czyli sumy nagród uzyskanych
 do końca epizodu:
 
@@ -293,44 +306,44 @@ do końca epizodu:
     G_t = \sum_{k=0}^{T-t-1} \gamma^{k}\, r_{t+k},
 \end{equation}
 
-gdzie \(\gamma \in [0,1]\) jest współczynnikiem dyskontowania, a \(T\)
+gdzie \(\gamma \in [0,1]\) jest współczynnikiem dyskontowania, a~\(T\)
 oznacza koniec epizodu. Współczynnik \(\gamma\) reguluje wagę nagród
-odległych w czasie względem nagród natychmiastowych \cite{sutton_barto_rl}.
+odległych w~czasie względem nagród natychmiastowych \cite{sutton_barto_rl}.
 
-Oczekiwany zwrot z danego stanu opisuje funkcja wartości stanu
-\(V^{\pi}(s)\), natomiast oczekiwany zwrot po wykonaniu akcji w danym
+Oczekiwany zwrot z~danego stanu opisuje funkcja wartości stanu
+\(V^{\pi}(s)\), natomiast oczekiwany zwrot po wykonaniu akcji w~danym
 stanie opisuje funkcja wartości akcji \(Q^{\pi}(s,a)\). Te funkcje
-pozwalają porównywać decyzje i stanowią podstawę w wielu metodach uczenia \cite{sutton_barto_rl}.
+pozwalają porównywać decyzje i~stanowią podstawę w~wielu metodach uczenia \cite{sutton_barto_rl}.
 
-W trakcie uczenia agent musi równoważyć eksplorację (ang. \emph{exploration}), czyli wypróbowywanie
-nowych akcji w celu zdobycia informacji, oraz eksploatację (ang. \emph{exploitation}), czyli wybór
+W~trakcie uczenia agent musi równoważyć eksplorację (ang. \emph{exploration}), czyli wypróbowywanie
+nowych akcji w~celu zdobycia informacji, oraz eksploatację (ang. \emph{exploitation}), czyli wybór
 akcji uznanych dotąd za najlepsze. Niewłaściwy balans między nimi
 prowadzi do niestabilnego
 przebiegu uczenia.
 
-Funkcje wartości i polityki można reprezentować w postaci tablicowej, gdy
+Funkcje wartości i~polityki można reprezentować w~postaci tablicowej, gdy
 przestrzeń stanów jest niewielka, albo za pomocą aproksymacji funkcji, na
 przykład sieci neuronowej, gdy przestrzeń stanów jest duża.
 Przestrzeń stanów Ultimate Texas Hold’em jest zbyt duża na podejście
-tablicowe, dlatego funkcję wartości akcji aproksymuję
-siecią neuronową, co opisuję szczegółowo w rozdziale dotyczącym
+tablicowe, dlatego funkcja wartości akcji jest aproksymowana
+siecią neuronową, co opisano szczegółowo w~rozdziale dotyczącym
 zastosowanej metody uczenia \cite{sutton_barto_rl}.
 
 Dwa elementy konfiguracji
-procesu uczenia mają dla mnie niebagatelne znaczenie: sposób reprezentacji obserwacji, decydujący o tym, jakie
+procesu uczenia mają niebagatelne znaczenie: sposób reprezentacji obserwacji, decydujący o~tym, jakie
 informacje trafiają na wejście agenta, oraz konstrukcja funkcji nagrody,
-przekształcająca finansowy wynik rozdania w sygnał uczący. To na analizie tych dwóch elementów
-skupiam się w niniejszej pracy.
+przekształcająca finansowy wynik rozdania w~sygnał uczący. Na analizie tych dwóch elementów
+skupiono się w~niniejszej pracy.
 
 \section{Modelowanie UTH jako procesu decyzyjnego}
 
-Kończąc niniejszy rozdział, chciałbym podkreślić, że w Ultimate Texas
-Hold’em agent nie zna pełnego stanu środowiska, a jedynie jego
+Kończąc niniejszy rozdział, warto podkreślić, że w~Ultimate Texas
+Hold’em agent nie zna pełnego stanu środowiska, a~jedynie jego
 obserwację. Agent nie wie, jakie karty ma krupier, ani jakie karty są
-następne w talii. Problem niniejszej pracy można więc traktować jako
+następne w~talii. Problem niniejszej pracy można więc traktować jako
 częściowo obserwowalny proces decyzyjny Markowa (ang. \emph{partially
 observable Markov decision process}, POMDP) \cite{russell_norvig_aima_2020}.
 To rozróżnienie obserwacji od
 pełnego stanu jest istotne dla zachowania niepełnej informacji, która
-jest charakterystyczna dla pokera. Odwzorowałem to w projekcie środowiska
-opisanym w kolejnym rozdziale \cite{sutton_barto_rl}.
+jest charakterystyczna dla pokera. Odwzorowano to w~projekcie środowiska
+opisanym w~kolejnym rozdziale \cite{sutton_barto_rl}.

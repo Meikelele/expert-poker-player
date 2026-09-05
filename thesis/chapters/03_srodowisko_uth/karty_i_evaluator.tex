@@ -1,107 +1,107 @@
-\section{Model kart i sterowanie talią}
+\section{Model kart i~sterowanie talią}
 \label{sec:model-kart-talii}
-Reprezentacja kart i mechanizm sterowania talią stanowią podstawową warstwę
-środowiska. Elementy te zaprojektowałem niezależnie od zasad
+Reprezentacja kart i~mechanizm sterowania talią stanowią podstawową warstwę
+środowiska. Elementy te zaprojektowano niezależnie od zasad
 Ultimate Texas Hold’em, dzięki czemu mogą być wykorzystywane także przez
-inne warianty pokera, o czym wspominam w części pracy poświęconej możliwym
+inne warianty pokera, o~czym wspomniano w~części pracy poświęconej możliwym
 kierunkom dalszego rozwoju.
 
 \subsection{Reprezentacja karty}
 \label{subsec:reprezentacja-karty}
 
-Pojedynczą kartę zaimplementowałem jako niemodyfikowalny obiekt
-\texttt{Card}, zawierający dwa pola: rangę oraz kolor. Rangi zakodowałem za
+Pojedynczą kartę zaimplementowano jako niemodyfikowalny obiekt
+\texttt{Card}, zawierający dwa pola: rangę oraz kolor. Rangi zakodowano za
 pomocą typu wyliczeniowego \texttt{Rank}, natomiast kolory za pomocą typu
-\texttt{Suit}. Przez zastosowanie typów wyliczeniowych ograniczyłem możliwość
-utworzenia karty zawierającej niepoprawną wartość, a przez podejście do karty jako niemutowalnego
-obiektu zapewniłem bezpieczne umieszczanie jej w krotkach i zbiorach, a także możliwość wykorzystania
+\texttt{Suit}. Przez zastosowanie typów wyliczeniowych ograniczono możliwość
+utworzenia karty zawierającej niepoprawną wartość, a~przez podejście do karty jako niemutowalnego
+obiektu zapewniono bezpieczne umieszczanie jej w~krotkach i~zbiorach, a~także możliwość wykorzystania
 porównania liczebności zbioru do wykrywania zduplikowanych kart.
 
 Rangi kart przyjmują wartości liczbowe od 2 do 14. Karty od dwójki do
 dziesiątki zachowują swoje naturalne wartości, natomiast walet, dama, król
-i as otrzymują odpowiednio wartości 11, 12, 13 i 14. Zdecydowałem się na taką konwencję 
-ponieważ umożliwia mi to bezpośrednie porównywanie rang podczas oceny układów.
+i~as otrzymują odpowiednio wartości 11, 12, 13 i~14. Przyjęto taką konwencję,
+ponieważ umożliwia ona bezpośrednie porównywanie rang podczas oceny układów.
 
 Warto dodać, że as jest kartą najwyższą, natomiast szczególny
-przypadek strita od asa do piątki obsługiwany jest przez ewaluator układów. 
-Zbiór kolorów obejmuje trefle, karo, kiery i piki.
+przypadek strita od asa do piątki obsługiwany jest przez ewaluator układów.
+Zbiór kolorów obejmuje trefle, karo, kiery i~piki.
 
 
 \subsection{Standardowa talia}
 \label{subsec:standardowa-talia}
 
 Klasa \texttt{Deck} reprezentuje standardową talię. Podczas jej tworzenia
-generowane są wszystkie kombinacje trzynastu rang i czterech kolorów.
-Liczba kart w pełnej talii wynosi zatem
+generowane są wszystkie kombinacje trzynastu rang i~czterech kolorów.
+Liczba kart w~pełnej talii wynosi zatem
 
 \begin{equation}
     |\mathcal{D}| = 13 \cdot 4 = 52.
 \end{equation}
 
-Ponieważ każda kombinacja rangi i koloru występuje dokładnie raz,
+Ponieważ każda kombinacja rangi i~koloru występuje dokładnie raz,
 wygenerowana talia zawiera 52 unikalne karty.
 
 Podstawową operacją jest metoda \texttt{draw()}, która pobiera jedną kartę
-z wierzchu talii i następnie ją usuwa z kolekcji. Jest również
-operacja służąca do pobrania wielu kart \texttt{draw\_many()}. Próba pobrania karty z pustej talii lub większej
-liczby kart niż liczba dostępnych kart pozostałych w talii powoduje zgłoszenie wyjątku.
-Chciałem, aby takie zachowanie umożliwiało szybkie wykrycie niepoprawnego przebiegu rozdania.
+z~wierzchu talii i~następnie ją usuwa z~kolekcji. Jest również
+operacja służąca do pobrania wielu kart \texttt{draw\_many()}. Próba pobrania karty z~pustej talii lub większej
+liczby kart niż liczba dostępnych kart pozostałych w~talii powoduje zgłoszenie wyjątku.
+Takie zachowanie umożliwia szybkie wykrycie niepoprawnego przebiegu rozdania.
 
-Domyślnie talia jest tasowana bezpośrednio po utworzeniu. Zadbałem o możliwość
-utworzenia talii w konkretnej kolejności początkowej, co bywa użyteczne podczas testowania
+Domyślnie talia jest tasowana bezpośrednio po utworzeniu. Zadbano o~możliwość
+utworzenia talii w~konkretnej kolejności początkowej, co bywa użyteczne podczas testowania
 samego modelu kart.
 
-Aby zapewnić powtarzalność eksperymentów, w klasie \texttt{Deck} zastosowałem możliwość
-przekazania ziarna generatora liczb pseudolosowych. Utworzenie dwóch talii z tym samym
+Aby zapewnić powtarzalność eksperymentów, w~klasie \texttt{Deck} zastosowano możliwość
+przekazania ziarna generatora liczb pseudolosowych. Utworzenie dwóch talii z~tym samym
 ziarnem prowadzi do uzyskania tej samej kolejności kart. Na poziomie klasy \texttt{UTHGame}
-zastosowałem dodatkowo generator nadrzędny, który przy każdym rozpoczęciu nowego rozdania
-generuje osobne ziarno przekazywane do nowej talii. Dzięki temu kolejne rozdania w obrębie
+zastosowano dodatkowo generator nadrzędny, który przy każdym rozpoczęciu nowego rozdania
+generuje osobne ziarno przekazywane do nowej talii. Dzięki temu kolejne rozdania w~obrębie
 jednego eksperymentu różnią się od siebie, ale cała ich sekwencja może zostać odtworzona przez
-ponowne uruchomienie środowiska z tym samym ziarnem początkowym. Jeżeli dwa eksperymenty
-zostaną uruchomione z tym samym ziarnem środowiska i zachowają tę samą kolejność wywołań,
+ponowne uruchomienie środowiska z~tym samym ziarnem początkowym. Jeżeli dwa eksperymenty
+zostaną uruchomione z~tym samym ziarnem środowiska i~zachowają tę samą kolejność wywołań,
 otrzymają identyczne talie, co ogranicza wpływ losowego doboru kart na ocenę różnic
 pomiędzy badanymi strategiami.
 
-\subsection{Abstrakcja źródła kart i talia testowa}
+\subsection{Abstrakcja źródła kart i~talia testowa}
 \label{subsec:zrodlo-kart}
 
 Silnik rozdania nie zależy bezpośrednio od klasy \texttt{Deck}. Zamiast tego
-korzysta z abstrakcji \texttt{CardSource}, która wymaga jedynie udostępnienia
+korzysta z~abstrakcji \texttt{CardSource}, która wymaga jedynie udostępnienia
 operacji \texttt{draw()}. Każdy obiekt spełniający ten kontrakt może zostać
 użyty jako źródło kolejnych kart, dzięki czemu moduł odpowiedzialny za
-rozdawanie nie musi rozpoznawać, czy korzysta z przetasowanej talii, czy
+rozdawanie nie musi rozpoznawać, czy korzysta z~przetasowanej talii, czy
 ze źródła deterministycznego.
 
-Dzięki deterministycznemu źródłu byłem w stanie przygotować powtarzalne testy obejmujące
-określone scenariusze rozgrywki, kwalifikacji krupiera i rozliczenia
-zakładów. Do testowania konkretnych scenariuszy wprowadziłem klasę \texttt{FixedDeck},
+Dzięki deterministycznemu źródłu możliwe było przygotowanie powtarzalnych testów obejmujących
+określone scenariusze rozgrywki, kwalifikacji krupiera i~rozliczenia
+zakładów. Do testowania konkretnych scenariuszy wprowadzono klasę \texttt{FixedDeck},
 która jest jawnie przekazaną sekwencją kart.
 Przed zapisaniem sekwencji sprawdzane jest, czy wszystkie
-jej elementy są poprawnymi obiektami \texttt{Card} oraz czy każda karta jest unikalna, 
-dzięki czemu błąd w danych testowych nie może
-doprowadzić do rozdania zawierającego dwie identyczne karty. 
+jej elementy są poprawnymi obiektami \texttt{Card} oraz czy każda karta jest unikalna,
+dzięki czemu błąd w~danych testowych nie może
+doprowadzić do rozdania zawierającego dwie identyczne karty.
 
 \section{Ocena układów pokerowych}
 \label{sec:ocena-ukladow}
 
 Zadaniem modułu oceny układów pokerowych jest określenie wartości dowolnego
 poprawnego układu pięciokartowego oraz wybranie najlepszej możliwej ręki
-z pięciu, sześciu lub siedmiu dostępnych kart. W finalnej fazie podczas showdownu
-ewaluator jest wywoływany dla gracza i krupiera zawsze na siedmiu kartach. 
+z~pięciu, sześciu lub siedmiu dostępnych kart. W~finalnej fazie, podczas porównania układów,
+ewaluator jest wywoływany dla gracza i~krupiera zawsze na siedmiu kartach.
 Pozostałe dwa warianty wykorzystuje natomiast agent regułowy
-opisany w rozdziale poświęconym agentom bazowym.
+opisany w~rozdziale poświęconym agentom bazowym.
 
 \subsection{Reprezentacja wartości ręki}
 \label{subsec:wartosc-reki}
 
-Do reprezentacji kategorii układów pokerowych podszedłem implementując typ wyliczeniowy \texttt{HandRank}.
+Do reprezentacji kategorii układów pokerowych zaimplementowano typ wyliczeniowy \texttt{HandRank}.
 Kolejnym kategoriom przypisuje rosnące wartości liczbowe od 0 do 8, począwszy od wysokiej karty,
-a kończąc na pokerze. Dzięki temu porównanie kategorii odbywa się wprost 
+a~kończąc na pokerze. Dzięki temu porównanie kategorii odbywa się wprost
 przez porównanie odpowiadających im wartości całkowitych.
 
-Sama kategoria nie wystarcza jednak do rozstrzygnięcia wszystkich przypadków (np. gracz i krupier mogą mieć układy tej samej kategorii, lecz różniące się rangą kart
-tworzących dany układ albo kartami dodatkowymi). Z tego względu pełną wartość ręki
-zaimplementowałem jako obiekt \texttt{HandValue}, zawierający kategorię
+Sama kategoria nie wystarcza jednak do rozstrzygnięcia wszystkich przypadków (np. gracz i~krupier mogą mieć układy tej samej kategorii, lecz różniące się rangą kart
+tworzących dany układ albo kartami dodatkowymi). Z~tego względu pełną wartość ręki
+zaimplementowano jako obiekt \texttt{HandValue}, zawierający kategorię
 układu \texttt{rank} oraz uporządkowaną krotkę wartości rozstrzygających
 remis \texttt{tiebreak}.
 
@@ -120,12 +120,12 @@ Klucz porównawczy ręki można zapisać jako
 
 gdzie \(r(h)\) oznacza wartość kategorii układu, natomiast
 \(t_1(h),\ldots,t_n(h)\) są kolejnymi wartościami rozstrzygającymi remis.
-Klucze porównywane są leksykograficznie. W pierwszej kolejności
-porównywana jest kategoria układu, a dopiero w przypadku jej równości 
+Klucze porównywane są leksykograficznie. W~pierwszej kolejności
+porównywana jest kategoria układu, a~dopiero w~przypadku jej równości
 kolejne elementy krotki \texttt{tiebreak}.
 
-Dla lepszego zobrazowania, wartość pary asów z królem, dziesiątką i dziewiątką jako kartami
-dodatkowymi może zostać zapisana w postaci
+Dla lepszego zobrazowania, wartość pary asów z~królem, dziesiątką i~dziewiątką jako kartami
+dodatkowymi może zostać zapisana w~postaci
 
 \begin{equation}
     K(h) =
@@ -139,45 +139,45 @@ dodatkowymi może zostać zapisana w postaci
 \end{equation}
 
 Jeżeli druga ręka również zawiera parę asów, porównanie przechodzi kolejno
-do króla, dziesiątki i dziewiątki. Kolory kart nie uczestniczą w rozstrzyganiu
+do króla, dziesiątki i~dziewiątki. Kolory kart nie uczestniczą w~rozstrzyganiu
 remisów, zgodnie ze standardowymi zasadami pokera.
 
-Zadbałem, aby obiekt \texttt{HandValue} sprawdzał zgodność długości krotki
-\texttt{tiebreak} z kategorią układu, walidował również, czy wszystkie
+Obiekt \texttt{HandValue} sprawdza zgodność długości krotki
+\texttt{tiebreak} z~kategorią układu oraz waliduje, czy wszystkie
 jej elementy są liczbami całkowitymi odpowiadającymi poprawnym rangom kart.
-W ten sposób ograniczyłem możliwość utworzenia wartości ręki, która nie mogłaby powstać
-w prawidłowym rozdaniu.
+W~ten sposób ograniczono możliwość utworzenia wartości ręki, która nie mogłaby powstać
+w~prawidłowym rozdaniu.
 
 \subsection{Ocena układu pięciokartowego}
 \label{subsec:ocena-pieciu-kart}
 
 Funkcja \texttt{evaluate\_five\_card\_hand()} przyjmuje pięć
-unikalnych kart. W pierwszym kroku funkcja oblicza liczbę wystąpień każdej rangi. Na tej
+unikalnych kart. W~pierwszym kroku funkcja oblicza liczbę wystąpień każdej rangi. Na tej
 podstawie możliwe jest wykrycie par, dwóch par, trójki, fulla oraz karety.
 Niezależnie sprawdzane są dwa warunki: czy wszystkie karty mają ten sam
 kolor oraz czy pięć różnych rang tworzy ciąg kolejnych wartości.
 
 Kategorie sprawdzane są od najsilniejszej do najsłabszej. Jeżeli spełnione
-są jednocześnie warunki strita i koloru, zwracany jest poker. W przeciwnym
+są jednocześnie warunki strita i~koloru, zwracany jest poker. W~przeciwnym
 razie funkcja sprawdza kolejno kareta, full, kolor, strit, trójka, dwie pary,
 jedna para oraz wysoka karta.
 
 Wartość \texttt{tiebreak} jest budowana bezpośrednio podczas rozpoznawania
 kategorii. Wynikiem funkcji nie jest jedynie nazwa układu, lecz kompletna
-wartość umożliwiająca porównanie z dowolną inną poprawną ręką. Szczególnym
-przypadkiem jest strit \(A\)-\(2\)-\(3\)-\(4\)-\(5\), w którym as pełni rolę
-najniższej karty, ewaluator zwraca wtedy strita o najwyższej karcie równej 5,
-bez zmiany wartości asa w pozostałych kategoriach.
+wartość umożliwiająca porównanie z~dowolną inną poprawną ręką. Szczególnym
+przypadkiem jest strit \(A\)-\(2\)-\(3\)-\(4\)-\(5\), w~którym as pełni rolę
+najniższej karty, ewaluator zwraca wtedy strita o~najwyższej karcie równej 5,
+bez zmiany wartości asa w~pozostałych kategoriach.
 
 \subsection{Wybór najlepszej ręki}
 \label{subsec:wybor-najlepszej-reki}
 
-Podczas showdownu gracz i krupier dysponują łącznie siedmioma kartami. 
+Podczas porównania układów gracz i~krupier dysponują łącznie siedmioma kartami.
 Rękę pokerową tworzy dokładnie pięć kart, dlatego funkcja \texttt{evaluate\_best\_hand()}
 generuje wszystkie możliwe pięciokartowe podzbiory dostępnych kart, ocenia
-każdy z nich, a następnie wybiera układ o największej wartości \texttt{HandValue}.
+każdy z~nich, a~następnie wybiera układ o~największej wartości \texttt{HandValue}.
 Generowanie każdego możliwego podzbioru nie jest optymalnym rozwiązaniem,
-jednak liczba kombinacji jest niewielka i stała, co potraktowałem jako kompromis pomiędzy prostotą implementacji a wydajnością.
+jednak liczba kombinacji jest niewielka i~stała, co potraktowano jako kompromis pomiędzy prostotą implementacji a~wydajnością.
 
 Liczba sprawdzanych kombinacji dla \(n\) dostępnych kart wynosi
 
@@ -195,7 +195,7 @@ Dla liczby kart obsługiwanych przez ewaluator jest tyle kombinacji:
     \binom{7}{5} = 21.
 \end{equation}
 
-W przypadku standardowego showdownu UTH konieczne jest zatem sprawdzenie
+W~przypadku standardowego porównania układów w~UTH konieczne jest zatem sprawdzenie
 21 kombinacji dla gracza oraz 21 kombinacji dla krupiera.
 
 Przed wygenerowaniem kombinacji sprawdzane jest, czy przekazano od pięciu
@@ -203,9 +203,8 @@ do siedmiu kart, czy wszystkie elementy są kartami oraz czy żadna karta
 nie występuje więcej niż raz.
 
 Wynikiem operacji jest obiekt \texttt{EvaluatedHand}, który przechowuje
-zarówno wartość \texttt{HandValue}, jak i dokładnie pięć kart tworzących
-wybrany układ. Uznałem to za wygodny sposób prezentacji wyniku showdownu oraz diagnostyki evaluatora.
+zarówno wartość \texttt{HandValue}, jak i~dokładnie pięć kart tworzących
+wybrany układ. Jest to wygodny sposób prezentacji wyniku porównania układów oraz diagnostyki ewaluatora.
 
-Dla najwyższej kategorii, jaką jest poker królewski, nie tworzyłem osobnej kategorii \texttt{HandRank}.
-Rozwinąłem go jako poker z asem jako najwyższą kartą.
-
+Dla najwyższej kategorii, jaką jest poker królewski, nie utworzono osobnej kategorii \texttt{HandRank}.
+Rozwinięto ją jako poker z~asem jako najwyższą kartą.

@@ -1,21 +1,21 @@
 \section{Policy Gradient - REINFORCE}
 \label{sec:policy-gradient-reinforce}
 
-Drugim algorytmem uczenia przez wzmacnianie, który zaimplementowałem,
+Drugim algorytmem uczenia przez wzmacnianie, zaimplementowanym w~tej pracy,
 jest Policy Gradient oparty na metodzie REINFORCE
 \cite{williams_reinforce_1992,sutton_barto_rl}.
-W przeciwieństwie do DQN model nie estymuje wartości poszczególnych
+W~przeciwieństwie do DQN model nie estymuje wartości poszczególnych
 akcji. Sieć neuronowa bezpośrednio definiuje politykę, czyli rozkład
 prawdopodobieństwa akcji dla otrzymanego stanu.
 
 
-\subsection{Sieć polityki i wybór akcji}
+\subsection{Sieć polityki i~wybór akcji}
 
 Sieć polityki \texttt{PolicyNetwork} przyjmuje wektor utworzony przez
 wybrany enkoder stanu. Zatem liczba wejść wynosi albo 373 dla
-RAW, albo 393 dla FEATURES. Zastosowałem dwie warstwy ukryte po
-256 neuronów z funkcją aktywacji ReLU oraz warstwę wyjściową
-o sześciu neuronach odpowiadających wszystkim akcjom.
+RAW, albo 393 dla FEATURES. Zastosowano dwie warstwy ukryte po
+256 neuronów z~funkcją aktywacji ReLU oraz warstwę wyjściową
+o~sześciu neuronach odpowiadających wszystkim akcjom.
 
 \begin{equation}
     d_{\mathrm{state}}
@@ -26,23 +26,23 @@ o sześciu neuronach odpowiadających wszystkim akcjom.
     d_{\mathrm{state}} \in \{373,393\}.
     \label{eq:pg-architecture}
 \end{equation}
-gdzie $d_{\mathrm{state}}$ to wymiar wektora stanu, a 6 to liczba akcji.
+gdzie $d_{\mathrm{state}}$ to wymiar wektora stanu, a~6 to liczba akcji.
 
 Sieć zwraca surowe wartości, czyli logity. Przed utworzeniem rozkładu
-prawdopodobieństwa maskuję akcje niedozwolone w aktualnej fazie
-rozdania. Dla legalnych akcji prawdopodobieństwa wyznaczam za pomocą
+prawdopodobieństwa maskowane są akcje niedozwolone w~aktualnej fazie
+rozdania. Dla legalnych akcji prawdopodobieństwa wyznaczane są za pomocą
 funkcji softmax \cite{goodfellow_deep_learning_2016}.
 
-Zaimplementowałem klasę \texttt{PolicyGradientAgent}, która podczas
-treningu losuje akcję zgodnie z otrzymanym rozkładem, a nie zawsze
+Zaimplementowano klasę \texttt{PolicyGradientAgent}, która podczas
+treningu losuje akcję zgodnie z~otrzymanym rozkładem, a~nie zawsze
 wybiera akcję najbardziej prawdopodobną. Dzięki temu agent od czasu
 do czasu sprawdza również mniej oczywiste decyzje, co pozwala na
 naturalną eksplorację bez potrzeby dodatkowego mechanizmu losowania,
-takiego jak epsilon-greedy w DQN. Podczas ewaluacji zależy mi
-natomiast na jak najlepszej, powtarzalnej decyzji, więc wykorzystuję
-politykę deterministyczną i wybieram legalną akcję o największym
+takiego jak epsilon-greedy w~DQN. Podczas ewaluacji istotna jest
+natomiast jak najlepsza, powtarzalna decyzja, dlatego wykorzystywana jest
+polityka deterministyczna, a~wybierana jest legalna akcja o~największym
 prawdopodobieństwie, czyli argument maksimum (ang. \emph{argmax})
-rozkładu. Cały ten przepływ przedstawiłem na
+rozkładu. Cały ten przepływ przedstawiono na
 rysunku~\ref{fig:policy-action-selection}.
 
 \begin{figure}[htbp]
@@ -60,23 +60,23 @@ rysunku~\ref{fig:policy-action-selection}.
         \draw[-{Latex}, thick] (mask) -- (softmax);
         \draw[-{Latex}, thick] (softmax) -- (dist);
 
-        \node[box, below=12mm of dist, xshift=-20mm, minimum width=28mm] (train) {trening\\losowanie z rozkładu};
+        \node[box, below=12mm of dist, xshift=-20mm, minimum width=28mm] (train) {trening\\losowanie z~rozkładu};
         \node[box, below=12mm of dist, xshift=20mm, minimum width=28mm] (eval) {ewaluacja\\argmax};
 
         \draw[-{Latex}, thick] (dist.south) -- ++(0,-5mm) -| (train.north);
         \draw[-{Latex}, thick] (dist.south) -- ++(0,-5mm) -| (eval.north);
     \end{tikzpicture}
-    \caption{Wybór akcji w Policy Gradient}
+    \caption{Wybór akcji w~Policy Gradient}
     \label{fig:policy-action-selection}
 \end{figure}
 
 \subsection{Uczenie metodą REINFORCE}
 
-Jedno rozdanie Ultimate Texas Hold'em traktuję jako jeden epizod,
-a dla każdej decyzji zapisuję zakodowany stan, wybraną akcję, maskę
-akcji legalnych oraz otrzymaną nagrodę w obiekcie \texttt{PolicyStep},
-z których po zakończeniu epizodu składam kompletną \texttt{Trajectory}.
-Dla każdego kroku wyznaczam wtedy zwrot
+Jedno rozdanie Ultimate Texas Hold'em traktowane jest jako jeden epizod,
+a~dla każdej decyzji zapisywany jest zakodowany stan, wybrana akcja, maska
+akcji legalnych oraz otrzymana nagroda w~obiekcie \texttt{PolicyStep},
+z~których po zakończeniu epizodu składana jest kompletna \texttt{Trajectory}.
+Dla każdego kroku wyznaczany jest wtedy zwrot
 
 \begin{equation}
     G_t =
@@ -84,19 +84,19 @@ Dla każdego kroku wyznaczam wtedy zwrot
     \gamma^{k-t} r_k.
 \end{equation}
 gdzie $G_t$ to zwrot, czyli suma nagród liczona od kroku $t$ do końca
-epizodu, $T$ to liczba kroków w epizodzie, $r_k$ to nagroda otrzymana
-w kroku $k$, a $\gamma$ to współczynnik dyskontowania nagród, omówiony
-już w opisie DQN. Wykładnik $k-t$ rośnie
-wraz z odległością kroku $k$ od kroku $t$, więc nagrody odległe
-w czasie są dyskontowane silniej niż nagrody bliskie.
+epizodu, $T$ to liczba kroków w~epizodzie, $r_k$ to nagroda otrzymana
+w~kroku $k$, a~$\gamma$ to współczynnik dyskontowania nagród, omówiony
+już w~opisie DQN. Wykładnik $k-t$ rośnie
+wraz z~odległością kroku $k$ od kroku $t$, więc nagrody odległe
+w~czasie są dyskontowane silniej niż nagrody bliskie.
 
-W eksperymentach przyjąłem $\gamma = 1$, ponieważ optymalizowanym
+W~eksperymentach przyjęto $\gamma = 1$, ponieważ optymalizowanym
 celem jest wynik finansowy całego rozdania, bez preferowania nagrody
 otrzymanej we wcześniejszym punkcie decyzji.
 
-Parametry polityki aktualizuję za pomocą klasy
-\texttt{ReinforceOptimizer}, zgodnie z klasycznym estymatorem
-REINFORCE \cite{sutton_barto_rl}. Dla batcha zawierającego $B$
+Parametry polityki są aktualizowane za pomocą klasy
+\texttt{ReinforceOptimizer}, zgodnie z~klasycznym estymatorem
+REINFORCE \cite{sutton_barto_rl}. Dla porcji zawierającej $B$
 kompletnych epizodów minimalizowana funkcja straty ma postać
 
 \begin{equation}
@@ -109,8 +109,8 @@ kompletnych epizodów minimalizowana funkcja straty ma postać
     \log
     \pi_\theta(a_{i,t} \mid s_{i,t}).
 \end{equation}
-gdzie $G_{i,t}$ to zwrot w kroku $t$ epizodu $i$, $a_{i,t}$ i $s_{i,t}$
-to odpowiednio akcja i stan w tym kroku, a $\pi_\theta(a_{i,t} \mid
+gdzie $G_{i,t}$ to zwrot w~kroku $t$ epizodu $i$, $a_{i,t}$ i~$s_{i,t}$
+to odpowiednio akcja i~stan w~tym kroku, a~$\pi_\theta(a_{i,t} \mid
 s_{i,t})$ to prawdopodobieństwo wybrania tej akcji przez aktualną
 politykę.
 
@@ -118,7 +118,7 @@ Intuicyjnie ta aktualizacja zwiększa prawdopodobieństwo akcji, które
 doprowadziły do wysokiego zwrotu $G_t$, oraz zmniejsza
 prawdopodobieństwo akcji, po których zwrot był niski lub ujemny.
 Logarytm prawdopodobieństwa wyznacza kierunek zmiany parametrów,
-natomiast wartość i znak $G_t$ decydują o sile tej zmiany.
+natomiast wartość i~znak $G_t$ decydują o~sile tej zmiany.
 
 \begin{figure}[htbp]
     \centering
@@ -150,45 +150,45 @@ natomiast wartość i znak $G_t$ decydują o sile tej zmiany.
         \draw[-{Latex}, dashed] (sT) -- (gT);
 
         \node[below=5mm of g2, xshift=20mm, align=center]
-            {$G_1=G_2=\dots=G_T=r_T$\\(bo $\gamma=1$, a $r_t=0$ dla $t<T$)};
+            {$G_1=G_2=\dots=G_T=r_T$\\(bo $\gamma=1$, a~$r_t=0$ dla $t<T$)};
     \end{tikzpicture}
-    \caption{Zwrot $G_t$ w epizodzie REINFORCE}
+    \caption{Zwrot $G_t$ w~epizodzie REINFORCE}
     \label{fig:reinforce-return}
 \end{figure}
 
-Na rysunku $s_t$ oznacza stan w kroku $t$, $a_t$ podjętą w nim akcję,
-a $r_t$ otrzymaną nagrodę. Ponieważ $r_t=0$ dla każdego kroku poza
-ostatnim, a $\gamma=1$, każdy zwrot $G_t$ sprowadza się do tej samej
+Na rysunku $s_t$ oznacza stan w~kroku $t$, $a_t$ podjętą w~nim akcję,
+a~$r_t$ otrzymaną nagrodę. Ponieważ $r_t=0$ dla każdego kroku poza
+ostatnim, a~$\gamma=1$, każdy zwrot $G_t$ sprowadza się do tej samej
 wartości, czyli końcowego wyniku netto rozdania $r_T=P_{\mathrm{net}}$.
 
-Zwroty obliczam niezależnie dla każdego epizodu, a parametry sieci
-pozostają niezmienione podczas zbierania całego batcha. Dopiero po
-zebraniu 32 rozdań wykonuję jeden krok optymalizatora Adam.
-Takie podejście powinno ograniczyć wariancję aktualizacji w porównaniu
-z wykonywaniem osobnego kroku optymalizacji po każdym rozdaniu.
+Zwroty obliczane są niezależnie dla każdego epizodu, a~parametry sieci
+pozostają niezmienione podczas zbierania całej porcji. Dopiero po
+zebraniu 32 rozdań wykonywany jest jeden krok optymalizatora Adam.
+Takie podejście powinno ograniczyć wariancję aktualizacji w~porównaniu
+z~wykonywaniem osobnego kroku optymalizacji po każdym rozdaniu.
 
-W domyślnej konfiguracji \texttt{PolicyGradientConfig} zastosowałem 
-learning rate równy $0{,}001$, batch size równy 32 oraz warstwy
-ukryte $(256,256)$. Nie stosuję sieci wartości, baseline'u,
-regularyzacji entropii ani normalizacji zwrotów. Pozostawiam w ten
-sposób REINFORCE jako względnie prostą metodę Policy Gradient, którą
-mogę bezpośrednio porównać z DQN.
+W~domyślnej konfiguracji \texttt{PolicyGradientConfig} zastosowano
+learning rate równy $0{,}001$, rozmiar porcji równy 32 oraz warstwy
+ukryte $(256,256)$. Nie stosuje się sieci wartości, punktu odniesienia
+(ang. \emph{baseline}), regularyzacji entropii ani normalizacji zwrotów.
+REINFORCE pozostaje w~ten sposób względnie prostą metodą Policy Gradient,
+którą można bezpośrednio porównać z~DQN.
 
-\subsection{Reprodukowalność i diagnostyka}
+\subsection{Reprodukowalność i~diagnostyka}
 
-Z jednego seeda wyprowadzam osobne, niezależne seedy dla sieci,
-środowiska i losowania akcji. Dzięki temu mogę później powtórzyć
+Z~jednego ziarna wyprowadzane są osobne, niezależne ziarna dla sieci,
+środowiska i~losowania akcji. Dzięki temu można później powtórzyć
 dokładnie ten sam trening, bez obawy, że różne źródła losowości się
 ze sobą pomieszają.
 
-Podczas treningu zapisuję między innymi wynik każdego epizodu, liczbę
-wykonanych kroków, wartość funkcji straty oraz normę gradientu. Dla
-ustalonego zestawu przykładowych stanów śledzę też, jak zmienia się
-rozkład prawdopodobieństwa akcji i jego entropia. Zbieram te dane, ponieważ pomagają mi
-ocenić przebieg uczenia i wychwycić moment, w którym polityka zbyt
+Podczas treningu zapisywany jest między innymi wynik każdego epizodu, liczba
+wykonanych kroków, wartość funkcji straty oraz norma gradientu. Dla
+ustalonego zestawu przykładowych stanów śledzone jest też, jak zmienia się
+rozkład prawdopodobieństwa akcji i~jego entropia. Dane te są zbierane, ponieważ pomagają
+ocenić przebieg uczenia i~wychwycić moment, w~którym polityka zbyt
 szybko zawęża się do jednej, wciąż tej samej akcji.
 
-Wyuczoną sieć zapisuję jako checkpoint razem z konfiguracją treningu,
-wariantem reprezentacji stanu i rodzajem funkcji nagrody, dzięki czemu
-mogę ją później jednoznacznie odtworzyć i wykorzystać podczas
+Wyuczona sieć zapisywana jest jako punkt kontrolny (checkpoint) razem
+z~konfiguracją treningu, wariantem reprezentacji stanu i~rodzajem funkcji nagrody,
+dzięki czemu można ją później jednoznacznie odtworzyć i~wykorzystać podczas
 ewaluacji.

@@ -3,9 +3,9 @@
 
 Problem badawczy tej pracy obejmuje również wybór samego algorytmu
 uczenia przez wzmacnianie, dlatego oprócz wpływu reprezentacji stanu
-i funkcji nagrody analizuję również główny efekt algorytmu. Porównałem
-REINFORCE z DQN przy zachowaniu tej samej reprezentacji stanu, funkcji
-nagrody oraz seedu treningowego. Różnicę zdefiniowałem jako
+i~funkcji nagrody analizowany jest również główny efekt algorytmu. Porównano
+REINFORCE z~DQN przy zachowaniu tej samej reprezentacji stanu, funkcji
+nagrody oraz ziarna treningowego. Różnicę zdefiniowano jako
 
 \begin{equation}
     \Delta EV_{\mathrm{alg}}
@@ -15,11 +15,11 @@ nagrody oraz seedu treningowego. Różnicę zdefiniowałem jako
     EV_{\mathrm{DQN}}.
 \end{equation}
 
-Ze wzoru wynika, że wartość dodatnia oznacza przewagę REINFORCE, a ujemna
-przewagę DQN. Wyniki wszystkich czterech porównań, z 95-procentowym
-przedziałem ufności wyznaczonym z rozkładu $t$-Studenta dla pięciu
-sparowanych seedów (podrozdział~\ref{sec:porownania-sparowane}),
-przedstawiam w tabeli~\ref{tab:algorithm-effect}.
+Ze wzoru wynika, że wartość dodatnia oznacza przewagę REINFORCE, a~ujemna
+przewagę DQN. Wyniki wszystkich czterech porównań, z~95-procentowym
+przedziałem ufności wyznaczonym z~rozkładu $t$-Studenta dla pięciu
+sparowanych ziaren (podrozdział~\ref{sec:porownania-sparowane}),
+przedstawiono w~tabeli~\ref{tab:algorithm-effect}.
 
 \begin{table}[htbp]
     \centering
@@ -44,16 +44,16 @@ przedstawiam w tabeli~\ref{tab:algorithm-effect}.
 
 We wszystkich czterech przypadkach przedział ufności leży całkowicie po
 dodatniej stronie zera, co oznacza statystycznie istotną przewagę
-REINFORCE nad DQN w podstawowym budżecie 50\,000 epizodów, niezależnie
-od zastosowanej reprezentacji stanu i funkcji nagrody. Przewaga ta jest
-jednak wyraźnie mniejsza dla reprezentacji FEATURES (0,0254 i 0,0954)
-niż dla RAW (0,2665 i 0,1878), co jest zgodne z wynikiem
+REINFORCE nad DQN w~podstawowym budżecie 50\,000 epizodów, niezależnie
+od zastosowanej reprezentacji stanu i~funkcji nagrody. Przewaga ta jest
+jednak wyraźnie mniejsza dla reprezentacji FEATURES (0,0254 i~0,0954)
+niż dla RAW (0,2665 i~0,1878), co jest zgodne z~wynikiem
 podrozdziału~\ref{sec:wyniki-reprezentacja-stanu}: reprezentacja
-FEATURES poprawiała wyniki DQN znacznie bardziej konsekwentnie niż
-wyniki REINFORCE, więc różnica między algorytmami zmniejsza się właśnie
-tam, gdzie DQN korzysta z dodatkowych cech domenowych.
+FEATURES poprawiała wyniki DQN w~sposób bardziej spójny niż wyniki
+REINFORCE, więc różnica między algorytmami jest mniej widoczna właśnie
+tam, gdzie DQN korzysta z~dodatkowych cech domenowych.
 
-Te same porównania przedstawiam także na rysunku~\ref{fig:algorithm-effect}.
+Te same porównania przedstawiono także na rysunku~\ref{fig:algorithm-effect}.
 
 \begin{figure}[htbp]
     \centering
@@ -65,11 +65,11 @@ Te same porównania przedstawiam także na rysunku~\ref{fig:algorithm-effect}.
 \end{figure}
 
 Statystycznie istotna przewaga REINFORCE nie oznacza jednak, że jest to
-metoda lepsza pod każdym względem. Jak opisuję w
+metoda lepsza pod każdym względem. Jak opisano w~
 podrozdziale~\ref{sec:wyniki-zachowanie-polityk}, wyższe średnie EV
-REINFORCE było w wielu przebiegach związane z degeneracją polityki do
-jednej, niezależnej od stanu akcji, a wybrana walidacyjnie konfiguracja
-DQN dawała bardziej powtarzalne wyniki między seedami. Poza tym oba
-algorytmy przyjmują nieco inny współczynnik dyskontowania, co opisuję
-jako ograniczenie porównania w rozdziale
-Podsumowanie i dalszy rozwój pracy.
+REINFORCE było w~wielu przebiegach związane z~degeneracją polityki do
+jednej, niezależnej od stanu akcji, a~wybrana walidacyjnie konfiguracja
+DQN dawała bardziej powtarzalne wyniki między ziarnami. Poza tym oba
+algorytmy przyjmują nieco inny współczynnik dyskontowania, co opisano
+jako ograniczenie porównania w~rozdziale
+Podsumowanie i~dalszy rozwój pracy.

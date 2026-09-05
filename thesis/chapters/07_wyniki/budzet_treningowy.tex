@@ -1,23 +1,23 @@
 \section{Wpływ zwiększenia budżetu treningowego}
 \label{sec:wyniki-budzet-treningowy}
 
-Po zakończeniu podstawowych eksperymentów rozszerzyłem trening dwóch
+Po zakończeniu podstawowych eksperymentów rozszerzono trening dwóch
 konfiguracji wybranych na podstawie wyników walidacyjnych. Dla DQN
-była to konfiguracja FEATURES z nagrodą opartą na zysku netto,
+była to konfiguracja FEATURES z~nagrodą opartą na zysku netto,
 natomiast dla REINFORCE konfiguracja FEATURES ze skalowaną funkcją
-nagrody. Dla obu konfiguracji uruchomiłem te same seedy z budżetem
+nagrody. Dla obu konfiguracji uruchomiono te same ziarna z~budżetem
 100\,000 epizodów. Pierwsze 50\,000 epizodów odtworzyło się przy tym
-deterministycznie, co sprawdziłem, porównując punkty walidacyjne
-z podstawowego przebiegu, więc wynik do 100\,000 epizodów można
+deterministycznie, co sprawdzono, porównując punkty walidacyjne
+z~podstawowego przebiegu, więc wynik do 100\,000 epizodów można
 traktować jako przedłużenie tej samej trajektorii treningowej.
 
-Przebieg walidacyjnego EV uśredniony po pięciu seedach przedstawiam
+Przebieg walidacyjnego EV uśredniony po pięciu ziarnach przedstawiono
 na rysunku~\ref{fig:extended-learning-curves}. Na osi poziomej
-znajduje się liczba epizodów treningowych do 100\,000, a na osi
+znajduje się liczba epizodów treningowych do 100\,000, a~na osi
 pionowej walidacyjne EV, linia pionowa oznacza podstawowy budżet
 50\,000 epizodów. Dla DQN wartość końcowa po 100\,000 epizodach jest wyższa niż po
-50\,000, mimo lokalnych wahań w trakcie dalszego treningu. Dla
-REINFORCE średnia też rośnie, ale trajektorie poszczególnych seedów
+50\,000, mimo lokalnych wahań w~trakcie dalszego treningu. Dla
+REINFORCE średnia też rośnie, ale trajektorie poszczególnych ziaren
 różnią się od siebie znacznie bardziej.
 
 \begin{figure}[htbp]
@@ -26,35 +26,35 @@ różnią się od siebie znacznie bardziej.
         width=\textwidth
     ]{../experiments/results/final_analysis/06_extended_learning_curves.pdf}
     \caption{Przebieg walidacyjnego EV wybranych konfiguracji DQN
-    i REINFORCE do 100\,000 epizodów}
+    i~REINFORCE do 100\,000 epizodów}
     \label{fig:extended-learning-curves}
 \end{figure}
 
 Uśredniona krzywa nie pokazuje jednak, czy poprawa dotyczy wszystkich
-seedów w podobnym stopniu. Trajektorie poszczególnych przebiegów
-przedstawiam na rysunku~\ref{fig:extended-training-per-seed}, z tymi
-samymi osiami co powyżej, dodatkowo z rozbiciem na pięć kolorów
-odpowiadających poszczególnym seedom oraz naniesioną krzywą średnią.
+ziaren w~podobnym stopniu. Trajektorie poszczególnych przebiegów
+przedstawiono na rysunku~\ref{fig:extended-training-per-seed}, z~tymi
+samymi osiami co powyżej, dodatkowo z~rozbiciem na pięć kolorów
+odpowiadających poszczególnym ziarnom oraz naniesioną krzywą średnią.
 Dla REINFORCE widoczna jest też płaska trajektoria odpowiadająca
 zdegenerowanym przebiegom. Część linii może się przy tym nakładać,
 ponieważ identyczna, deterministyczna polityka oceniana na tym samym
 harmonogramie daje identyczny wynik. Jest to zgodne ze zjawiskiem
-degeneracji polityki do jednej, niezależnej od stanu akcji, które
-opisuję szerzej w sekcji~\ref{sec:wyniki-zachowanie-polityk}.
+degeneracji polityki do jednej, niezależnej od stanu akcji, opisanym
+szerzej w~sekcji~\ref{sec:wyniki-zachowanie-polityk}.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[
         width=0.75\textwidth
     ]{../experiments/results/final_analysis/10_extended_training_per_seed.pdf}
-    \caption{Trajektorie walidacyjnego EV dla pięciu seedów
-    wybranych konfiguracji DQN i REINFORCE}
+    \caption{Trajektorie walidacyjnego EV dla pięciu ziaren
+    wybranych konfiguracji DQN i~REINFORCE}
     \label{fig:extended-training-per-seed}
 \end{figure}
 
 Dla DQN wydłużenie treningu prowadziło do stosunkowo spójnej poprawy.
-W końcowej ewaluacji na wspólnych 100\,000 rozdaniach średnie EV
-pięciu modeli wzrosło z $-0{,}4076$ po 50\,000 epizodów do
+W~końcowej ewaluacji na wspólnych 100\,000 rozdaniach średnie EV
+pięciu modeli wzrosło z~$-0{,}4076$ po 50\,000 epizodów do
 $-0{,}3859$ po 100\,000 epizodów. Średnia sparowana poprawa wyniosła
 
 \begin{equation}
@@ -63,33 +63,33 @@ $-0{,}3859$ po 100\,000 epizodów. Średnia sparowana poprawa wyniosła
     0{,}0217,
 \end{equation}
 
-a 95-procentowy przedział ufności po pięciu seedach był równy
+a~95-procentowy przedział ufności po pięciu ziarnach był równy
 $[0{,}0022,\ 0{,}0412]$.
 
-Co istotne, poprawę końcowego EV zaobserwowałem dla wszystkich pięciu
-seedów wybranej konfiguracji DQN. Nie oznacza to monotonicznej poprawy na każdym etapie
+Co istotne, poprawę końcowego EV zaobserwowano dla wszystkich pięciu
+ziaren wybranej konfiguracji DQN. Nie oznacza to monotonicznej poprawy na każdym etapie
 treningu, co widać na krzywych walidacyjnych, ale rezultat po
-100\,000 epizodów był dla każdego seedu lepszy niż wynik odpowiadającego
+100\,000 epizodów był dla każdego ziarna lepszy niż wynik odpowiadającego
 mu modelu po 50\,000 epizodów.
 
-Dla REINFORCE średnie EV wzrosło z $-0{,}3211$ do $-0{,}2943$.
-Średnia różnica wyniosła $0{,}0268$, a więc punktowo była nawet
+Dla REINFORCE średnie EV wzrosło z~$-0{,}3211$ do $-0{,}2943$.
+Średnia różnica wyniosła $0{,}0268$, a~więc punktowo była nawet
 większa niż dla DQN. Jej 95-procentowy przedział ufności był jednak
-równy $[-0{,}0362,\ 0{,}0898]$ i obejmował zero.
+równy $[-0{,}0362,\ 0{,}0898]$ i~obejmował zero.
 
 Wynik ten był konsekwencją dużego zróżnicowania zmian pomiędzy
-poszczególnymi seedami. Niektóre przebiegi REINFORCE poprawiły się
+poszczególnymi ziarnami. Niektóre przebiegi REINFORCE poprawiły się
 znacznie, podczas gdy inne praktycznie nie zmieniły zachowania lub
 uzyskały nieznacznie gorszy wynik. Wydłużenie treningu poprawiło więc
 średni rezultat tej konfiguracji, ale nie usunęło problemu
 niestabilności procesu uczenia.
 
-Wyniki rozszerzenia budżetu podsumowuję w
+Wyniki rozszerzenia budżetu podsumowano w~
 tabeli~\ref{tab:extended-training-results}.
 
 \begin{table}[htbp]
     \centering
-    \caption{Wpływ zwiększenia budżetu treningowego z 50\,000 do
+    \caption{Wpływ zwiększenia budżetu treningowego z~50\,000 do
     100\,000 epizodów dla wybranej konfiguracji FEATURES każdego
     algorytmu}
     \label{tab:extended-training-results}
@@ -111,4 +111,4 @@ tabeli~\ref{tab:extended-training-results}.
     \end{tabular}
 \end{table}
 
-Rozszerzony eksperyment traktuję jako analizę uzupełniającą.
+Rozszerzony eksperyment jest traktowany jako analiza uzupełniająca.

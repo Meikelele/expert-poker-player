@@ -1,15 +1,15 @@
 \chapter{Metody uczenia przez wzmacnianie}
 \label{chap:metody-rl}
 
-W tym rozdziale przedstawiam elementy uczenia przez
-wzmacnianie, które bezpośrednio wykorzystuję w eksperymentach.
-Opisuję w nim, w jaki sposób przekształcam obserwacje do reprezentacji numerycznej
-oraz definiuję sygnał nagrody.
+W~tym rozdziale przedstawiono elementy uczenia przez
+wzmacnianie, wykorzystywane bezpośrednio w~eksperymentach.
+Opisano w~nim, w~jaki sposób przekształcane są obserwacje do reprezentacji numerycznej
+oraz definiowany jest sygnał nagrody.
 
-Dalej w rozdziale opisuję najpierw dwa elementy wspólne dla
+Dalej w~rozdziale opisano najpierw dwa elementy wspólne dla
 obu zastosowanych algorytmów, czyli sposób kodowania stanu oraz
-funkcję nagrody, a następnie same algorytmy, mianowicie Deep Q-Network oraz
-Policy Gradient oparty na metodzie REINFORCE. Rozdział kończę krótkim
+funkcję nagrody, a~następnie same algorytmy, mianowicie Deep Q-Network oraz
+Policy Gradient oparty na metodzie REINFORCE. Rozdział kończy się krótkim
 zestawieniem różnic pomiędzy tymi dwoma podejściami.
 
 \input{chapters/05_metody_rl/reprezentacja_stanu}
@@ -20,34 +20,34 @@ zestawieniem różnic pomiędzy tymi dwoma podejściami.
 \section{Porównanie podejść}
 \label{sec:porownanie-dqn-pg}
 
-DQN uczy się przybliżonej wartości $Q$ dla każdej pary stanu i akcji,
-a decyzję podejmuje pośrednio, wybierając akcję o najwyższej ocenionej
+DQN uczy się przybliżonej wartości $Q$ dla każdej pary stanu i~akcji,
+a~decyzję podejmuje pośrednio, wybierając akcję o~najwyższej ocenionej
 wartości. Policy Gradient nie szacuje wartości poszczególnych akcji,
 tylko uczy się wprost rozkładu prawdopodobieństwa ich wyboru, więc
-decyzja wynika bezpośrednio z wyjścia sieci polityki.
+decyzja wynika bezpośrednio z~wyjścia sieci polityki.
 
 Różnica ta wpływa też na to, skąd bierze się cel każdej aktualizacji.
 DQN nie czeka na koniec rozdania, tylko szacuje cel na podstawie
-wartości ocenionej przez sieć docelową dla następnego stanu. Taką
-technikę nazywa się bootstrappingiem (ang. \emph{bootstrapping}).
-Wartość jednego stanu wyznacza się w niej na podstawie oszacowanej
-wartości stanu następnego, a nie na podstawie faktycznego wyniku
+wartości ocenionej przez sieć docelową dla następnego stanu — technikę
+tę określa się mianem \emph{bootstrappingu}.
+Wartość jednego stanu wyznacza się w~niej na podstawie oszacowanej
+wartości stanu następnego, a~nie na podstawie faktycznego wyniku
 całego epizodu \cite{sutton_barto_rl}. REINFORCE działa inaczej, czeka,
-aż rozdanie się zakończy, i aktualizuje politykę na podstawie
-faktycznie otrzymanego wyniku netto, czyli zwrotu $G_t$ z
+aż rozdanie się zakończy, i~aktualizuje politykę na podstawie
+faktycznie otrzymanego wyniku netto, czyli zwrotu $G_t$ z~
 rysunku~\ref{fig:reinforce-return}.
 
 Ta różnica wpływa również na sposób wykorzystania zebranych danych.
-Ocena wartości akcji w DQN nie zależy od tego, jaka polityka aktualnie
+Ocena wartości akcji w~DQN nie zależy od tego, jaka polityka aktualnie
 tę akcję wybiera.
 Estymator REINFORCE zakłada natomiast, że dany epizod pochodzi
-z polityki właśnie aktualizowanej, dlatego każdy zebrany batch
-epizodów wykorzystuję tylko do jednej aktualizacji, a potem odrzucam.
+z~polityki właśnie aktualizowanej, dlatego każda zebrana porcja
+epizodów jest wykorzystywana tylko do jednej aktualizacji, a~następnie odrzucana.
 
 Odmiennie wygląda też eksploracja. DQN wymaga osobnego mechanizmu
 epsilon-greedy, ponieważ sama sieć $Q$ zwraca deterministyczną ocenę
-wartości. W Policy Gradient eksploracja wynika naturalnie ze
-stochastycznego charakteru wyuczonej polityki. Te różnice przedstawiłem na rysunku~\ref{fig:training-rhythm}.
+wartości. W~Policy Gradient eksploracja wynika naturalnie ze
+stochastycznego charakteru wyuczonej polityki. Te różnice przedstawiono na rysunku~\ref{fig:training-rhythm}.
 
 \begin{figure}[htbp]
     \centering
@@ -55,10 +55,10 @@ stochastycznego charakteru wyuczonej polityki. Te różnice przedstawiłem na ry
         every node/.style={font=\small},
         box/.style={draw, rounded corners, align=center, minimum width=34mm, minimum height=9mm}
     ]
-        \node[box, very thick] (dqn1) at (0,36mm) {krok w środowisku};
+        \node[box, very thick] (dqn1) at (0,36mm) {krok w~środowisku};
         \node[box] (dqn2) at (0,24mm) {bufor doświadczeń};
         \node[box] (dqn3) at (0,12mm) {minibatch};
-        \node[box] (dqn4) at (0,0mm) {bootstrap z sieci docelowej};
+        \node[box] (dqn4) at (0,0mm) {bootstrap z~sieci docelowej};
         \node[box, very thick] (dqn5) at (0,-12mm) {aktualizacja};
 
         \draw[-{Latex}] (dqn1) -- (dqn2);
@@ -71,35 +71,35 @@ stochastycznego charakteru wyuczonej polityki. Te różnice przedstawiłem na ry
         \node[above=4mm of dqn1] {\textbf{DQN}};
 
         \node[box, very thick] (pg1) at (62mm,36mm) {pełny epizod};
-        \node[box] (pg2) at (62mm,24mm) {batch 32 epizodów};
+        \node[box] (pg2) at (62mm,24mm) {porcja 32 epizodów};
         \node[box] (pg3) at (62mm,12mm) {prawdziwy zwrot $G_t$};
         \node[box, very thick] (pg4) at (62mm,0mm) {jedna aktualizacja};
-        \node[box] (pg5) at (62mm,-12mm) {batch wyrzucony};
+        \node[box] (pg5) at (62mm,-12mm) {porcja odrzucona};
 
         \draw[-{Latex}] (pg1) -- (pg2);
         \draw[-{Latex}] (pg2) -- (pg3);
         \draw[-{Latex}] (pg3) -- (pg4);
         \draw[-{Latex}] (pg4) -- (pg5);
         \draw[-{Latex}] (pg5.east) -- ++(12mm,0) |- (pg1.east)
-            node[midway, right=1mm, align=left] {powtórz\\co batch};
+            node[midway, right=1mm, align=left] {powtórz\\co porcję};
 
         \node[above=4mm of pg1] {\textbf{REINFORCE}};
     \end{tikzpicture}
     \caption{DQN aktualizuje sieć na
-    bieżąco, ponownie wykorzystując stare przejścia z bufora.
-    REINFORCE zbiera cały batch epizodów z aktualnej polityki
-    i wykorzystuje go tylko raz}
+    bieżąco, ponownie wykorzystując stare przejścia z~bufora.
+    REINFORCE zbiera całą porcję epizodów z~aktualnej polityki
+    i~wykorzystuje go tylko raz}
     \label{fig:training-rhythm}
 \end{figure}
 
 Zestawienie wszystkich hiperparametrów użytych do treningu obu algorytmów
-w podstawowym budżecie 50\,000 epizodów przedstawiam w
+w~podstawowym budżecie 50\,000 epizodów przedstawiono w~
 tabeli~\ref{tab:hiperparametry-dqn-reinforce}.
 
 \begin{table}[htbp]
 \centering
 \small
-\caption{Hiperparametry treningu DQN i REINFORCE}
+\caption{Hiperparametry treningu DQN i~REINFORCE}
 \label{tab:hiperparametry-dqn-reinforce}
 \begin{tabular}{
     @{}>{\raggedright\arraybackslash}p{0.33\textwidth}
@@ -124,8 +124,8 @@ Liczba parametrów (RAW / FEATURES) & 163\,078 / 168\,198 & 163\,078 / 168\,198 
 \end{tabular}
 \end{table}
 
-Obie sieci mają identyczną architekturę i liczbę parametrów, ponieważ
-korzystają z tego samego kształtu wejścia i wyjścia. Nie
-stosuję gradient clippingu w żadnym z algorytmów, a normę gradientu
-jedynie rejestruję do celów diagnostycznych, nie ograniczam jej podczas
+Obie sieci mają identyczną architekturę i~liczbę parametrów, ponieważ
+korzystają z~tego samego kształtu wejścia i~wyjścia. Gradient clipping
+nie jest stosowany w~żadnym z~algorytmów, a~norma gradientu
+jest jedynie rejestrowana do celów diagnostycznych, bez ograniczania jej podczas
 treningu.

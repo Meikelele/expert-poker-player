@@ -1,7 +1,7 @@
 \section{Interfejs silnika}
 \label{sec:interfejs-silnika}
 
-Silnik domenowy zaimplementowałem w taki sposób, aby udostępniał niewielki interfejs publiczny, za pomocą którego
+Silnik domenowy zaimplementowano w~taki sposób, aby udostępniał niewielki interfejs publiczny, za pomocą którego
 można rozpocząć rozdanie, pobrać obserwację, wykonać decyzję oraz odczytać wynik
 zakończonego epizodu. Interfejs nie zależy od konkretnego algorytmu
 uczenia, co czyni go dość uniwersalnym rozwiązaniem do wykorzystania przy różnych eksperymentach.
@@ -11,66 +11,66 @@ przechowuje stan aktualnego rozdania, źródło kart oraz opcjonalną historię
 decyzji. Po zakończeniu rozdania ta sama instancja może zostać wykorzystana
 ponownie przez wywołanie metody \texttt{reset()}.
 
-\subsection{Tworzenie silnika i rozpoczęcie epizodu}
+\subsection{Tworzenie silnika i~rozpoczęcie epizodu}
 \label{subsec:tworzenie-silnika}
 
 Konstruktor klasy \texttt{UTHGame} przyjmuje dwa opcjonalne parametry:
 \texttt{seed} oraz \texttt{record\_history}.
 
 Ziarno (ang. \emph{seed}) określa powtarzalny strumień
-kart w talii generowanych dla kolejnych rozdawań, nie ustala jednak pojedynczej,
+kart w~talii generowanych dla kolejnych rozdawań, nie ustala jednak pojedynczej,
 niezmiennej talii dla całej instancji. Rejestrowanie historii jest
 domyślnie wyłączone, służy ono do zbierania dodatkowych obiektów diagnostycznych.
 
 Każde nowe rozdanie rozpoczyna się właśnie wywołaniem metody \texttt{reset()}, które zwraca pierwszą obserwację
-w fazie \texttt{PREFLOP}. W standardowym użyciu środowisko samodzielnie
+w~fazie \texttt{PREFLOP}. W~standardowym użyciu środowisko samodzielnie
 tworzy przetasowaną talię. Metoda umożliwia również przekazanie własnego
 obiektu implementującego interfejs \texttt{CardSource}, na przykład
 deterministycznej talii \texttt{FixedDeck}.
 
-Rozpoczęcie rozdania rozumiem jako wybór lub utworzenie źródła kart, rozdanie po
-dwie karty graczowi i krupierowi, utworzenie stanu \texttt{PREFLOP},
+Przez rozpoczęcie rozdania rozumie się wybór lub utworzenie źródła kart, rozdanie po
+dwie karty graczowi i~krupierowi, utworzenie stanu \texttt{PREFLOP},
 wyzerowanie historii bieżącego rozdania oraz utworzenie pierwszej obserwacji.
 Reset jest wykonywany transakcyjnie, silnik najpierw spróbuje pobrać wszystkie
-karty potrzebne do utworzenia stanu początkowego, a dopiero po powodzeniu
-zapisuje nowy stan i źródło kart. Jeżeli przekazane źródło nie może dostarczyć
+karty potrzebne do utworzenia stanu początkowego, a~dopiero po pozytywnym zakończeniu tego etapu
+zapisuje nowy stan i~źródło kart. Jeżeli przekazane źródło nie może dostarczyć
 wymaganych kart, poprzedni stan silnika nie zostaje zastąpiony stanem
 częściowo utworzonego rozdania.
 
 \subsection{Wykonanie decyzji}
 \label{subsec:interfejs-step}
 
-Zaprojektowałem metodę \texttt{step()} tak, aby przyjmowała jedną wartość typu \texttt{Action},
-wykonała jej odpowiadające przejście i zwracała obiekt \texttt{StepResult},
+Metodę \texttt{step()} zaprojektowano tak, aby przyjmowała jedną wartość typu \texttt{Action},
+wykonała jej odpowiadające przejście i~zwracała obiekt \texttt{StepResult},
 zawierający:
 
 \begin{itemize}
     \item obserwację po wykonaniu akcji,
     \item wynik rozdania (jeśli osiągnięto stan terminalny),
-    \item rozliczenie zakładów w stanie terminalnym,
-    \item szczegóły showdownu (jeśli gracz nie spasował).
+    \item rozliczenie zakładów w~stanie terminalnym,
+    \item szczegóły porównania układów (jeśli gracz nie spasował).
 \end{itemize}
 
 Wynik metody \texttt{step()} kroku pośredniego zawiera jedynie kolejną obserwację. Pola dotyczące
-wyniku i rozliczenia pozostają wtedy nieokreślone. W kroku terminalnym
+wyniku i~rozliczenia pozostają wtedy nieokreślone. W~kroku terminalnym
 obiekt zawiera informacje niezbędne do obliczenia nagrody
-i zarejestrowania wyniku eksperymentu.
+i~zarejestrowania wyniku eksperymentu.
 
 Właściwość \texttt{terminated} obiektu \texttt{StepResult} informuje,
 czy wykonana akcja zakończyła rozdanie. Jej wartość jest wyznaczana na
-podstawie fazy, która wchodzi w skład obserwacji.
+podstawie fazy, która wchodzi w~skład obserwacji.
 
-Choć zbiór legalnych akcji jest wyznaczany przez środowisko i umieszczany
-w obserwacji, metoda \texttt{step()} nie ufa bezkrytycznie przekazanej decyzji. 
+Choć zbiór legalnych akcji jest wyznaczany przez środowisko i~umieszczany
+w~obserwacji, metoda \texttt{step()} nie ufa bezkrytycznie przekazanej decyzji.
 Każda akcja jest walidowana ponownie przed jakąkolwiek zmianą stanu. Walidacja następuje przed
-dobieraniem kart, więc odrzucona decyzja nie zużywa kart z talii, nie zmienia fazy
-i nie jest dodawana do historii.
+dobieraniem kart, więc odrzucona decyzja nie zużywa kart z~talii, nie zmienia fazy
+i~nie jest dodawana do historii.
 
 \subsection{Właściwości publiczne}
 \label{subsec:wlasciwosci-publiczne}
 
-Poza metodami \texttt{reset()} i \texttt{step()} silnik udostępnia
-właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
+Poza metodami \texttt{reset()} i~\texttt{step()} silnik udostępnia
+właściwości przedstawione w~tabeli~\ref{tab:interfejs-uth-game}.
 
 \begin{table}[htbp]
     \centering
@@ -94,7 +94,7 @@ właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
         &
         \texttt{UTHObservation}
         &
-        Rozpoczyna nowe rozdanie i zwraca obserwację preflop.
+        Rozpoczyna nowe rozdanie i~zwraca obserwację preflop.
         \\
         \hline
 
@@ -102,7 +102,7 @@ właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
         &
         \texttt{StepResult}
         &
-        Wykonuje legalną akcję i zwraca wynik przejścia.
+        Wykonuje legalną akcję i~zwraca wynik przejścia.
         \\
         \hline
 
@@ -119,7 +119,7 @@ właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
         \texttt{RoundState}
         &
         Zwraca pełny stan wewnętrzny, przeznaczony głównie do testów
-        i diagnostyki.
+        i~diagnostyki.
         \\
         \hline
 
@@ -150,40 +150,40 @@ właściwości przedstawione w tabeli~\ref{tab:interfejs-uth-game}.
 \end{table}
 
 Właściwość \texttt{state} nie jest częścią interfejsu przeznaczonego
-do podejmowania decyzji przez agenta. Udostępniłem ją jedynie do celów testowych
-i diagnostycznych. Agent otrzymuje
+do podejmowania decyzji przez agenta. Udostępniono ją jedynie do celów testowych
+i~diagnostycznych. Agent otrzymuje
 wartość właściwości \texttt{observation} albo obserwację zwróconą przez
 \texttt{reset()} lub \texttt{step()}.
 
-\section{Rejestrowanie przebiegu i walidacja środowiska}
+\section{Rejestrowanie przebiegu i~walidacja środowiska}
 \label{sec:rejestrowanie-i-walidacja}
 
-Bardzo ważnym elementem projektu środowiska jest pokrycie jego implementacji testami, 
-ponieważ potencjalne niedopatrzenia na etapie implementacji, skrajne przypadki, błędy w logice 
+Bardzo ważnym elementem projektu środowiska jest pokrycie jego implementacji testami,
+ponieważ potencjalne niedopatrzenia na etapie implementacji, skrajne przypadki, błędy w~logice
 bezpośrednio rzutują na wyniki eksperymentów, co może doprowadzić do nieefektywnego uczenia się agentów.
-Aby zapobiec takiemu scenariuszowi, dużą uwagę poświęciłem testom jednostkowym i integracyjnym, 
-wprowadziłem opcjonalny mechanizm rejestrowania przebiegu rozdania oraz wzbogaciłem testy o weryfikację całych komponentów jak i ścieżek rozgrywki.
+Aby zapobiec takiemu scenariuszowi, poświęcono dużą uwagę testom jednostkowym i~integracyjnym,
+wprowadzono opcjonalny mechanizm rejestrowania przebiegu rozdania oraz wzbogacono testy o~weryfikację zarówno całych komponentów, jak i~ścieżek rozgrywki.
 
-\subsection{Rejestrowanie historii i jej rekordy}
+\subsection{Rejestrowanie historii i~jej rekordy}
 \label{subsec:rekordy-historii}
 
 Rejestrowanie historii jest aktywowane parametrem
 \texttt{record\_history} przekazywanym podczas tworzenia obiektu
 \texttt{UTHGame}. Domyślnie mechanizm ten pozostaje wyłączony, aby podczas uczenia
-nie generować dodatkowych obiektów diagnostycznych, które nie są potrzebne agentowi i zajmują pamięć oraz czas.
+nie generować dodatkowych obiektów diagnostycznych, które nie są potrzebne agentowi i~zajmują pamięć oraz czas.
 Po jego włączeniu każde poprawnie rozpoczęte rozdanie otrzymuje dodatni, rosnący
-identyfikator \texttt{round\_id}, a lista decyzji jest zerowana przy każdym poprawnym
+identyfikator \texttt{round\_id}, a~lista decyzji jest zerowana przy każdym poprawnym
 wywołaniu metody \texttt{reset()}. Właściwość \texttt{trace} zwraca obiekt
 \texttt{RoundTrace}. Jeżeli historia jest wyłączona albo nie rozpoczęto jeszcze
 rozdania, jej wartością jest \texttt{None}. Mechanizm ten nie stanowi pamięci agenta
-i nie jest częścią obserwacji. Wykorzystuję go do odtwarzania przebiegu wybranych
-rozdań w celu weryfikacji zgodności decyzji agenta z legalną przestrzenią akcji.
+i~nie jest częścią obserwacji. Wykorzystywany jest do odtwarzania przebiegu wybranych
+rozdań w~celu weryfikacji zgodności decyzji agenta z~legalną przestrzenią akcji.
 
 Niemutowalny obiekt \texttt{DecisionRecord} przechowuje pojedynczą decyzję agenta:
 obserwację dostępną agentowi przed
 wykonaniem decyzji oraz wybraną akcję. Argumentem za zapisywaniem obserwacji sprzed przejścia
-jest to, że chciałem zachować informację, dla jakiej obserwacji agent podjął konkretną decyzję,
-zapisywanie obserwacji po wykonaniu akcji byłoby w mojej ocenie niejednoznaczne, 
+jest chęć zachowania informacji, dla jakiej obserwacji agent podjął konkretną decyzję.
+Zapisywanie obserwacji po wykonaniu akcji byłoby niejednoznaczne,
 ponieważ taki stan zawierałby informacje już odkrytych kart, które mogłyby być skutkiem wykonanej akcji.
 Podczas tworzenia rekordu
 sprawdzane jest, czy akcja należy do zbioru
@@ -191,40 +191,40 @@ legalnego dla tej obserwacji.
 
 Cały przebieg rozdania opisuje niemodyfikowalny obiekt \texttt{RoundTrace}, który
 zawiera identyfikator rozdania, uporządkowaną krotkę rekordów decyzji oraz
-aktualny pełny stan \texttt{RoundState}. Obserwacje w rekordach zawierają
+aktualny pełny stan \texttt{RoundState}. Obserwacje w~rekordach zawierają
 wyłącznie informacje dostępne agentowi, natomiast końcowy stan jest pełnym
-obiektem diagnostycznym, z tego powodu \texttt{RoundTrace} nie jest
+obiektem diagnostycznym, z~tego powodu \texttt{RoundTrace} nie jest
 przekazywany agentowi, lecz służy testom.
 
 Zapis historii jest transakcyjny. Metoda \texttt{step()} zapamiętuje bieżącą
-obserwację, wykonuje walidację i przejście, a rekord dodaje dopiero po
+obserwację, wykonuje walidację i~przejście, a~rekord dodaje dopiero po
 utworzeniu poprawnego kolejnego stanu. Jeżeli walidacja lub odkrywanie kart
 zakończy się wyjątkiem, rekord nie powstaje, więc historia nie zawiera akcji
 nielegalnych, decyzji po zakończeniu rozdania ani niedokończonych przejść.
-Podobny cel mi przyświecał przy metodzie \texttt{reset()}, która zapisuje nowy stan
+Podobny cel przyświecał metodzie \texttt{reset()}, która zapisuje nowy stan
 dopiero po rozdaniu wszystkich czterech kart początkowych.
 
 \subsection{Poziomy testowania}
 \label{subsec:poziomy-testowania}
 
-Wspominałem, że testy są kluczowe, dlatego uporządkowałem je według odpowiedzialności komponentów.
+Testy są kluczowe, dlatego uporządkowano je według odpowiedzialności komponentów.
 Testy jednostkowe
-sprawdzają w izolacji model kart i talię, ewaluator, modele stanu,
-rozdawanie, legalność akcji, showdown oraz rozliczenia. Testy integracyjne z kolei 
+sprawdzają w~izolacji model kart i~talię, ewaluator, modele stanu,
+rozdawanie, legalność akcji, porównanie układów oraz rozliczenia. Testy integracyjne z~kolei
 wykonują kompletne rozdania obejmujące wszystkie ścieżki maszyny stanów, od
-\texttt{reset()} do stanu terminalnego, wraz z rejestrowaniem historii.
+\texttt{reset()} do stanu terminalnego, wraz z~rejestrowaniem historii.
 
 Testy weryfikują również między innymi brak powtarzających się kart,
-zgodność liczby kart wspólnych i spalonych z fazą, brak danych terminalnych
-w stanie pośrednim, brak showdownu po spasowaniu, wykonanie co najwyżej
-jednego zakładu Play, brak kart krupiera i kart spalonych w obserwacji oraz
+zgodność liczby kart wspólnych i~spalonych z~fazą, brak danych terminalnych
+w~stanie pośrednim, brak porównania układów po spasowaniu, wykonanie co najwyżej
+jednego zakładu Play, brak kart krupiera i~kart spalonych w~obserwacji oraz
 brak zmiany stanu po odrzuconej akcji. Walidacja obejmuje także
-przypadki brzegowe i próby utworzenia stanów naruszających reguły domenowe.
+przypadki brzegowe i~próby utworzenia stanów naruszających reguły domenowe.
 
-W przypadku realizacji testów postawiłem na bibliotekę \texttt{pytest}.
-Podczas prac nad silnikiem analizowałem na bieżąco zarówno pokrycie instrukcji, jak
-i pokrycie rozgałęzień. Pozwoliło mi to wykryć nieprzetestowane ścieżki
+Do realizacji testów wykorzystano bibliotekę \texttt{pytest}.
+Podczas prac nad silnikiem analizowano na bieżąco zarówno pokrycie instrukcji, jak
+i~pokrycie rozgałęzień. Pozwoliło to wykryć nieprzetestowane ścieżki
 walidacji oraz przypadki brzegowe ewaluatora.
 
-Kod źródłowy środowiska, agentów i skryptów eksperymentalnych udostępniam
-w repozytorium \url{https://github.com/Meikelele/expert-poker-player}.
+Kod źródłowy środowiska, agentów i~skryptów eksperymentalnych udostępniono
+w~repozytorium \url{https://github.com/Meikelele/expert-poker-player}.

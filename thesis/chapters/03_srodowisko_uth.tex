@@ -1,18 +1,18 @@
-\chapter{Projekt i implementacja środowiska Ultimate Texas Hold’em}
+\chapter{Projekt i~implementacja środowiska Ultimate Texas Hold’em}
 \label{chap:srodowisko-uth}
 
-W niniejszym rozdziale przedstawiam projekt oraz implementację środowiska
-Ultimate Texas Hold’em wykorzystywanego w dalszej części pracy do uczenia
-i oceny agentów. Wcześniej opisane zasady gry odwzorowałem w postaci silnika
+W~niniejszym rozdziale przedstawiono projekt oraz implementację środowiska
+Ultimate Texas Hold’em wykorzystywanego w~dalszej części pracy do uczenia
+i~oceny agentów. Wcześniej opisane zasady gry odwzorowano w~postaci silnika
 odpowiedzialnego za zarządzanie całym przebiegiem rozdania. Silnik
 udostępnia agentowi legalne akcje do wykonania oraz rozlicza wynik
 finansowy rozdania.
 
-Implementację podzieliłem na niezależne moduły odpowiedzialne między innymi
+Implementację podzielono na niezależne moduły odpowiedzialne między innymi
 za reprezentację kart, ocenę układów, sterowanie przebiegiem rozdania,
 walidację akcji oraz rozliczanie zakładów. Kodowanie obserwacji, odwzorowanie akcji
-i konstrukcja nagrody są poza warstwą realizującą zasady
-gry, co umożliwi mi porównywanie różnych reprezentacji stanu i funkcji nagrody.
+i~konstrukcja nagrody są poza warstwą realizującą zasady
+gry, co umożliwia porównywanie różnych reprezentacji stanu i~funkcji nagrody.
 
 \input{chapters/03_srodowisko_uth/architektura}
 \input{chapters/03_srodowisko_uth/karty_i_evaluator}

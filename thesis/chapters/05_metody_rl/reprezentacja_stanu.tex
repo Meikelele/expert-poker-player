@@ -1,37 +1,37 @@
 \section{Reprezentacja stanu}
 \label{sec:reprezentacja-stanu}
-Stan definiuję zgodnie z przyjętą w uczeniu przez wzmacnianie konwencją, jako
-opis aktualnej sytuacji agenta w środowisku \cite{state_representation}.
+Stan definiowany jest zgodnie z~przyjętą w~uczeniu przez wzmacnianie konwencją, jako
+opis aktualnej sytuacji agenta w~środowisku \cite{state_representation}.
 
-W moich rozważaniach zastosowałem dwa warianty funkcji stanu, które nazwałem
-RAW i FEATURES. Obie funkcje powstają wyłącznie na podstawie obiektu
-\texttt{UTHObservation}, a więc informacji dostępnych graczowi.
+W~pracy zastosowano dwa warianty funkcji stanu, nazwane
+RAW i~FEATURES. Obie funkcje powstają wyłącznie na podstawie obiektu
+\texttt{UTHObservation}, a~więc informacji dostępnych graczowi.
 
 \subsection{RAW: reprezentacja surowa}
 \label{subsec:state-a}
 
-Pierwszy wariant, który określiłem jako RAW, stanowi surowy wektor
-reprezentujący karty. Każda karta jest reprezentowana jako wektor one-hot
-o długości 52.
+Pierwszy wariant, określony jako RAW, stanowi surowy wektor
+reprezentujący karty. Każda karta jest reprezentowana jako wektor one-hot (ang. \emph{one-hot}) \cite{one_hot_encoding}
+o~długości 52.
 
-Kodowanie jednej karty jako one-hot, a nie jako pojedynczej wartości
-porządkowej, wynika z tego, co właściwie koduję. Sama ranga karty ma
-charakter porządkowy i w tej postaci wykorzystuję ją w cechach domenowych
-FEATURES opisanych w podrozdziale~\ref{subsec:state-b}. Tutaj jednak koduję
-całą kartę, czyli konkretną kombinację rangi i koloru, a kolor nie ma w
+Kodowanie jednej karty jako one-hot, a~nie jako pojedynczej wartości
+porządkowej, wynika z~tego, co właściwie jest kodowane. Sama ranga karty ma
+charakter porządkowy i~w~tej postaci wykorzystywana jest w~cechach domenowych
+FEATURES opisanych w~podrozdziale~\ref{subsec:state-b}. Tutaj jednak kodowana jest
+cała karta, czyli konkretna kombinacja rangi i~koloru, a~kolor nie ma w~
 pokerze żadnej naturalnej hierarchii. Przypisanie 52 kartom pojedynczych,
 kolejnych numerów mogłoby sugerować sieci nieistniejącą zależność, na przykład
-że dwie karty o bliskich numerach są sobie w jakimś sensie bliskie. Kodowanie
+że dwie karty o~bliskich numerach wykazują nieuzasadnioną bliskość. Kodowanie
 one-hot tego problemu nie ma, ponieważ każda karta dostaje własną,
-niezależną pozycję w wektorze.
+niezależną pozycję w~wektorze.
 
-Kodowanie one-hot polega na tym, że każdą wartość ze zbioru możliwych
-wartości reprezentuję jako wektor samych zer z pojedynczą jedynką na
+Kodowanie one-hot polega na tym, że każda wartość ze zbioru możliwych
+wartości reprezentowana jest jako wektor samych zer z~pojedynczą jedynką na
 pozycji odpowiadającej tej konkretnej wartości \cite{one_hot_encoding}.
-A zatem każda karta to 52 liczby, z czego 51 to zera. Jedynka stoi na
+A~zatem każda karta to 52 liczby, z~czego 51 to zera. Jedynka stoi na
 pozycji przypisanej dokładnie tej karcie (np. as pik), jak przedstawiono
-na rysunku~\ref{fig:one-hot-karta}. Więc agentowi dostarczam informacje
-o obecności karty. Nieodkryte karty to wektory zerowe.
+na rysunku~\ref{fig:one-hot-karta}. Agentowi dostarczana jest w~ten sposób informacja
+o~obecności karty. Nieodkryte karty to wektory zerowe.
 
 \begin{figure}[htbp]
     \centering
@@ -57,9 +57,9 @@ o obecności karty. Nieodkryte karty to wektory zerowe.
     \label{fig:one-hot-karta}
 \end{figure}
 
-Do reprezentacji stanu dołączyłem zakodowaną aktualną fazę rozdania oraz
+Do reprezentacji stanu dołączono zakodowaną aktualną fazę rozdania oraz
 maskę sześciu możliwych akcji, dzięki której sieć neuronowa ma
-bezpośredni dostęp do informacji o tym, które akcje są w danym
+bezpośredni dostęp do informacji o~tym, które akcje są w~danym
 momencie możliwe do wykonania.
 Łączny wymiar RAW wynosi
 
@@ -68,22 +68,22 @@ momencie możliwe do wykonania.
     \label{eq:state-a-dim}
 \end{equation}
 
-Chciałem, aby RAW nie zawierał informacji o sile układu
+Przyjęto założenie, że RAW nie będzie zawierał informacji o~sile układu
 pokerowego. Model musi więc samodzielnie nauczyć się korelacji pomiędzy
-kartami a ich wartością w pokerze.
+kartami a~ich wartością w~pokerze.
 
-Kolejność kart w wektorze RAW odpowiada kolejności, w jakiej trafiają one do
-obiektu \texttt{UTHObservation}, a nie ich rangom. Nie
-kanonizuję tej kolejności, więc ta sama para kart własnych może zostać
-zakodowana na dwa różne sposoby w zależności od tego, która z kart została
+Kolejność kart w~wektorze RAW odpowiada kolejności, w~jakiej trafiają one do
+obiektu \texttt{UTHObservation}, a~nie ich rangom. Kolejność ta nie jest
+kanonizowana, więc ta sama para kart własnych może zostać
+zakodowana na dwa różne sposoby w~zależności od tego, która z~kart została
 rozdana jako pierwsza.
 
-\subsection{FEATURES: reprezentacja z cechami domenowymi}
+\subsection{FEATURES: reprezentacja z~cechami domenowymi}
 \label{subsec:state-b}
 
-Drugi wariant, który nazwałem FEATURES, jest rozszerzeniem surowego wariantu
-opisanego w podrozdziale~\ref{subsec:state-a} o 20 dodatkowych cech
-domenowych, tak jak przedstawiłem na rysunku~\ref{fig:state-b-rozszerzenie}.
+Drugi wariant, nazwany FEATURES, jest rozszerzeniem surowego wariantu
+opisanego w~podrozdziale~\ref{subsec:state-a} o~20 dodatkowych cech
+domenowych, przedstawionym na rysunku~\ref{fig:state-b-rozszerzenie}.
 
 \begin{figure}[htbp]
     \centering
@@ -95,16 +95,16 @@ domenowych, tak jak przedstawiłem na rysunku~\ref{fig:state-b-rozszerzenie}.
         \node[box, minimum width=22mm, very thick, right=2mm of a] (extra)
             {+ cechy\\domenowe\\(20 elementów)};
     \end{tikzpicture}
-    \caption{FEATURES jako RAW rozszerzone o 20 cech domenowych}
+    \caption{FEATURES jako RAW rozszerzone o~20 cech domenowych}
     \label{fig:state-b-rozszerzenie}
 \end{figure}
 
-Oprócz informacji o kartach, fazie rozdania i dostępnych akcjach, do
-reprezentacji tego wariantu dołączyłem informacje o właściwościach kart
-prywatnych, o kategorii najlepszego widocznego układu oraz o strukturze
-kart, między innymi o parach, zgodności kolorów i możliwości utworzenia
-strita. Wszystkie 20 cech domenowych wraz ze sposobem ich wyznaczania,
-zakresem wartości i normalizacją przedstawiam w tabeli~\ref{tab:features-20}.
+Oprócz informacji o~kartach, fazie rozdania i~dostępnych akcjach, do
+reprezentacji tego wariantu dołączono informacje o~właściwościach kart
+prywatnych, o~kategorii najlepszego widocznego układu oraz o~strukturze
+kart, między innymi o~parach, zgodności kolorów i~możliwości utworzenia
+strita. Wszystkie 20 cech domenowych wraz z~zakresem wartości i~normalizacją
+przedstawiono w~tabeli~\ref{tab:features-20}.
 
 \begin{table}[htbp]
 \centering
@@ -149,6 +149,6 @@ Wymiar drugiego wariantu wynosi
     \label{eq:state-b-dim}
 \end{equation}
 
-Porównanie obu reprezentacji pozwala mi ocenić, czy przekazanie modelowi
-cech pokerowych ułatwia proces uczenia w porównaniu z reprezentacją opartą
+Porównanie obu reprezentacji pozwala ocenić, czy przekazanie modelowi
+cech pokerowych ułatwia proces uczenia w~porównaniu z~reprezentacją opartą
 głównie na surowym kodowaniu kart.

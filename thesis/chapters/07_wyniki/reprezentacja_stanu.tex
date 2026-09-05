@@ -1,9 +1,9 @@
 \section{Wpływ reprezentacji stanu}
 \label{sec:wyniki-reprezentacja-stanu}
 
-W celu oceny wpływu sposobu reprezentacji stanu porównałem warianty
-RAW i FEATURES przy zachowaniu tego samego algorytmu, funkcji nagrody
-oraz seedu treningowego. Dla każdej pary wyznaczyłem różnicę
+W~celu oceny wpływu sposobu reprezentacji stanu porównano warianty
+RAW i~FEATURES przy zachowaniu tego samego algorytmu, funkcji nagrody
+oraz ziarna treningowego. Dla każdej pary wyznaczono różnicę
 
 \begin{equation}
     \Delta EV_{\mathrm{state}}
@@ -14,13 +14,13 @@ oraz seedu treningowego. Dla każdej pary wyznaczyłem różnicę
 \end{equation}
 
 Zgodnie ze wzorem dodatnia wartość różnicy oznacza zatem przewagę reprezentacji
-FEATURES. Porównanie wykonałem osobno dla obu algorytmów i obu funkcji
-nagrody. Jednostką porównania jest w tym przypadku seed treningowy,
+FEATURES. Porównanie wykonano osobno dla obu algorytmów i~obu funkcji
+nagrody. Jednostką porównania jest w~tym przypadku ziarno treningowe,
 dlatego każda wartość średnia oraz odpowiadający jej przedział ufności
-wynikają z pięciu sparowanych różnic.
+wynikają z~pięciu sparowanych różnic.
 
-Wyniki wszystkich czterech porównań przedstawiam
-w tabeli~\ref{tab:state-representation-effect}.
+Wyniki wszystkich czterech porównań przedstawiono
+w~tabeli~\ref{tab:state-representation-effect}.
 
 \begin{table}[htbp]
     \centering
@@ -43,28 +43,28 @@ w tabeli~\ref{tab:state-representation-effect}.
     \end{tabular}
 \end{table}
 
-W przypadku DQN zastosowanie reprezentacji FEATURES doprowadziło do
-wyraźnej poprawy końcowego EV dla obu funkcji nagrody, w obu przypadkach
-cały przedział ufności leży powyżej zera. Wynika z tego, że w badanej
-konfiguracji DQN rozszerzenie wektora stanu o cechy opisujące sytuację
+W~przypadku DQN zastosowanie reprezentacji FEATURES doprowadziło do
+wyraźnej poprawy końcowego EV dla obu funkcji nagrody, w~obu przypadkach
+cały przedział ufności leży powyżej zera. Wynika z~tego, że w~badanej
+konfiguracji DQN rozszerzenie wektora stanu o~cechy opisujące sytuację
 pokerową poprawiało jakość uzyskiwanej strategii.
 
 Dla REINFORCE wpływ reprezentacji stanu był znacznie mniej jednoznaczny.
 Przy funkcji nagrody opartej na zysku netto przedział ufności obejmował
-zero, dlatego na podstawie tych pięciu par nie mogę wskazać wyraźnej
-przewagi żadnej z reprezentacji. Przy skalowanej funkcji nagrody
+zero, dlatego na podstawie tych pięciu par nie można wskazać wyraźnej
+przewagi żadnej z~reprezentacji. Przy skalowanej funkcji nagrody
 punktowe oszacowanie wskazuje na wyższe EV reprezentacji FEATURES,
-jednak przedział ufności jest znacznie szerszy i również obejmuje zero,
-więc duże zróżnicowanie wyników między seedami nie pozwala mi uznać tego
-efektu za równie stabilny jak w przypadku DQN.
+jednak przedział ufności jest znacznie szerszy i~również obejmuje zero,
+więc duże zróżnicowanie wyników między ziarnami nie pozwala uznać tego
+efektu za równie stabilny jak w~przypadku DQN.
 
-Te same porównania przedstawiam także na
+Te same porównania przedstawiono także na
 rysunku~\ref{fig:state-representation-effect}, gdzie na osi poziomej
 znajduje się różnica $EV_{\mathrm{FEATURES}} - EV_{\mathrm{RAW}}$,
-a na osi pionowej cztery kombinacje algorytmu i funkcji nagrody.
-Punkty przedstawiają średnią różnicę dla pięciu sparowanych seedów
-treningowych, a wąsy odpowiadają 95-procentowym przedziałom ufności,
-wartości dodatnie oznaczają przewagę reprezentacji FEATURES. Widać, 
+a~na osi pionowej cztery kombinacje algorytmu i~funkcji nagrody.
+Punkty przedstawiają średnią różnicę dla pięciu sparowanych ziaren
+treningowych, a~wąsy odpowiadają 95-procentowym przedziałom ufności,
+wartości dodatnie oznaczają przewagę reprezentacji FEATURES. Widać,
 że przedziały ufności obu wariantów DQN leżą całkowicie po
 dodatniej stronie zera, natomiast oba przedziały REINFORCE obejmują
 zero.
@@ -79,6 +79,6 @@ zero.
 \end{figure}
 
 Rezultaty wskazują na odmienny wpływ reprezentacji
-stanu na oba badane algorytmy. DQN korzystał z informacji zawartych
-w rozszerzonej reprezentacji FEATURES, natomiast dla REINFORCE
-nie zaobserwowałem równie stabilnego efektu zmiany reprezentacji.
+stanu na oba badane algorytmy. DQN korzystał z~informacji zawartych
+w~rozszerzonej reprezentacji FEATURES, natomiast dla REINFORCE
+nie zaobserwowano równie stabilnego efektu zmiany reprezentacji.

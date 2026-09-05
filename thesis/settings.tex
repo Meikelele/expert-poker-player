@@ -36,20 +36,22 @@
 \usepackage[indentafter]{titlesec}
 
 % Rozdział (nagłówek 1. stopnia): 12 pt, wersaliki, pogrubienie.
+% \MakeUppercase jako before-code (5. argument) — tak, żeby uwielkościł
+% wyłącznie tekst tytułu, a nie numer rozdziału z pierwszego argumentu.
 \titleformat{\chapter}[block]
-  {\normalfont\normalsize\bfseries\MakeUppercase}
-  {\thechapter.}{0.5em}{}
+  {\normalfont\normalsize\bfseries}
+  {\thechapter.}{0.5em}{\MakeUppercase}
 \titlespacing*{\chapter}{0pt}{12pt}{6pt}
 
-% Podrozdział (nagłówek 2. stopnia): 10 pt, pogrubienie.
+% Podrozdział (nagłówek 2. stopnia): 10 pt, pogrubienie i kursywa.
 \titleformat{\section}[block]
-  {\normalfont\fontsize{10pt}{12pt}\selectfont\bfseries}
+  {\normalfont\fontsize{10pt}{12pt}\selectfont\bfseries\itshape}
   {\thesection.}{0.5em}{}
 \titlespacing*{\section}{0pt}{12pt}{6pt}
 
-% Punkt podrozdziału (nagłówek 3. stopnia): 10 pt, pogrubienie.
+% Punkt podrozdziału (nagłówek 3. stopnia): 10 pt, kursywa (bez pogrubienia).
 \titleformat{\subsection}[block]
-  {\normalfont\fontsize{10pt}{12pt}\selectfont\bfseries}
+  {\normalfont\fontsize{10pt}{12pt}\selectfont\itshape}
   {\thesubsection.}{0.5em}{}
 \titlespacing*{\subsection}{0pt}{12pt}{6pt}
 
@@ -110,7 +112,10 @@
 \usepackage{fancyhdr}
 
 % Bibliografia.
-\usepackage[style=ieee]{biblatex}
+% citestyle=numeric-comp (zamiast domyślnego dla stylu ieee) — łączy wiele
+% cytowań w jeden nawias kwadratowy, np. [2,3,4] / [2-4], zgodnie z wytycznymi
+% wydziałowymi (zamiast oddzielnych nawiasów [2], [3], [4] ze stylu IEEE).
+\usepackage[style=ieee,citestyle=numeric-comp]{biblatex}
 \usepackage{csquotes}
 
 % Linki w PDF.
